@@ -15,10 +15,16 @@ class GUIStatus():
         self.status_var = tk.StringVar()
         ttk.Label(self.frame, textvariable=self.status_var, font=self.root.font_status).place(x=110, y=28)
 
+        self.root.style.configure(
+            'Status.Horizontal.TProgressbar',
+            background='green',
+            lightcolor='green',
+            darkcolor='green')
         self.progressbar = ttk.Progressbar(
             self.frame,
             orient='horizontal',
             mode='determinate',
-            length=100
+            length=100,
+            style='Status.Horizontal.TProgressbar'
         )
         self.progressbar.place(x=0, y=30)
