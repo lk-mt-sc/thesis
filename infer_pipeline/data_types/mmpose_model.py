@@ -8,8 +8,21 @@ class MMPoseModel():
         self.checkpoint = checkpoint
         self.config = config
 
+    @classmethod
+    def get_from_selection_string(cls, selection_str):
+        selection_str_split = selection_str.split(' | ')
+        return MMPoseModel(
+            section=selection_str_split[3],
+            arch=selection_str_split[4],
+            dataset=selection_str_split[0],
+            input_size=selection_str_split[2],
+            key_metric=selection_str_split[1],
+            checkpoint=None,
+            config=None
+        )
+
     def __str__(self):
-        return f'{self.dataset.value.upper()} | {self.key_metric} | {self.input_size} | {self.section} | {self.arch}'
+        return f'{self.dataset} | {self.key_metric} | {self.input_size} | {self.section} | {self.arch}'
 
     def __eq__(self, other):
         equal = self.section == other.section \

@@ -3,6 +3,7 @@ from threading import Thread
 
 from gui.gui_mmpose_model import GUIMMPoseModel
 from manager.status_manager import Status
+from data_types.mmpose_model import MMPoseModel
 from model_zoo import ModelZoo
 
 
@@ -16,6 +17,7 @@ class MMPoseModelManager():
         self.status_manager = status_manager
         self.model_zoo = ModelZoo(redownload_model_zoo=False)
         self.models = []
+        self.selected_model = None
         self.fetch_models()
 
     def fetch_models(self):
@@ -54,5 +56,19 @@ class MMPoseModelManager():
         for model in self.models:
             self.gui_mmpose_model.listbox_models.insert(tk.END, model)
 
-    def model_selected(self):
-        pass
+    def _gui_set_details(self):
+        self.gui_mmpose_model.details_section_var.set(self.selected_model.section)
+        self.gui_mmpose_model.details_arch_var.set(self.selected_model.arch)
+        self.gui_mmpose_model.details_dataset_var.set(self.selected_model.dataset)
+        self.gui_mmpose_model.details_input_size_var.set(self.selected_model.input_size)
+        self.gui_mmpose_model.details_key_metric_var.set(self.selected_model.key_metric)
+        self.gui_mmpose_model.details_checkpoint_var.set(self.selected_model.checkpoint)
+        self.gui_mmpose_model.details_config_var.set(self.selected_model.config)
+
+    def model_selected(self, event=None):
+        current_selection = self.gui_mmpose_model.listbox_models.curselection()
+        selection_str = self.gui_mmpose_model.listbox_models.get(current_selection[0])
+        selected_model = MMPoseModel.get_from_selection_string(selection_str)
+        self.selected_model = next(model for model in self.models if model == selected_model)
+
+        self._gui_set_details()

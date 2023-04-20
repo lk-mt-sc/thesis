@@ -6,7 +6,6 @@ from bs4 import BeautifulSoup
 
 from common import MMPOSE_CHECKPOINTS_DIR
 from data_types.mmpose_model import MMPoseModel
-from manager.dataset_manager import Datasets
 
 
 class ModelZoo:
@@ -101,7 +100,7 @@ class ModelZoo:
                     models.append(
                         MMPoseModel(section=section_,
                                     arch=arch,
-                                    dataset=Datasets.COCO,
+                                    dataset='coco',
                                     input_size=input_size,
                                     key_metric=key_metric,
                                     checkpoint=checkpoint,
@@ -138,7 +137,7 @@ class ModelZoo:
                     models.append(
                         MMPoseModel(section=section_,
                                     arch=arch,
-                                    dataset=Datasets.CROWDPOSE,
+                                    dataset='crowdpose',
                                     input_size=input_size,
                                     key_metric=key_metric,
                                     checkpoint=checkpoint,
@@ -175,7 +174,7 @@ class ModelZoo:
                     models.append(
                         MMPoseModel(section=section_,
                                     arch=arch,
-                                    dataset=Datasets.MPII,
+                                    dataset='mpii',
                                     input_size=input_size,
                                     key_metric=key_metric,
                                     checkpoint=checkpoint,
@@ -212,7 +211,7 @@ class ModelZoo:
                     models.append(
                         MMPoseModel(section=section_,
                                     arch=arch,
-                                    dataset=Datasets.AIC,
+                                    dataset='aic',
                                     input_size=input_size,
                                     key_metric=key_metric,
                                     checkpoint=checkpoint,
