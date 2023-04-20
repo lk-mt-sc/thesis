@@ -41,7 +41,7 @@ class GUIMMDetectionModel():
         ttk.Label(self.frame, textvariable=self.details_key_metric_var).place(x=120, y=170)
 
         self.details_checkpoint_var = tk.StringVar()
-        ttk.Label(self.frame, textvariable=self.details_checkpoint_var).place(x=120, y=200)
+        ttk.Label(self.frame, textvariable=self.details_checkpoint_var, wraplength=320).place(x=120, y=200)
 
-        self.details_configuration_var = tk.StringVar()
-        ttk.Label(self.frame, textvariable=self.details_configuration_var).place(x=120, y=230)
+        self.details_config_var = tk.StringVar()
+        ttk.Label(self.frame, textvariable=self.details_config_var, wraplength=320).place(x=120, y=230)

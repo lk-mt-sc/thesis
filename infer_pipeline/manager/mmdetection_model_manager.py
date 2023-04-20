@@ -10,18 +10,19 @@ class MMDetectionModelManager():
         self.gui_mmdetection_model = GUIMMDetectionModel(root, listbox_models_callback=self.model_selected)
         self.status_manager = status_manager
         self.models = []
+        self.selected_model = None
         self.fetch_models()
 
     def fetch_models(self):
         if not self.status_manager.has_status(Status.FETCHING_MMDETECTION_MODELS):
             self.status_manager.add_status(Status.FETCHING_MMDETECTION_MODELS)
 
-            # manually selected models using the interactive model zoo at https://platform.openmmlab.com/modelzoos
+            # manually selected models based on box AP
             self.models.append(MMDetectionModel(
-                name='-',
-                key_metric='-',
-                checkpoint='-',
-                config='-'
+                name='Faster R-CNN (Person)',
+                key_metric='box AP (55.8)',
+                checkpoint='faster_rcnn_r50_fpn_1x_coco-person_20201216_175929-d022e227.pth',
+                config='configs/faster_rcnn/faster-rcnn_r50-caffe_fpn_ms-1x_coco-person.py'
             ))
 
             self._gui_set_models()
@@ -32,5 +33,16 @@ class MMDetectionModelManager():
         for model in self.models:
             self.gui_mmdetection_model.listbox_models.insert(tk.END, model)
 
-    def model_selected(self):
-        pass
+    def _gui_set_details(self):
+        self.gui_mmdetection_model.details_name_var.set(self.selected_model.name)
+        self.gui_mmdetection_model.details_key_metric_var.set(self.selected_model.key_metric)
+        self.gui_mmdetection_model.details_checkpoint_var.set(self.selected_model.checkpoint)
+        self.gui_mmdetection_model.details_config_var.set(self.selected_model.config)
+
+    def model_selected(self, event=None):
+        current_selection = self.gui_mmdetection_model.listbox_models.curselection()
+        selection_str = self.gui_mmdetection_model.listbox_models.get(current_selection[0])
+        selected_model = MMDetectionModel.get_from_selection_string(selection_str)
+        self.selected_model = next(model for model in self.models if model == selected_model)
+
+        self._gui_set_details()
