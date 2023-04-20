@@ -28,6 +28,7 @@ class DataManager():
 
     def _fetch_data(self):
         data = sorted(glob.glob(os.path.join(MMPOSE_DATA_DIR, '*')))
+        self.data.clear()
         for d in data:
             self.data.append(Data(d))
 
