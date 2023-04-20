@@ -17,6 +17,7 @@ class DataManager():
             listbox_data_callback=self.data_selected)
         self.status_manager = status_manager
         self.data = []
+        self.selected_data = []
         self.fetch_data()
 
     def fetch_data(self):
@@ -44,5 +45,10 @@ class DataManager():
         for data in self.data:
             self.gui_data.listbox_data.insert(tk.END, data)
 
-    def data_selected(self):
-        pass
+    def data_selected(self, event=None):
+        self.selected_data.clear()
+        current_selection = self.gui_data.listbox_data.curselection()
+        for selection in current_selection:
+            selection_str = self.gui_data.listbox_data.get(selection)
+            data_id = int(selection_str[:3])
+            self.selected_data.append(next(data for data in self.data if data.id == data_id))
