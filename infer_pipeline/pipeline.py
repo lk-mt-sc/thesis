@@ -10,6 +10,7 @@ from gui.gui_feature import GUIFeature
 from gui.gui_plot import GUIPlot
 from gui.gui_metric import GUIMetric
 
+from manager.dataset_manager import DatasetManager
 from manager.status_manager import StatusManager
 from manager.data_manager import DataManager
 from manager.mmpose_model_manager import MMPoseModelManager
@@ -63,6 +64,9 @@ class Pipeline():
 
         ttk.Separator(self.root, orient='vertical').place(x=480, y=10, height=1350)
         ttk.Separator(self.root, orient='vertical').place(x=960, y=10, height=1350)
+
+        self.dataset_manager = DatasetManager()
+        self.dataset_manager.create_datasets()
 
         self.status_manager = StatusManager(self.root)
         self.data_manager = DataManager(self.root, self.status_manager)

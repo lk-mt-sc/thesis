@@ -6,7 +6,7 @@ from bs4 import BeautifulSoup
 
 from common import MMPOSE_CHECKPOINTS_DIR
 from data_types.mmpose_model import MMPoseModel
-from datasets import COCO, CROWDPOSE, MPII, AIC
+from manager.dataset_manager import Datasets
 
 
 class ModelZoo:
@@ -101,7 +101,7 @@ class ModelZoo:
                     models.append(
                         MMPoseModel(section=section_,
                                     arch=arch,
-                                    dataset=COCO,
+                                    dataset=Datasets.COCO,
                                     input_size=input_size,
                                     key_metric=key_metric,
                                     checkpoint=checkpoint,
@@ -138,7 +138,7 @@ class ModelZoo:
                     models.append(
                         MMPoseModel(section=section_,
                                     arch=arch,
-                                    dataset=CROWDPOSE,
+                                    dataset=Datasets.CROWDPOSE,
                                     input_size=input_size,
                                     key_metric=key_metric,
                                     checkpoint=checkpoint,
@@ -175,7 +175,7 @@ class ModelZoo:
                     models.append(
                         MMPoseModel(section=section_,
                                     arch=arch,
-                                    dataset=MPII,
+                                    dataset=Datasets.MPII,
                                     input_size=input_size,
                                     key_metric=key_metric,
                                     checkpoint=checkpoint,
@@ -212,7 +212,7 @@ class ModelZoo:
                     models.append(
                         MMPoseModel(section=section_,
                                     arch=arch,
-                                    dataset=AIC,
+                                    dataset=Datasets.AIC,
                                     input_size=input_size,
                                     key_metric=key_metric,
                                     checkpoint=checkpoint,

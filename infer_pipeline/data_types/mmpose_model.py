@@ -9,7 +9,7 @@ class MMPoseModel():
         self.config = config
 
     def __str__(self):
-        return f'{self.dataset.dataset_name()} | {self.key_metric} | {self.input_size} | {self.section} | {self.arch}'
+        return f'{self.dataset.value.upper()} | {self.key_metric} | {self.input_size} | {self.section} | {self.arch}'
 
     def __eq__(self, other):
         equal = self.section == other.section \
