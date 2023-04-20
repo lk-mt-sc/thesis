@@ -4,7 +4,6 @@ from tkinter import font
 
 import matplotlib
 
-from gui.gui_plot import GUIPlot
 from gui.gui_metric import GUIMetric
 
 from manager.dataset_manager import DatasetManager
@@ -14,6 +13,7 @@ from manager.mmpose_model_manager import MMPoseModelManager
 from manager.mmdetection_model_manager import MMDetectionModelManager
 from manager.inference_manager import InferenceManager
 from manager.feature_manager import FeatureManager
+from manager.plot_manager import PlotManager
 
 
 class Pipeline():
@@ -43,7 +43,6 @@ class Pipeline():
         self.root.style.configure('Delete.TButton', font=self.root.font_small, padding=(0, 0))
         self.root.style.configure('Refresh.TButton', font=self.root.font_small, padding=(0, 0))
 
-        self.gui_plot = GUIPlot(self.root)
         self.gui_metric = GUIMetric(self.root)
 
         self.dataset_manager = DatasetManager()
@@ -55,6 +54,7 @@ class Pipeline():
         self.mmdetection_model_manager = MMDetectionModelManager(self.root, self.status_manager)
         self.inference_manager = InferenceManager(self.root, self.status_manager)
         self.feature_manager = FeatureManager(self.root, self.status_manager)
+        self.plot_manager = PlotManager(self.root, self.status_manager)
 
         ttk.Separator(self.root, orient='horizontal').place(x=10, y=576, width=460)
         ttk.Separator(self.root, orient='horizontal').place(x=10, y=864, width=460)
