@@ -54,8 +54,8 @@ class Inference:
             for run in runs:
                 self.runs.append(Run.load(run))
 
-    def get_run(self, id):
+    def get_run(self, id_):
         for run in self.runs:
-            if run.id == id:
+            if run.id == id_:
                 return run
         return None
