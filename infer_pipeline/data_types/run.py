@@ -2,9 +2,10 @@ import pickle
 
 
 class Run:
-    def __init__(self, id, data):
+    def __init__(self, id, data, features):
         self.id = id
         self.data = data
+        self.features = features
 
     @classmethod
     def load(cls, filename):
