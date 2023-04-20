@@ -19,8 +19,8 @@ class MMPoseModelManager():
         self.fetch_models()
 
     def fetch_models(self):
-        if not self.status_manager.has_status(Status.FETCHING_MODELS):
-            self.status_manager.add_status(Status.FETCHING_MODELS)
+        if not self.status_manager.has_status(Status.FETCHING_MMPOSE_MODELS):
+            self.status_manager.add_status(Status.FETCHING_MMPOSE_MODELS)
             self._gui_disable_button_refresh()
             self._gui_clear_listbox_models()
             fetch_thread = Thread(target=self._fetch_models)
@@ -39,7 +39,7 @@ class MMPoseModelManager():
         else:
             self._gui_set_models()
             self._gui_enable_button_refresh()
-            self.status_manager.remove_status(Status.FETCHING_MODELS)
+            self.status_manager.remove_status(Status.FETCHING_MMPOSE_MODELS)
 
     def _gui_clear_listbox_models(self):
         self.gui_mmpose_model.listbox_models.delete(0, tk.END)

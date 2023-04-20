@@ -6,7 +6,8 @@ from gui.gui_status import GUIStatus
 class Status(Enum):
     IDLE = 'Idle'
     FETCHING_DATA = 'Fetching data'
-    FETCHING_MODELS = 'Fetching models'
+    FETCHING_MMPOSE_MODELS = 'Fetching MMPose models'
+    FETCHING_MMDETECTION_MODELS = 'Fetching MMDetection models'
     FETCHING_INFERENCES = 'Fetching inferences'
     INFERING = 'Infering'
     LOADING_IMAGE = 'Loading image'
