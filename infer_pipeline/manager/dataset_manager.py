@@ -16,13 +16,13 @@ class Datasets(Enum):
 
 class DatasetManager():
     def __init__(self):
-        self.datasets = []
+        self.datasets = {}
 
     def create_datasets(self):
-        self.datasets.append(self._create_dataset(aic_dataset_info))
-        self.datasets.append(self._create_dataset(coco_dataset_info))
-        self.datasets.append(self._create_dataset(crowdpose_dataset_info))
-        self.datasets.append(self._create_dataset(mpii_dataset_info))
+        self.datasets[Datasets.AIC.value] = self._create_dataset(aic_dataset_info)
+        self.datasets[Datasets.COCO.value] = self._create_dataset(coco_dataset_info)
+        self.datasets[Datasets.CROWDPOSE.value] = self._create_dataset(crowdpose_dataset_info)
+        self.datasets[Datasets.MPII.value] = self._create_dataset(mpii_dataset_info)
 
     def _create_dataset(self, dataset):
         name = dataset['dataset_name']
