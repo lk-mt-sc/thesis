@@ -4,8 +4,6 @@ from tkinter import font
 
 import matplotlib
 
-from gui.gui_mmpose_model import GUIMMPoseModel
-from gui.gui_mmdetection_model import GUIMMDetectionModel
 from gui.gui_infer import GUIInfer
 from gui.gui_inference import GUIInference
 from gui.gui_feature import GUIFeature
@@ -14,6 +12,8 @@ from gui.gui_metric import GUIMetric
 
 from manager.status_manager import StatusManager
 from manager.data_manager import DataManager
+from manager.mmpose_model_manager import MMPoseModelManager
+from manager.mmdetection_model_manager import MMDetectionModelManager
 
 
 class Pipeline():
@@ -43,8 +43,6 @@ class Pipeline():
         self.root.style.configure('Delete.TButton', font=self.root.font_small, padding=(0, 0))
         self.root.style.configure('Refresh.TButton', font=self.root.font_small, padding=(0, 0))
 
-        self.gui_mmpose_model = GUIMMPoseModel(self.root, button_refresh_callback=None, listbox_models_callback=None)
-        self.gui_detection_model = GUIMMDetectionModel(self.root, listbox_models_callback=None)
         self.gui_infer = GUIInfer(self.root, button_infer_callback=None)
         self.gui_inference = GUIInference(
             self.root,
@@ -68,6 +66,8 @@ class Pipeline():
 
         self.status_manager = StatusManager(self.root)
         self.data_manager = DataManager(self.root, self.status_manager)
+        self.mmpose_model_manager = MMPoseModelManager(self.root, self.status_manager)
+        self.mmdetection_model_manager = MMDetectionModelManager(self.root, self.status_manager)
 
     def on_key_press(self, event):
         key = event.keysym
