@@ -6,7 +6,6 @@ import matplotlib
 
 from gui.gui_mmpose_model import GUIMMPoseModel
 from gui.gui_mmdetection_model import GUIMMDetectionModel
-from gui.gui_data import GUIData
 from gui.gui_infer import GUIInfer
 from gui.gui_inference import GUIInference
 from gui.gui_feature import GUIFeature
@@ -14,6 +13,7 @@ from gui.gui_plot import GUIPlot
 from gui.gui_metric import GUIMetric
 
 from manager.status_manager import StatusManager
+from manager.data_manager import DataManager
 
 
 class Pipeline():
@@ -45,7 +45,6 @@ class Pipeline():
 
         self.gui_mmpose_model = GUIMMPoseModel(self.root, button_refresh_callback=None, listbox_models_callback=None)
         self.gui_detection_model = GUIMMDetectionModel(self.root, listbox_models_callback=None)
-        self.gui_data = GUIData(self.root, button_refresh_callback=None, listbox_data_callback=None)
         self.gui_infer = GUIInfer(self.root, button_infer_callback=None)
         self.gui_inference = GUIInference(
             self.root,
@@ -68,6 +67,7 @@ class Pipeline():
         ttk.Separator(self.root, orient='vertical').place(x=960, y=10, height=1350)
 
         self.status_manager = StatusManager(self.root)
+        self.data_manager = DataManager(self.root, self.status_manager)
 
     def on_key_press(self, event):
         key = event.keysym
