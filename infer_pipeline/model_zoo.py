@@ -4,7 +4,7 @@ import requests
 from tqdm import tqdm
 from bs4 import BeautifulSoup
 
-from common import CHECKPOINTS_DIR
+from common import MMPOSE_CHECKPOINTS_DIR
 from data_types.mmpose_model import MMPoseModel
 from datasets import COCO, CROWDPOSE, MPII, AIC
 
@@ -234,7 +234,7 @@ class ModelZoo:
         print(f'Model Zoo: Downloading {len(checkpoint_links)} checkpoints.')
         for checkpoint_link in tqdm(checkpoint_links):
             checkpoint_filename = checkpoint_link.split('/')[-1]
-            checkpoint_local = os.path.join(CHECKPOINTS_DIR, checkpoint_filename)
+            checkpoint_local = os.path.join(MMPOSE_CHECKPOINTS_DIR, checkpoint_filename)
             if os.path.exists(checkpoint_local):
                 if overwrite:
                     os.remove(checkpoint_local)

@@ -3,7 +3,7 @@ import glob
 import tkinter as tk
 from threading import Thread
 
-from common import DATA_DIR
+from common import MMPOSE_DATA_DIR
 from gui.gui_data import GUIData
 from manager.status_manager import Status
 from data_types.data import Data
@@ -27,7 +27,7 @@ class DataManager():
             self.monitor_fetch_thread(fetch_thread)
 
     def _fetch_data(self):
-        data = sorted(glob.glob(os.path.join(DATA_DIR, '*')))
+        data = sorted(glob.glob(os.path.join(MMPOSE_DATA_DIR, '*')))
         for d in data:
             self.data.append(Data(d))
 
