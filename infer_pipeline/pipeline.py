@@ -4,8 +4,6 @@ from tkinter import font
 
 import matplotlib
 
-from gui.gui_metric import GUIMetric
-
 from manager.dataset_manager import DatasetManager
 from manager.status_manager import StatusManager
 from manager.data_manager import DataManager
@@ -14,6 +12,7 @@ from manager.mmdetection_model_manager import MMDetectionModelManager
 from manager.inference_manager import InferenceManager
 from manager.feature_manager import FeatureManager
 from manager.plot_manager import PlotManager
+from manager.metric_manager import MetricManager
 
 
 class Pipeline():
@@ -43,24 +42,22 @@ class Pipeline():
         self.root.style.configure('Delete.TButton', font=self.root.font_small, padding=(0, 0))
         self.root.style.configure('Refresh.TButton', font=self.root.font_small, padding=(0, 0))
 
-        self.gui_metric = GUIMetric(self.root)
-
         self.dataset_manager = DatasetManager()
         self.dataset_manager.create_datasets()
 
         self.status_manager = StatusManager(self.root)
-        self.data_manager = DataManager(self.root, self.status_manager)
         self.mmpose_model_manager = MMPoseModelManager(self.root, self.status_manager)
         self.mmdetection_model_manager = MMDetectionModelManager(self.root, self.status_manager)
+        self.data_manager = DataManager(self.root, self.status_manager)
         self.inference_manager = InferenceManager(self.root, self.status_manager)
         self.feature_manager = FeatureManager(self.root, self.status_manager)
         self.plot_manager = PlotManager(self.root, self.status_manager)
+        self.metric_manager = MetricManager(self.root, self.status_manager)
 
         ttk.Separator(self.root, orient='horizontal').place(x=10, y=576, width=460)
         ttk.Separator(self.root, orient='horizontal').place(x=10, y=864, width=460)
         ttk.Separator(self.root, orient='horizontal').place(x=490, y=864, width=460)
         ttk.Separator(self.root, orient='horizontal').place(x=970, y=1152, width=2445)
-
         ttk.Separator(self.root, orient='vertical').place(x=480, y=10, height=1350)
         ttk.Separator(self.root, orient='vertical').place(x=960, y=10, height=1350)
 
