@@ -5,7 +5,7 @@ from tqdm import tqdm
 from bs4 import BeautifulSoup
 
 from common import CHECKPOINTS_DIR
-from data_types.model import Model
+from data_types.mmpose_model import MMPoseModel
 from datasets import COCO, CROWDPOSE, MPII, AIC
 
 
@@ -99,13 +99,13 @@ class ModelZoo:
                     section_ = section.find('h3').text[:-1]
                     section_ = section_.replace('on Coco', '')
                     models.append(
-                        Model(section=section_,
-                              arch=arch,
-                              dataset=COCO,
-                              input_size=input_size,
-                              key_metric=key_metric,
-                              checkpoint=checkpoint,
-                              config=config))
+                        MMPoseModel(section=section_,
+                                    arch=arch,
+                                    dataset=COCO,
+                                    input_size=input_size,
+                                    key_metric=key_metric,
+                                    checkpoint=checkpoint,
+                                    config=config))
 
         return models
 
@@ -136,13 +136,13 @@ class ModelZoo:
                     section_ = section.find('h3').text[:-1]
                     section_ = section_.replace('on Crowdpose', '')
                     models.append(
-                        Model(section=section_,
-                              arch=arch,
-                              dataset=CROWDPOSE,
-                              input_size=input_size,
-                              key_metric=key_metric,
-                              checkpoint=checkpoint,
-                              config=config))
+                        MMPoseModel(section=section_,
+                                    arch=arch,
+                                    dataset=CROWDPOSE,
+                                    input_size=input_size,
+                                    key_metric=key_metric,
+                                    checkpoint=checkpoint,
+                                    config=config))
 
         return models
 
@@ -173,13 +173,13 @@ class ModelZoo:
                     section_ = section.find('h3').text[:-1]
                     section_ = section_.replace('on MPII', '')
                     models.append(
-                        Model(section=section_,
-                              arch=arch,
-                              dataset=MPII,
-                              input_size=input_size,
-                              key_metric=key_metric,
-                              checkpoint=checkpoint,
-                              config=config))
+                        MMPoseModel(section=section_,
+                                    arch=arch,
+                                    dataset=MPII,
+                                    input_size=input_size,
+                                    key_metric=key_metric,
+                                    checkpoint=checkpoint,
+                                    config=config))
 
         return models
 
@@ -210,13 +210,13 @@ class ModelZoo:
                     section_ = section.find('h3').text[:-1]
                     section_ = section_.replace('on AIC', '')
                     models.append(
-                        Model(section=section_,
-                              arch=arch,
-                              dataset=AIC,
-                              input_size=input_size,
-                              key_metric=key_metric,
-                              checkpoint=checkpoint,
-                              config=config))
+                        MMPoseModel(section=section_,
+                                    arch=arch,
+                                    dataset=AIC,
+                                    input_size=input_size,
+                                    key_metric=key_metric,
+                                    checkpoint=checkpoint,
+                                    config=config))
 
         return models
 
