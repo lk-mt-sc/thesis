@@ -25,6 +25,7 @@ class MMDetectionModelManager():
             ))
 
             self._gui_set_models()
+            self.status_manager.remove_status(Status.FETCHING_MMDETECTION_MODELS)
 
     def _gui_set_models(self):
         self.gui_mmdetection_model.listbox_models.delete(0, tk.END)
