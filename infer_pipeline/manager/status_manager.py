@@ -18,7 +18,6 @@ class StatusManager():
         self.gui_status = GUIStatus(root)
         self.status = []
         self._gui_set_status()
-        self._gui_set_progress()
 
     def add_status(self, status):
         self.status.append(status)
@@ -31,9 +30,6 @@ class StatusManager():
     def has_status(self, status):
         return status in self.status
 
-    def update_progress(self, value):
-        self._gui_set_progress(value)
-
     def _gui_set_status(self):
         if not self.status:
             self.status.append(Status.IDLE)
@@ -43,6 +39,3 @@ class StatusManager():
 
         status_str = [status.value for status in self.status]
         self.gui_status.status_var.set(' | '.join(status_str))
-
-    def _gui_set_progress(self, value=0):
-        self.gui_status.progressbar['value'] = value
