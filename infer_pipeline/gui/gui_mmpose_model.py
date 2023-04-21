@@ -22,7 +22,7 @@ class GUIMMPoseModel():
         self.button_refresh = ttk.Button(
             self.frame,
             text='Refresh',
-            style='Refresh.TButton',
+            style='Button.TButton',
             width=7,
             command=button_refresh_callback
         )

@@ -22,7 +22,7 @@ class GUIInference():
         self.button_compare = ttk.Button(
             self.frame,
             text='Compare',
-            style='Compare.TButton',
+            style='Button.TButton',
             width=8,
             command=button_compare_callback)
         self.button_compare.place(x=300, y=0, height=20)
@@ -31,7 +31,7 @@ class GUIInference():
         self.button_delete = ttk.Button(
             self.frame,
             text='Delete',
-            style='Delete.TButton',
+            style='Button.TButton',
             width=6,
             command=button_delete_callback)
         self.button_delete.place(x=360, y=0, height=20)
@@ -40,7 +40,7 @@ class GUIInference():
         self.button_refresh = ttk.Button(
             self.frame,
             text='Refresh',
-            style='Refresh.TButton',
+            style='Button.TButton',
             width=7,
             command=button_refresh_callback)
         self.button_refresh.place(x=410, y=0, height=20)
