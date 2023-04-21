@@ -39,6 +39,7 @@ class MMPoseModelManager():
         if thread.is_alive():
             self.gui_mmpose_model.root.after(50, lambda: self.monitor_fetch_thread(thread))
         else:
+            self.selected_model = None
             self._gui_set_models()
             self._gui_enable_button_refresh()
             self.status_manager.remove_status(Status.FETCHING_MMPOSE_MODELS)

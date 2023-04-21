@@ -37,6 +37,7 @@ class DataManager():
         if fetch_thread.is_alive():
             self.gui_data.root.after(50, lambda: self.monitor_fetch_thread(fetch_thread))
         else:
+            self.selected_data.clear()
             self._gui_set_data()
             self.status_manager.remove_status(Status.FETCHING_DATA)
 
