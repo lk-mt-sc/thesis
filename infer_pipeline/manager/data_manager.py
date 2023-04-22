@@ -53,3 +53,6 @@ class DataManager():
             selection_str = self.gui_data.listbox_data.get(selection)
             data_id = int(selection_str[:3])
             self.selected_data.append(next(data for data in self.data if data.id == data_id))
+
+    def get_data(self, id_):
+        return next((data for data in self.data if data.id == id_), None)

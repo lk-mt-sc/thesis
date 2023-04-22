@@ -1,6 +1,7 @@
 import os
 import glob
 import json
+import shutil
 import tkinter as tk
 from tkinter import messagebox
 from threading import Thread
@@ -26,7 +27,7 @@ class InferenceManager():
         self.gui_inference = GUIInference(
             root,
             button_compare_callback=self.compare_inference,
-            button_delete_callback=self.delete_inference,
+            button_delete_callback=self.ask_for_ok_delete_inferences,
             button_refresh_callback=self.fetch_inferences,
             listbox_inferences_callback=self.inference_selected,
             listbox_data_callback=self.data_selected)
@@ -101,6 +102,18 @@ class InferenceManager():
     def _gui_disable_button_queue_add(self):
         self.gui_inference_queue.button_add['state'] = 'disabled'
 
+    def _gui_enable_button_delete(self):
+        self.gui_inference.button_delete['state'] = 'normal'
+
+    def _gui_disable_button_delete(self):
+        self.gui_inference.button_delete['state'] = 'disabled'
+
+    def _gui_enable_button_compare(self):
+        self.gui_inference.button_compare['state'] = 'normal'
+
+    def _gui_disable_button_compare(self):
+        self.gui_inference.button_compare['state'] = 'disabled'
+
     def _gui_update_inference_progress(self, inference_id, inference_progress):
         for i, inference in enumerate(self.queue_inferences):
             if inference.id == inference_id:
@@ -113,6 +126,35 @@ class InferenceManager():
                     progress_str += f' - {inference_progress}%'
 
                 self.gui_inference_queue.listbox_inferences.insert(i, progress_str)
+
+    def _gui_set_details(self):
+        selected_inference = self.selected_inferences[0]
+        self.gui_inference.details_id_var.set(selected_inference.id)
+        self.gui_inference.details_name_var.set(selected_inference.name)
+        self.gui_inference.details_date_var.set(selected_inference.datetime)
+        self.gui_inference.details_model_mmpose_var.set(selected_inference.mmpose_model)
+        self.gui_inference.details_model_mmdetection_var.set(selected_inference.mmdetection_model)
+        self.gui_inference.details_duration_bb_detection_var.set('-/-/-')
+        self.gui_inference.details_duration_bb_classification_var.set('-/-/-')
+        self.gui_inference.details_duration_pose_estimation_var.set('-/-/-')
+        self.gui_inference.details_description_var.set(selected_inference.description)
+
+        self.gui_inference.details_listbox_data.delete(0, tk.END)
+        for data in selected_inference.data:
+            self.gui_inference.details_listbox_data.insert(tk.END, self.data_manager.get_data(data))
+
+    def _gui_clear_details(self):
+        self.gui_inference.details_id_var.set('')
+        self.gui_inference.details_name_var.set('')
+        self.gui_inference.details_date_var.set('')
+        self.gui_inference.details_model_mmpose_var.set('')
+        self.gui_inference.details_model_mmdetection_var.set('')
+        self.gui_inference.details_duration_bb_detection_var.set('')
+        self.gui_inference.details_duration_bb_classification_var.set('')
+        self.gui_inference.details_duration_pose_estimation_var.set('')
+        self.gui_inference.details_description_var.set('')
+
+        self.gui_inference.details_listbox_data.delete(0, tk.END)
 
     def queue_inference_add(self):
         inference_mmpose_model = self.mmpose_model_manager.selected_model
@@ -227,13 +269,48 @@ class InferenceManager():
         return False
 
     def inference_selected(self, event=None):
-        pass
+        self.selected_inferences.clear()
+        current_selection = self.gui_inference.listbox_inferences.curselection()
+
+        for selection in current_selection:
+            selection_str = self.gui_inference.listbox_inferences.get(selection)
+            selection_str_split = selection_str.split(' | ')
+            inference_id = selection_str_split[-1]
+            self.selected_inferences.append(
+                next(inference for inference in self.inferences if inference.id == inference_id))
+
+        if len(self.selected_inferences) == 1:
+            self._gui_set_details()
+            self._gui_disable_button_compare()
+        else:
+            self._gui_enable_button_compare()
+            self._gui_clear_details()
+
+        self._gui_enable_button_delete()
 
     def data_selected(self):
         pass
 
-    def delete_inference(self):
-        pass
+    def ask_for_ok_delete_inferences(self):
+        if len(self.selected_inferences) == 1:
+            title = 'Delete inference'
+            message = 'Are you sure to delete the selected inference?'
+        else:
+            title = 'Delete inferences'
+            message = 'Are you sure to delete the selected inferences?'
+
+        answer = messagebox.askyesno(title, message)
+        if answer:
+            self.delete_inferences()
+
+    def delete_inferences(self):
+        for inference in self.selected_inferences:
+            shutil.rmtree(os.path.join(INFERENCES_DIR, inference.id))
+
+        self.fetch_inferences()
+        self._gui_clear_details()
+        self._gui_disable_button_delete()
+        self._gui_disable_button_compare()
 
     def compare_inference(self):
         pass
