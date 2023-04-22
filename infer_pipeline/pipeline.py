@@ -38,9 +38,7 @@ class Pipeline():
         self.root.font_small.configure(size=7)
         self.root.option_add('*TCombobox*Listbox.font', self.root.font_small)
 
-        self.root.style.configure('Compare.TButton', font=self.root.font_small, padding=(0, 0))
-        self.root.style.configure('Delete.TButton', font=self.root.font_small, padding=(0, 0))
-        self.root.style.configure('Refresh.TButton', font=self.root.font_small, padding=(0, 0))
+        self.root.style.configure('Button.TButton', font=self.root.font_small, padding=(0, 0))
 
         self.dataset_manager = DatasetManager()
         self.dataset_manager.create_datasets()
@@ -49,7 +47,12 @@ class Pipeline():
         self.mmpose_model_manager = MMPoseModelManager(self.root, self.status_manager)
         self.mmdetection_model_manager = MMDetectionModelManager(self.root, self.status_manager)
         self.data_manager = DataManager(self.root, self.status_manager)
-        self.inference_manager = InferenceManager(self.root, self.status_manager)
+        self.inference_manager = InferenceManager(
+            self.root,
+            self.status_manager,
+            self.mmpose_model_manager,
+            self.mmdetection_model_manager,
+            self.data_manager)
         self.feature_manager = FeatureManager(self.root, self.status_manager)
         self.plot_manager = PlotManager(self.root, self.status_manager)
         self.metric_manager = MetricManager(self.root, self.status_manager)
