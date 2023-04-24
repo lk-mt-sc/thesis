@@ -1,15 +1,15 @@
 import os
 import glob
 import json
+import shutil
+import subprocess
 from datetime import datetime
 
-from mmpose.apis import MMPoseInferencer
-
 from data_types.run import Run
-from utils import Suppressor
-from common import MMPOSE_DIR, MMPOSE_CHECKPOINTS_DIR
-from common import MMDETECTION_DIR, MMDETECTION_CHECKPOINTS_DIR
-from common import INFERENCES_DIR
+from utils import collect_image_infos, cvt_to_coco_json
+from common import MMPOSE_DIR, MMPOSE_CHECKPOINTS_DIR, MMPOSE_TEST_SCRIPT, MMPOSE_DATASET_DIR, MMPOSE_RUNS_DIR
+from common import MMDETECTION_DIR, MMDETECTION_CHECKPOINTS_DIR, MMDETECTION_TEST_SCRIPT
+from common import WORKING_DIR, INFERENCES_DIR
 
 
 class Inference:
@@ -42,37 +42,79 @@ class Inference:
         out_dir = os.path.join(INFERENCES_DIR, self.id)
         os.mkdir(out_dir)
 
-        with Suppressor():
-            inferencer = MMPoseInferencer(
-                pose2d=os.path.join(MMPOSE_DIR, self.mmpose_model.config),
-                pose2d_weights=os.path.join(MMPOSE_CHECKPOINTS_DIR, self.mmpose_model.checkpoint),
-                det_model=os.path.join(MMDETECTION_DIR, self.mmdetection_model.config),
-                det_weights=os.path.join(MMDETECTION_CHECKPOINTS_DIR, self.mmdetection_model.checkpoint),
-                det_cat_ids=[0])
+        mmdetection_config = os.path.join(MMDETECTION_DIR, self.mmdetection_model.config)
+        mmdetection_checkpoint = os.path.join(MMDETECTION_CHECKPOINTS_DIR, self.mmdetection_model.checkpoint)
 
-        n_total_images = 0
-        for data in self.data:
+        temp_dir = os.path.join(out_dir, 'temp')
+        mmdetection_work_dir = os.path.join(temp_dir, 'work_dir')
+        os.makedirs(mmdetection_work_dir)
+
+        dataset_dir = MMPOSE_DATASET_DIR + f'_{self.id}'
+        os.mkdir(dataset_dir)
+        for i, data in enumerate(self.data):
+            inference_progress.value = f'DATA PREP. {i}/{len(self.data)}'
             images = data.get_images()
-            n_total_images += len(images)
-
-        n_processed_images = 0
-        for data in self.data:
-            images = data.get_images()
-
-            features = []
             for image in images:
-                with Suppressor():
-                    result_generator = inferencer(image)
-                    result = next(result_generator)
-                    # TODO: fill features with result data
-                n_processed_images += 1
-                inference_progress.value = int(n_processed_images/n_total_images * 100)
+                src = image
+                dst = os.path.join(dataset_dir, f"{data.id}_{image.split('/')[-1]}")
+                shutil.copyfile(src, dst)
 
-            run = Run(data.id, data, features)
-            run.save(os.path.join(out_dir, f'run_{data.id}.pkl'))
+        inference_progress.value = 'ANN. FILE CREATION'
+        image_infos = collect_image_infos(dataset_dir)
+        image_list_coco_format = cvt_to_coco_json(image_infos)
+        ann_file = os.path.join(dataset_dir, 'ann_file.json')
 
-        self.store_metadata(out_dir)
-        self.load_runs()
+        with open(ann_file, 'w', encoding='utf8') as file:
+            json.dump(image_list_coco_format, file)
+
+        mmdetection_outfile_prefix = os.path.join(out_dir, 'temp', 'result_dir', str(self.id))
+        mmdetection_num_workers = 2
+        mmdetection_batch_size = 2
+
+        inference_progress.value = 'BB. DETECTION STARTUP'
+
+        mmdetection_args = [
+            'python',
+            MMDETECTION_TEST_SCRIPT,
+            mmdetection_config,
+            mmdetection_checkpoint,
+            '--work-dir',
+            mmdetection_work_dir,
+            '--cfg-options',
+            f'test_dataloader.dataset.ann_file={ann_file}',
+            f'test_dataloader.batch_size={mmdetection_batch_size}',
+            f'test_dataloader.num_workers={mmdetection_num_workers}',
+            f'test_evaluator.outfile_prefix={mmdetection_outfile_prefix}',
+            f'test_evaluator.ann_file={ann_file}',
+        ]
+
+        detection = subprocess.Popen(
+            mmdetection_args,
+            cwd=MMDETECTION_DIR,
+            stdout=subprocess.PIPE,
+            bufsize=1,
+            universal_newlines=True
+        )
+
+        while True:
+            line = detection.stdout.readline()
+            if not line:
+                print()
+                break
+            line = line.rstrip()
+            if 'mmengine - INFO - Epoch(test)' in line:
+                tracker = line[line.find('[') + 1: line.find(']')].split('/')
+                progress_percentage = int(int(tracker[0])/int(tracker[1]) * 100)
+                inference_progress.value = 'BB. DETECTION ' + f'{progress_percentage}%'
+
+        shutil.rmtree(temp_dir)
+        shutil.rmtree(dataset_dir)
+
+        # run = Run(data.id, data, features)
+        # run.save(os.path.join(out_dir, f'run_{data.id}.pkl'))
+
+        # self.store_metadata(out_dir)
+        # self.load_runs()
 
     def store_metadata(self, out_dir):
         metadata_file = open(os.path.join(out_dir, 'metadata.json'), 'w', encoding='utf8')
