@@ -14,4 +14,3 @@ MMDETECTION_DIR = os.environ['MMDETECTION_DIR']
 MMDETECTION_DATA_DIR = os.path.join(MMDETECTION_DIR, 'data', 'sc')
 MMDETECTION_CHECKPOINTS_DIR = os.path.join(MMDETECTION_DIR, 'checkpoints')
 MMDETECTION_TEST_SCRIPT = os.path.join(MMDETECTION_DIR, 'tools', 'test.py')
-MMDETECTION_IMAGES2COCO_SCRIPT = os.path.join(MMDETECTION_DIR, 'tools', 'dataset_converters', 'images2coco.py')
