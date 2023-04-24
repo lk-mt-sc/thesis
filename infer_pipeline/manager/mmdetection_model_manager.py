@@ -22,7 +22,7 @@ class MMDetectionModelManager():
                 name='Faster R-CNN (Person)',
                 key_metric='box AP (55.8)',
                 checkpoint='faster_rcnn_r50_fpn_1x_coco-person_20201216_175929-d022e227.pth',
-                config='configs/faster_rcnn/faster-rcnn_r50-caffe_fpn_ms-1x_coco-person.py'
+                config='configs/faster_rcnn/faster-rcnn_r50-caffe_fpn_ms-1x_sc-person.py'
             ))
 
             self._gui_set_models()
