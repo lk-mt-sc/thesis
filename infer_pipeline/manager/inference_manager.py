@@ -2,6 +2,7 @@ import os
 import glob
 import json
 import shutil
+import ctypes
 import tkinter as tk
 from tkinter import messagebox
 from threading import Thread
@@ -42,6 +43,7 @@ class InferenceManager():
         self.selected_inferences = []
         self.queue_inferences = []
         self.queue_selected_inferences = []
+        self.multiprocessing_manager = torch.multiprocessing.Manager()
         self.fetch_inferences()
         torch.multiprocessing.set_start_method('spawn', force=True)
 
@@ -118,13 +120,7 @@ class InferenceManager():
         for i, inference in enumerate(self.queue_inferences):
             if inference.id == inference_id:
                 self.gui_inference_queue.listbox_inferences.delete(i)
-
-                progress_str = str(inference)
-                if inference_progress == 0:
-                    progress_str += ' - Starting...'
-                else:
-                    progress_str += f' - {inference_progress}%'
-
+                progress_str = str(inference) + ' - ' + inference_progress
                 self.gui_inference_queue.listbox_inferences.insert(i, progress_str)
 
     def _gui_set_details(self):
@@ -221,7 +217,7 @@ class InferenceManager():
             self.status_manager.add_status(Status.INFERING)
 
             for inference in self.queue_inferences:
-                inference_progress = torch.multiprocessing.Value('i')
+                inference_progress = self.multiprocessing_manager.Value(ctypes.c_wchar_p, '')
                 inference_process = torch.multiprocessing.Process(
                     target=inference.infer, args=(inference_progress, ))
                 pending_process = {
