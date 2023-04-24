@@ -3,7 +3,7 @@ import glob
 import json
 from datetime import datetime
 
-from my_mmpose.apis import MyMMPoseInferencer
+from mmpose.apis import MMPoseInferencer
 
 from data_types.run import Run
 from utils import Suppressor
@@ -43,7 +43,7 @@ class Inference:
         os.mkdir(out_dir)
 
         with Suppressor():
-            inferencer = MyMMPoseInferencer(
+            inferencer = MMPoseInferencer(
                 pose2d=os.path.join(MMPOSE_DIR, self.mmpose_model.config),
                 pose2d_weights=os.path.join(MMPOSE_CHECKPOINTS_DIR, self.mmpose_model.checkpoint),
                 det_model=os.path.join(MMDETECTION_DIR, self.mmdetection_model.config),
