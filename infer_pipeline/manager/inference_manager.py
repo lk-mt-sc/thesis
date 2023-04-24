@@ -120,7 +120,9 @@ class InferenceManager():
         for i, inference in enumerate(self.queue_inferences):
             if inference.id == inference_id:
                 self.gui_inference_queue.listbox_inferences.delete(i)
-                progress_str = str(inference) + ' - ' + inference_progress
+                progress_str = str(inference)
+                if inference_progress:
+                    progress_str += ' - ' + inference_progress
                 self.gui_inference_queue.listbox_inferences.insert(i, progress_str)
 
     def _gui_set_details(self):
