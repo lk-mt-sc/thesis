@@ -129,5 +129,8 @@ dmypy.json
 .pyre/
 
 # custom
-model_zoo.html
-inferences/
+infer_pipeline/model_zoo.html
+infer_pipeline/inferences/
+create_dataset/speed21
+create_dataset/supervisor
+create_dataset/runs
