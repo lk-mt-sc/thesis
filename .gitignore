@@ -131,6 +131,6 @@ dmypy.json
 # custom
 infer_pipeline/model_zoo.html
 infer_pipeline/inferences/
-dataset/speed21
-dataset/speed23
-dataset/runs_tagged
+dataset/videos
+dataset/runs_video
+dataset/runs_image
