@@ -100,7 +100,7 @@ if __name__ == '__main__':
             video_path = os.path.join(VIDEOS_DIR, video_id + '.mp4')
 
             out_str = []
-            out_str.append(str(climber_id).zfill(2))
+            out_str.append(f'{str(climber_id).zfill(2)} CLIMBER ID')
             out_str.append(f'{str(frames_cut)} IMG')
             if spotlight == 'yes':
                 out_str.append('SPOTLIGHT')
@@ -109,7 +109,7 @@ if __name__ == '__main__':
             if start_at_rest == 'yes':
                 out_str.append('START AT REST')
             elif start_at_rest == 'no':
-                out_str.append('NO START AT REST')
+                out_str.append('START IN MOTION')
             out_str.append(f'{video_fps} FPS')
             out_str = ' - '.join(out_str)
             out_path = os.path.join(RUNS_VIDEO_DIR, out_str + '.mp4')
