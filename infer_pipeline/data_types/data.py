@@ -4,23 +4,25 @@ import glob
 
 class Data:
     def __init__(self, path):
-        data = path.split('/')[-1]
-        data = data.split('_')
         self.path = path
-        self.id = int(data[1])
-        self.fps = int(data[2])
-        self.n_images = int(data[3])
-        if len(data) > 4:
-            self.keys = data[4:]
+        self.folder_name = self.path.split('/')[-1]
+        data_properties = self.folder_name.split(' - ')
+        self.id = int(data_properties[0][:2])
+        self.n_images = int(data_properties[1][:3])
+        self.spotlight = data_properties[2] == 'SPOTLIGHT'
+        self.start_at_rest = data_properties[3] == 'START AT REST'
+        self.fps = int(data_properties[4][:2])
+        if self.fps == 25:
+            self.interpolated = False
         else:
-            self.keys = None
+            self.interpolated = True
+        if len(data_properties) > 5:
+            self.deblurred = data_properties[5] == 'DEBLURRED'
+        else:
+            self.deblurred = False
 
     def __str__(self):
-        data_str = f'{str(self.id).zfill(3)} | {str(self.fps).zfill(2)} FPS | {str(self.n_images).zfill(3)} IMG'
-        if self.keys is not None:
-            for key in self.keys:
-                data_str += ' | ' + key
-        return data_str
+        return self.folder_name
 
     def get_images(self):
         return sorted(glob.glob(os.path.join(self.path, '*')))

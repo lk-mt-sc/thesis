@@ -3,7 +3,14 @@ from tkinter import ttk
 
 
 class GUIData():
-    def __init__(self, root, button_refresh_callback, listbox_data_callback):
+    def __init__(
+            self,
+            root,
+            combobox_data_callback,
+            button_select_all_callback,
+            button_refresh_callback,
+            listbox_data_callback
+    ):
         self.root = root
 
         self.frame = ttk.Frame(self.root, padding=(10, 10))
@@ -12,12 +19,31 @@ class GUIData():
         self.title = ttk.Label(self.frame, text='Data', font=self.root.font_title)
         self.title.place(x=0, y=0)
 
-        self.combobox_dataset = ttk.Combobox(self.frame, width=10, font=self.root.font_small)
-        self.combobox_dataset['values'] = ['No preset', 'Dark', 'Deblurred', 'Interpolated']
-        self.combobox_dataset['state'] = 'readonly'
-        self.combobox_dataset.current(0)
-        self.combobox_dataset.bind('<<ComboboxSelected>>', None)
-        self.combobox_dataset.place(x=320, y=1)
+        self.combobox_data_base = ttk.Combobox(self.frame, width=12, font=self.root.font_small)
+        self.combobox_data_base['values'] = ['']
+        self.combobox_data_base['state'] = 'readonly'
+        self.combobox_data_base.bind('<<ComboboxSelected>>', combobox_data_callback)
+        self.combobox_data_base.place(x=50, y=1)
+
+        self.combobox_data_spotlight = ttk.Combobox(self.frame, width=12, font=self.root.font_small)
+        self.combobox_data_spotlight['values'] = ['']
+        self.combobox_data_spotlight['state'] = 'readonly'
+        self.combobox_data_spotlight.bind('<<ComboboxSelected>>', combobox_data_callback)
+        self.combobox_data_spotlight.place(x=150, y=1)
+
+        self.combobox_data_start = ttk.Combobox(self.frame, width=12, font=self.root.font_small)
+        self.combobox_data_start['values'] = ['']
+        self.combobox_data_start['state'] = 'readonly'
+        self.combobox_data_start.bind('<<ComboboxSelected>>', combobox_data_callback)
+        self.combobox_data_start.place(x=250, y=1)
+
+        self.button_select_all = ttk.Button(
+            self.frame,
+            text='Select all',
+            style='Button.TButton',
+            width=8,
+            command=button_select_all_callback)
+        self.button_select_all.place(x=350, y=0, height=20)
 
         self.button_refresh = ttk.Button(
             self.frame,
