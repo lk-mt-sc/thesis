@@ -123,6 +123,7 @@ if __name__ == '__main__':
             run_video = cv.VideoCapture(out_path)
 
             img_id = 0
+            out_id = 0
             while True:
                 ret, frame = run_video.read()
                 if not ret:
@@ -132,7 +133,7 @@ if __name__ == '__main__':
                     continue
                 if img_id > end_frame:
                     break
-                out_path = os.path.join(out_folder, f'{str(img_id).zfill(3)}.png')
+                out_path = os.path.join(out_folder, f'{str(out_id).zfill(3)}.png')
                 width = frame.shape[1]
                 if left_or_right_climber == 'L':
                     frame = frame[:, offset:int(offset+width/2)]
@@ -140,6 +141,7 @@ if __name__ == '__main__':
                     frame = frame[:, int(width/2-offset):int(width-offset)]
                 cv.imwrite(out_path, frame)
                 img_id += 1
+                out_id += 1
 
     for entry in markdown_table_entries:
         print(entry)
