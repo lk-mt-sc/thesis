@@ -7,6 +7,8 @@ import random
 from mmengine.utils import scandir, track_iter_progress
 from PIL import Image
 
+from categories import categories
+
 
 class Suppressor(object):
     # modified from https://stackoverflow.com/a/40054132
@@ -59,15 +61,9 @@ def cvt_to_coco_json(img_infos):
     coco = dict()
     coco['images'] = []
     coco['type'] = 'instance'
-    coco['categories'] = []
+    coco['categories'] = categories
     coco['annotations'] = []
     image_set = set()
-
-    category_item = dict()
-    category_item['supercategory'] = 'person'
-    category_item['id'] = 1
-    category_item['name'] = 'person'
-    coco['categories'].append(category_item)
 
     for img_dict in img_infos:
         file_name = img_dict['filename']
