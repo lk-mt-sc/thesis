@@ -19,12 +19,23 @@ class MMDetectionModelManager():
 
             # manually selected models based on box AP
             self.models.append(MMDetectionModel(
-                name='Faster R-CNN (Person)',
+                name='Faster R-CNN',
                 key_metric='box AP (55.8)',
                 checkpoint='faster_rcnn_r50_fpn_1x_coco-person_20201216_175929-d022e227.pth',
                 config='configs/faster_rcnn/faster-rcnn_r50-caffe_fpn_ms-1x_sc-person.py'
             ))
-
+            self.models.append(MMDetectionModel(
+                name='YOLOX',
+                key_metric='box AP (50.9)',
+                checkpoint='yolox_x_8x8_300e_coco_20211126_140254-1ef88d67.pth',
+                config='configs/yolox/yolox_x_8xb8-300e_sc.py'
+            ))
+            self.models.append(MMDetectionModel(
+                name='RTMDet (default)',
+                key_metric='box AP (49.4)',
+                checkpoint='rtmdet_m_8xb32-300e_coco_20220719_112220-229f527c.pth',
+                config='configs/rtmdet/rtmdet_m_8xb32-300e_sc.py'
+            ))
             self._gui_set_models()
             self.status_manager.remove_status(Status.FETCHING_MMDETECTION_MODELS)
 
