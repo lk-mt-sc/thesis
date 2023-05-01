@@ -38,7 +38,7 @@ class InferenceManager():
         self.data_manager = data_manager
         self.active_processes = []
         self.pending_processes = []
-        self.parallel_processes = 2
+        self.parallel_processes = 1
         self.inferences = []
         self.selected_inferences = []
         self.queue_inferences = []
@@ -218,10 +218,12 @@ class InferenceManager():
             self.queue_selected_inferences.clear()
             self.status_manager.add_status(Status.INFERING)
 
+            existing_dataset = self.data_manager.get_existing_dataset()
+
             for inference in self.queue_inferences:
                 inference_progress = self.multiprocessing_manager.Value(ctypes.c_wchar_p, '')
                 inference_process = torch.multiprocessing.Process(
-                    target=inference.infer, args=(inference_progress, ))
+                    target=inference.infer, args=(inference_progress, existing_dataset))
                 pending_process = {
                     'process': inference_process,
                     'progress': inference_progress,
