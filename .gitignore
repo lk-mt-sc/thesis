@@ -132,5 +132,5 @@ dmypy.json
 infer_pipeline/model_zoo.html
 infer_pipeline/inferences/
 dataset/videos
-dataset/runs_video
-dataset/runs_image
+dataset/std_dataset
+dataset/det_dataset
