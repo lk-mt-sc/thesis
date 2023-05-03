@@ -1,15 +1,19 @@
-""" 
-Script to create dataset as specified in https://github.com/lk-mt-sc/thesis/wiki/Dataset. 
-Prerequisites: 
+"""
+Script to create datasets as specified in https://github.com/lk-mt-sc/thesis/wiki/Datasets.
+Prerequisites:
 a) videos in FullHD and .mp4 file format stored in ./videos named after their YouTube-ID
 b) FFmpeg installed and accessible from the command line
 """
 import os
+import glob
+import random
 import shutil
+import argparse
 import subprocess
 
-from tqdm import tqdm
 import cv2 as cv
+import numpy as np
+from tqdm import tqdm
 
 
 def time_to_ms(time):
@@ -24,25 +28,18 @@ def time_to_ms(time):
     return h_ms + m_ms + s_ms + ms
 
 
-if __name__ == '__main__':
+def create_std_dataset():
 
-    WORKING_DIR = os.path.dirname(__file__)
-    VIDEOS_DIR = os.path.join(WORKING_DIR, 'videos')
-    RUNS_VIDEO_DIR = os.path.join(WORKING_DIR, 'runs_video')
-    RUNS_IMAGE_DIR = os.path.join(WORKING_DIR, 'runs_image')
+    if os.path.exists(STD_DATASET_DIR):
+        shutil.rmtree(STD_DATASET_DIR)
 
-    if os.path.exists(RUNS_VIDEO_DIR):
-        shutil.rmtree(RUNS_VIDEO_DIR)
-
-    if os.path.exists(RUNS_IMAGE_DIR):
-        shutil.rmtree(RUNS_IMAGE_DIR)
-
-    os.mkdir(RUNS_VIDEO_DIR)
-    os.mkdir(RUNS_IMAGE_DIR)
+    os.mkdir(STD_DATASET_DIR)
+    os.mkdir(STD_RUNS_VIDEO_DIR)
+    os.mkdir(STD_RUNS_IMAGE_DIR)
 
     markdown_table_entries = []
 
-    print('Creating dataset...')
+    print('Creating standard dataset...')
     with open(os.path.join('dataset.CSV'), 'r', encoding='utf8') as metadata:
         runs = metadata.readlines()
         for run in tqdm(runs[1:]):
@@ -112,13 +109,13 @@ if __name__ == '__main__':
                 out_str.append('START IN MOTION')
             out_str.append(f'{video_fps} FPS')
             out_str = ' - '.join(out_str)
-            out_path = os.path.join(RUNS_VIDEO_DIR, out_str + '.mp4')
+            out_path = os.path.join(STD_RUNS_VIDEO_DIR, out_str + '.mp4')
 
-            args = ['ffmpeg', '-ss', f'{start_time_ms}ms', '-to', f'{end_time_ms}ms', '-i', video_path, out_path]
-            with open(os.devnull, 'wb') as devnull:
-                subprocess.check_call(args, stdout=subprocess.DEVNULL, stderr=subprocess.STDOUT)
+            subprocess_args = ['ffmpeg', '-ss', f'{start_time_ms}ms',
+                               '-to', f'{end_time_ms}ms', '-i', video_path, out_path]
+            subprocess.check_call(subprocess_args, stdout=subprocess.DEVNULL, stderr=subprocess.STDOUT)
 
-            out_folder = os.path.join(RUNS_IMAGE_DIR, out_str)
+            out_folder = os.path.join(STD_RUNS_IMAGE_DIR, out_str)
             os.mkdir(out_folder)
             run_video = cv.VideoCapture(out_path)
 
@@ -143,5 +140,99 @@ if __name__ == '__main__':
                 img_id += 1
                 out_id += 1
 
-    for entry in markdown_table_entries:
-        print(entry)
+        for entry in markdown_table_entries:
+            print(entry)
+
+
+def create_det_dataset():
+    if not os.path.exists(STD_DATASET_DIR):
+        print('Standard dataset not found.')
+        create_std_dataset()
+
+    if os.path.exists(DET_DATASET_DIR):
+        shutil.rmtree(DET_DATASET_DIR)
+
+    os.mkdir(DET_DATASET_DIR)
+    os.mkdir(DET_TRAIN_DIR)
+    os.mkdir(DET_VAL_DIR)
+    os.mkdir(DET_TEST_DIR)
+
+    n_train = 16
+    n_val = 4
+    n_test = 4
+
+    print('Creating detection dataset...')
+    runs = sorted(glob.glob(os.path.join(STD_RUNS_IMAGE_DIR, '*')))
+    for i, run in enumerate(runs):
+        images = sorted(glob.glob(os.path.join(run, '*')))
+
+        train_files = []
+        val_files = []
+        test_files = []
+
+        train_chunks = np.array_split(images, n_train)
+        val_chunks = np.array_split(images, n_val)
+        test_chunks = np.array_split(images, n_test)
+
+        n_max = max(n_train, n_val, n_test)
+        for j in range(0, n_max):
+
+            if j < len(train_chunks):
+                train_chunk = train_chunks[j]
+                random_index = random.randint(0, len(train_chunk) - 1)
+                random_image = train_chunk[random_index]
+                image_filename = f"{i + 1}_{random_image.split('/')[-1]}"
+                out_image = os.path.join(DET_TRAIN_DIR, image_filename)
+                shutil.copyfile(random_image, out_image)
+                train_files.append(image_filename)
+
+            if j < len(val_chunks):
+                val_chunk = val_chunks[j]
+                while True:
+                    random_index = random.randint(0, len(val_chunk) - 1)
+                    random_image = val_chunk[random_index]
+                    image_filename = f"{i + 1}_{random_image.split('/')[-1]}"
+                    out_image = os.path.join(DET_VAL_DIR, image_filename)
+                    if (image_filename not in train_files):
+                        shutil.copyfile(random_image, out_image)
+                        val_files.append(image_filename)
+                        break
+
+            if j < len(test_chunks):
+                test_chunk = test_chunks[j]
+                while True:
+                    random_index = random.randint(0, len(test_chunk) - 1)
+                    random_image = test_chunk[random_index]
+                    image_filename = f"{i + 1}_{random_image.split('/')[-1]}"
+                    out_image = os.path.join(DET_TEST_DIR, image_filename)
+                    if (image_filename not in train_files and image_filename not in val_files):
+                        shutil.copyfile(random_image, out_image)
+                        test_files.append(image_filename)
+                        break
+
+
+if __name__ == '__main__':
+
+    random.seed(0)
+
+    WORKING_DIR = os.path.dirname(__file__)
+    VIDEOS_DIR = os.path.join(WORKING_DIR, 'videos')
+    STD_DATASET_DIR = os.path.join(WORKING_DIR, 'std_dataset')
+    DET_DATASET_DIR = os.path.join(WORKING_DIR, 'det_dataset')
+    STD_RUNS_VIDEO_DIR = os.path.join(STD_DATASET_DIR, 'runs_video')
+    STD_RUNS_IMAGE_DIR = os.path.join(STD_DATASET_DIR, 'runs_image')
+    DET_TRAIN_DIR = os.path.join(DET_DATASET_DIR, 'train')
+    DET_VAL_DIR = os.path.join(DET_DATASET_DIR, 'val')
+    DET_TEST_DIR = os.path.join(DET_DATASET_DIR, 'test')
+
+    parser = argparse.ArgumentParser()
+    parser.add_argument('dataset', type=str)
+    args = parser.parse_args()
+
+    match args.dataset:
+        case 'std':
+            create_std_dataset()
+        case 'det':
+            create_det_dataset()
+
+    # future: itp, deb, i_d, cls
