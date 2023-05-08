@@ -1,3 +1,5 @@
+import copy
+
 import tkinter as tk
 from threading import Thread
 
@@ -17,15 +19,19 @@ class MMPoseModelManager():
         )
         self.status_manager = status_manager
         self.model_zoo = ModelZoo(redownload_model_zoo=False)
-        self.models_all = []
+        self.zoo_models = []
+        self.custom_models = []
         self.models_show = []
         self.selected_model = None
         self.filter_models = None
         self.fetch_models()
         self._gui_set_presets()
 
-        self.best_models = [
-            'configs/body_2d_keypoint/topdown_heatmap/coco/td-hm_hrnet-w48_udp-8xb32-210e_coco-384x288.py'
+        self.custom_configs = [
+            {
+                'original_config': 'configs/body_2d_keypoint/topdown_heatmap/coco/td-hm_hrnet-w48_udp-8xb32-210e_coco-384x288.py',
+                'custom_config': 'configs/body_2d_keypoint/topdown_heatmap/coco/td-hm_hrnet-w48_udp-8xb32-210e_sc-384x288.py'
+            }
         ]
 
     def fetch_models(self):
@@ -38,8 +44,8 @@ class MMPoseModelManager():
             self.monitor_fetch_thread(fetch_thread)
 
     def _fetch_models(self):
-        self.models_all = self.model_zoo.get_models(
-            dataset='all',
+        self.zoo_models = self.model_zoo.get_models(
+            dataset='coco',
             redownload_model_zoo=self.gui_mmpose_model.checkbutton_redownload_model_zoo.instate(['selected'])
         )
 
@@ -47,15 +53,24 @@ class MMPoseModelManager():
         if thread.is_alive():
             self.gui_mmpose_model.root.after(50, lambda: self.monitor_fetch_thread(thread))
         else:
+            self.fetch_custom_models()
             self.selected_model = None
             self.filter()
             self._gui_enable_button_refresh()
             self.status_manager.remove_status(Status.FETCHING_MMPOSE_MODELS)
 
+    def fetch_custom_models(self):
+        for config in self.custom_configs:
+            for model in self.zoo_models:
+                if model.config == config['original_config']:
+                    new_custom_model = copy.deepcopy(model)
+                    new_custom_model.config = config['custom_config']
+                    self.custom_models.append(new_custom_model)
+
     def _gui_set_presets(self):
         self.gui_mmpose_model.combobox_model_preset['values'] = [
-            'No Preset',
-            'Best',
+            'Model Zoo',
+            'Custom',
         ]
 
         self.gui_mmpose_model.combobox_model_preset.current(1)
@@ -86,20 +101,26 @@ class MMPoseModelManager():
         self.gui_mmpose_model.details_checkpoint_var.set(self.selected_model.checkpoint)
         self.gui_mmpose_model.details_config_var.set(self.selected_model.config)
 
+    def _gui_clear_details(self):
+        self.gui_mmpose_model.details_section_var.set('')
+        self.gui_mmpose_model.details_arch_var.set('')
+        self.gui_mmpose_model.details_dataset_var.set('')
+        self.gui_mmpose_model.details_input_size_var.set('')
+        self.gui_mmpose_model.details_key_metric_var.set('')
+        self.gui_mmpose_model.details_checkpoint_var.set('')
+        self.gui_mmpose_model.details_config_var.set('')
+
     def filter(self, event=None):
         self.selected_model = None
-        self.models_show = self.models_all.copy()
+        self.models_show.clear()
+        self._gui_clear_details()
         self._gui_get_filter()
 
-        models_to_hide = []
+        if self.filter_models == 'Model Zoo':
+            self.models_show = self.zoo_models.copy()
 
-        if self.filter_models == 'Best':
-            for model in self.models_show:
-                if model.config not in self.best_models:
-                    models_to_hide.append(model)
-
-        for model in models_to_hide:
-            self.models_show.remove(model)
+        if self.filter_models == 'Custom':
+            self.models_show = self.custom_models.copy()
 
         self._gui_set_models()
 

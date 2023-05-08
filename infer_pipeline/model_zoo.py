@@ -222,7 +222,7 @@ class ModelZoo:
     def get_config_rtmpose_fix(self, config_link, dataset):
         config_link = config_link['href']
         if 'rtmpose' in config_link:
-            return '/configs/body_2d_keypoint/rtmpose/' + dataset + '/' + config_link.split('/')[-1]
+            return 'configs/body_2d_keypoint/rtmpose/' + dataset + '/' + config_link.split('/')[-1]
         else:
             return '/'.join(config_link.split('/')[-5:])
 
