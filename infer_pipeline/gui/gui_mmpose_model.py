@@ -3,7 +3,12 @@ from tkinter import ttk
 
 
 class GUIMMPoseModel():
-    def __init__(self, root, button_refresh_callback, listbox_models_callback):
+    def __init__(
+            self,
+            root,
+            combobox_model_preset_callback,
+            button_refresh_callback,
+            listbox_models_callback):
         self.root = root
 
         self.frame = ttk.Frame(self.root, padding=(10, 10))
@@ -12,12 +17,12 @@ class GUIMMPoseModel():
         self.title = ttk.Label(self.frame, text='MMPose Models', font=self.root.font_title)
         self.title.place(x=0, y=0)
 
-        self.combobox_dataset = ttk.Combobox(self.frame, width=10, font=self.root.font_small)
-        self.combobox_dataset['values'] = ['No preset']
-        self.combobox_dataset['state'] = 'readonly'
-        self.combobox_dataset.current(0)
-        self.combobox_dataset.bind('<<ComboboxSelected>>', None)
-        self.combobox_dataset.place(x=180, y=1)
+        self.combobox_model_preset = ttk.Combobox(self.frame, width=10, font=self.root.font_small)
+        self.combobox_model_preset['values'] = ['No preset']
+        self.combobox_model_preset['state'] = 'readonly'
+        self.combobox_model_preset.current(0)
+        self.combobox_model_preset.bind('<<ComboboxSelected>>', combobox_model_preset_callback)
+        self.combobox_model_preset.place(x=180, y=1)
 
         self.button_refresh = ttk.Button(
             self.frame,
