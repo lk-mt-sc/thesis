@@ -1,3 +1,4 @@
+import os
 import copy
 
 import tkinter as tk
@@ -7,6 +8,7 @@ from gui.gui_mmpose_model import GUIMMPoseModel
 from manager.status_manager import Status
 from data_types.mmpose_model import MMPoseModel
 from model_zoo import ModelZoo
+from common import INFER_PIPELINE_MMDPOSE_CONFIGS_DIR
 
 
 class MMPoseModelManager():
@@ -30,8 +32,16 @@ class MMPoseModelManager():
         self.custom_configs = [
             {
                 'original_config': 'configs/body_2d_keypoint/topdown_heatmap/coco/td-hm_hrnet-w48_udp-8xb32-210e_coco-384x288.py',
-                'custom_config': 'configs/body_2d_keypoint/topdown_heatmap/coco/td-hm_hrnet-w48_udp-8xb32-210e_sc-384x288.py'
-            }
+                'custom_config': os.path.join(INFER_PIPELINE_MMDPOSE_CONFIGS_DIR, 'td-hm_hrnet-w48_udp-8xb32-210e_sc-384x288.py')
+            },
+            {
+                'original_config': 'configs/body_2d_keypoint/dekr/coco/dekr_hrnet-w48_8xb10-140e_coco-640x640.py',
+                'custom_config': os.path.join(INFER_PIPELINE_MMDPOSE_CONFIGS_DIR, 'dekr_hrnet-w48_8xb10-140e_sc-640x640.py')
+            },
+            {
+                'original_config': 'configs/body_2d_keypoint/topdown_heatmap/coco/td-hm_mobilenetv2_8xb64-210e_coco-256x192.py',
+                'custom_config': os.path.join(INFER_PIPELINE_MMDPOSE_CONFIGS_DIR, 'td-hm_mobilenetv2_8xb64-210e_sc-256x192.py')
+            },
         ]
 
     def fetch_models(self):
