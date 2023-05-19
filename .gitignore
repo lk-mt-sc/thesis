@@ -131,6 +131,7 @@ dmypy.json
 # custom
 infer_pipeline/model_zoo.html
 infer_pipeline/inferences/
+infer_pipeline/sin/
 train_pipeline/mmdet/trainings/
 dataset/videos/
 dataset/std_dataset/
