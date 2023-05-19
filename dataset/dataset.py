@@ -161,6 +161,14 @@ def create_det_dataset():
     n_val = 4
     n_test = 4
 
+    forbidden = ['31_115.png', '63_204.png', '30_091.png', '4_144.png', '33_094.png', '13_126.png', '1_072.png',
+                 '43_116.png', '25_117.png', '30_045.png', '16_146.png', '57_133.png', '57_058.png', '50_111.png',
+                 '23_083.png', '1_026.png', '64_123.png', '39_080.png', '42_161.png', '33_167.png', '27_204.png',
+                 '60_157.png', '54_175.png', '21_070.png', '23_104.png', '59_160.png', '33_105.png', '41_235.png',
+                 '10_050.png', '52_131.png', '12_227.png', '30_135.png', '21_025.png', '40_118.png', '14_048.png',
+                 '29_022.png', '10_111.png', '51_178.png', '56_039.png', '23_218.png', '52_101.png', '37_050.png',
+                 '60_030.png', '13_019.png']
+
     print('Creating detection dataset...')
     runs = sorted(glob.glob(os.path.join(STD_RUNS_IMAGE_DIR, '*')))
     for i, run in enumerate(runs):
@@ -179,21 +187,46 @@ def create_det_dataset():
 
             if j < len(train_chunks):
                 train_chunk = train_chunks[j]
-                random_index = random.randint(0, len(train_chunk) - 1)
+                random_index = random_1.randint(0, len(train_chunk) - 1)
                 random_image = train_chunk[random_index]
                 image_filename = f"{i + 1}_{random_image.split('/')[-1]}"
+                # fix to allow reuse of already labeled data while maintaining randomness
+                # when creating a new dataset using a seed != 0, use the following block instead of this one
+                if image_filename in forbidden:
+                    while True:
+                        random_index = random_2.randint(0, len(train_chunk) - 1)
+                        random_image = train_chunk[random_index]
+                        image_filename = f"{i + 1}_{random_image.split('/')[-1]}"
+                        if image_filename not in forbidden \
+                                and image_filename not in val_files \
+                                and image_filename not in test_files:
+                            break
                 out_image = os.path.join(DET_TRAIN_DIR, image_filename)
                 shutil.copyfile(random_image, out_image)
                 train_files.append(image_filename)
 
+            """
+            if j < len(train_chunks):
+                train_chunk = train_chunks[j]
+                while True:
+                    random_index = random_1.randint(0, len(train_chunk) - 1)
+                    random_image = train_chunk[random_index]
+                    image_filename = f"{i + 1}_{random_image.split('/')[-1]}"
+                    out_image = os.path.join(DET_TRAIN_DIR, image_filename)
+                    if (image_filename not in val_files and image_filename not in test_files):
+                        shutil.copyfile(random_image, out_image)
+                        train_files.append(image_filename)
+                        break
+            """
+
             if j < len(val_chunks):
                 val_chunk = val_chunks[j]
                 while True:
-                    random_index = random.randint(0, len(val_chunk) - 1)
+                    random_index = random_1.randint(0, len(val_chunk) - 1)
                     random_image = val_chunk[random_index]
                     image_filename = f"{i + 1}_{random_image.split('/')[-1]}"
                     out_image = os.path.join(DET_VAL_DIR, image_filename)
-                    if (image_filename not in train_files):
+                    if (image_filename not in train_files and image_filename not in test_files):
                         shutil.copyfile(random_image, out_image)
                         val_files.append(image_filename)
                         break
@@ -201,7 +234,7 @@ def create_det_dataset():
             if j < len(test_chunks):
                 test_chunk = test_chunks[j]
                 while True:
-                    random_index = random.randint(0, len(test_chunk) - 1)
+                    random_index = random_1.randint(0, len(test_chunk) - 1)
                     random_image = test_chunk[random_index]
                     image_filename = f"{i + 1}_{random_image.split('/')[-1]}"
                     out_image = os.path.join(DET_TEST_DIR, image_filename)
@@ -213,7 +246,8 @@ def create_det_dataset():
 
 if __name__ == '__main__':
 
-    random.seed(0)
+    random_1 = random.Random(0)
+    random_2 = random.Random(0)
 
     WORKING_DIR = os.path.dirname(__file__)
     VIDEOS_DIR = os.path.join(WORKING_DIR, 'videos')
