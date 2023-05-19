@@ -14,11 +14,22 @@ from common import INFERENCES_DIR
 from gui.gui_inference_queue import GUIInferenceQueue
 from gui.gui_inference import GUIInference
 from manager.status_manager import Status
+from manager.dataset_manager import Datasets
 from data_types.inference import Inference
 
 
 class InferenceManager():
-    def __init__(self, root, status_manager, mmpose_model_manager, mmdetection_model_manager, data_manager):
+    def __init__(
+            self,
+            root,
+            status_manager,
+            dataset_manager,
+            mmpose_model_manager,
+            mmdetection_model_manager,
+            data_manager,
+            plot_manager,
+            feature_manager
+    ):
         self.gui_inference_queue = GUIInferenceQueue(
             root,
             button_add_callback=self.queue_inference_add,
@@ -33,9 +44,12 @@ class InferenceManager():
             listbox_inferences_callback=self.inference_selected,
             listbox_data_callback=self.data_selected)
         self.status_manager = status_manager
+        self.dataset_manager = dataset_manager
         self.mmpose_model_manager = mmpose_model_manager
         self.mmdetection_model_manager = mmdetection_model_manager
         self.data_manager = data_manager
+        self.plot_manager = plot_manager
+        self.feature_manager = feature_manager
         self.active_processes = []
         self.pending_processes = []
         self.parallel_processes = 1
@@ -43,6 +57,8 @@ class InferenceManager():
         self.selected_inferences = []
         self.queue_inferences = []
         self.queue_selected_inferences = []
+        self.selected_data = None
+        self.dataset_type = self.dataset_manager.datasets[Datasets.COCO.value]
         self.multiprocessing_manager = torch.multiprocessing.Manager()
         self.fetch_inferences()
         torch.multiprocessing.set_start_method('spawn', force=True)
@@ -170,6 +186,15 @@ class InferenceManager():
         inference_name = self._gui_get_name_text()
         if not inference_name:
             inference_name = inference_id
+        else:
+            for inference in self.inferences:
+                if inference.name == inference_name:
+                    messagebox.showerror(title='', message='Inference name already used.')
+                    return
+            for inference in self.queue_inferences:
+                if inference.name == inference_name:
+                    messagebox.showerror(title='', message='Inference name already used.')
+                    return
 
         inference_description = self._gui_get_description_text()
         if not inference_description:
@@ -223,7 +248,7 @@ class InferenceManager():
             for inference in self.queue_inferences:
                 inference_progress = self.multiprocessing_manager.Value(ctypes.c_wchar_p, '')
                 inference_process = torch.multiprocessing.Process(
-                    target=inference.infer, args=(inference_progress, existing_dataset))
+                    target=inference.infer, args=(inference_progress, existing_dataset, self.dataset_type))
                 pending_process = {
                     'process': inference_process,
                     'progress': inference_progress,
@@ -286,10 +311,27 @@ class InferenceManager():
             self._gui_enable_button_compare()
             self._gui_clear_details()
 
+        self.plot_manager.clear_image()
+        self.feature_manager.clear()
+        self.selected_data = None
+
         self._gui_enable_button_delete()
 
-    def data_selected(self):
-        pass
+    def data_selected(self, event=None):
+        if len(self.selected_inferences) > 1:
+            return
+
+        selected_inference = self.selected_inferences[0]
+        selection = self.gui_inference.details_listbox_data.curselection()
+        if not selection:
+            return
+        selection_str = self.gui_inference.details_listbox_data.get(selection)
+        data_id = int(selection_str[0:2])
+        run_id = data_id
+
+        run = next(run for run in selected_inference.runs if run.id == run_id)
+        self.plot_manager.set_data(run, self.dataset_type)
+        self.feature_manager.set_data(run, selected_inference.name)
 
     def ask_for_ok_delete_inferences(self):
         if len(self.selected_inferences) == 1:
@@ -311,6 +353,10 @@ class InferenceManager():
         self._gui_clear_details()
         self._gui_disable_button_delete()
         self._gui_disable_button_compare()
+        self.plot_manager.clear_image()
+        self.plot_manager.clear_feature_plot()
+        self.feature_manager.clear()
+        self.selected_data = None
 
     def compare_inference(self):
         pass
