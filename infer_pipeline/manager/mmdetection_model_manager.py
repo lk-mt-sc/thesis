@@ -1,8 +1,12 @@
+import os
 import tkinter as tk
 
 from gui.gui_mmdetection_model import GUIMMDetectionModel
 from manager.status_manager import Status
 from data_types.mmdetection_model import MMDetectionModel
+
+from common import TRAIN_PIPELINE_MMDETECTION_TRAININGS_DIR
+from common import INFER_PIPELINE_MMDETECTION_CONFIGS_DIR
 
 
 class MMDetectionModelManager():
@@ -20,22 +24,35 @@ class MMDetectionModelManager():
             # manually selected models based on box AP
             self.models.append(MMDetectionModel(
                 name='Faster R-CNN',
-                key_metric='box AP (55.8)',
-                checkpoint='faster_rcnn_r50_fpn_1x_coco-person_20201216_175929-d022e227.pth',
-                config='configs/faster_rcnn/faster-rcnn_r50-caffe_fpn_ms-1x_sc-person.py'
-            ))
+                key_metric='box AP (0.937)',
+                checkpoint=os.path.join(TRAIN_PIPELINE_MMDETECTION_TRAININGS_DIR, 'non_deterministic_models',
+                                        'faster-rcnn', 'train', 'best_coco_bbox_mAP_epoch_29.pth'),
+                config=os.path.join(INFER_PIPELINE_MMDETECTION_CONFIGS_DIR, 'faster-rcnn.py')))
+            self.models.append(MMDetectionModel(
+                name='RTMDet',
+                key_metric='box AP (0.804)',
+                checkpoint=os.path.join(TRAIN_PIPELINE_MMDETECTION_TRAININGS_DIR, 'deterministic_models', 'rtmdet',
+                                        'train', 'best_coco_bbox_mAP_epoch_44.pth'),
+                config=os.path.join(INFER_PIPELINE_MMDETECTION_CONFIGS_DIR, 'rtmdet.py')))
             self.models.append(MMDetectionModel(
                 name='YOLOX',
-                key_metric='box AP (50.9)',
-                checkpoint='yolox_x_8x8_300e_coco_20211126_140254-1ef88d67.pth',
-                config='configs/yolox/yolox_x_8xb8-300e_sc.py'
-            ))
+                key_metric='box AP (0.884)',
+                checkpoint=os.path.join(TRAIN_PIPELINE_MMDETECTION_TRAININGS_DIR, 'deterministic_models', 'yolox',
+                                        'train', 'best_coco_bbox_mAP_epoch_250.pth'),
+                config=os.path.join(INFER_PIPELINE_MMDETECTION_CONFIGS_DIR, 'yolox.py')))
             self.models.append(MMDetectionModel(
-                name='RTMDet (default)',
-                key_metric='box AP (49.4)',
-                checkpoint='rtmdet_m_8xb32-300e_coco_20220719_112220-229f527c.pth',
-                config='configs/rtmdet/rtmdet_m_8xb32-300e_sc.py'
-            ))
+                name='VarifocalNet',
+                key_metric='box AP (0.731)',
+                checkpoint=os.path.join(TRAIN_PIPELINE_MMDETECTION_TRAININGS_DIR, 'non_deterministic_models', 'vfnet',
+                                        'train', 'best_coco_bbox_mAP_epoch_30.pth'),
+                config=os.path.join(INFER_PIPELINE_MMDETECTION_CONFIGS_DIR, 'vfnet.py')))
+            self.models.append(MMDetectionModel(
+                name='TOOD',
+                key_metric='box AP (0.941)',
+                checkpoint=os.path.join(TRAIN_PIPELINE_MMDETECTION_TRAININGS_DIR, 'non_deterministic_models', 'tood',
+                                        'train', 'best_coco_bbox_mAP_epoch_27.pth'),
+                config=os.path.join(INFER_PIPELINE_MMDETECTION_CONFIGS_DIR, 'tood.py')))
+
             self._gui_set_models()
             self.status_manager.remove_status(Status.FETCHING_MMDETECTION_MODELS)
 
