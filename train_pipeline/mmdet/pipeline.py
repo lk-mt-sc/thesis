@@ -105,7 +105,7 @@ if __name__ == '__main__':
             universal_newlines=True
         )
 
-        val_results = deque(maxlen=patience)
+        val_results = deque(maxlen=patience + 1)
         best_result = 0
         while True:
             line = training.stdout.readline()
@@ -116,14 +116,17 @@ if __name__ == '__main__':
             if 'Epoch(train)' in line:
                 log_str = line[line.find('Epoch(train)'):]
                 logger.info(log_str)
-            if 'coco/bbox_mAP' in line:
+            if 'coco/bbox_mAP:' in line:
                 log_str = line[line.find('Epoch(val)'):]
                 logger.info(log_str)
                 result = float(re.findall("[+-]?\d+\.\d+", line)[0])
                 if result > best_result:
                     best_result = result
                 val_results.append(result)
-                saturated = all(i < best_result for i in val_results)
+                if len(val_results) == patience + 1:
+                    saturated = all(i <= best_result for i in val_results) and val_results[0] == best_result
+                else:
+                    saturated = False
                 if saturated:
                     end = time.time()
                     duration = end - start
@@ -161,7 +164,7 @@ if __name__ == '__main__':
                 print()
                 break
             line = line.rstrip()
-            if 'coco/bbox_mAP' in line:
+            if 'coco/bbox_mAP:' in line:
                 log_str = line[line.find('Epoch(test)'):]
                 logger.info(log_str)
 
