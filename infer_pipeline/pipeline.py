@@ -47,15 +47,18 @@ class Pipeline():
         self.mmpose_model_manager = MMPoseModelManager(self.root, self.status_manager)
         self.mmdetection_model_manager = MMDetectionModelManager(self.root, self.status_manager)
         self.data_manager = DataManager(self.root, self.status_manager)
+        self.plot_manager = PlotManager(self.root, self.status_manager)
+        self.metric_manager = MetricManager(self.root, self.status_manager)
+        self.feature_manager = FeatureManager(self.root, self.status_manager, self.plot_manager)
         self.inference_manager = InferenceManager(
             self.root,
             self.status_manager,
+            self.dataset_manager,
             self.mmpose_model_manager,
             self.mmdetection_model_manager,
-            self.data_manager)
-        self.feature_manager = FeatureManager(self.root, self.status_manager)
-        self.plot_manager = PlotManager(self.root, self.status_manager)
-        self.metric_manager = MetricManager(self.root, self.status_manager)
+            self.data_manager,
+            self.plot_manager,
+            self.feature_manager)
 
         ttk.Separator(self.root, orient='horizontal').place(x=10, y=576, width=460)
         ttk.Separator(self.root, orient='horizontal').place(x=10, y=864, width=460)
