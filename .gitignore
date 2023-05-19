@@ -133,6 +133,7 @@ infer_pipeline/model_zoo.html
 infer_pipeline/inferences/
 infer_pipeline/sin/
 train_pipeline/mmdet/trainings/
+train_pipeline/mmdet/mlruns
 dataset/videos/
 dataset/std_dataset/
 dataset/det_dataset/
