@@ -2,6 +2,7 @@ import copy
 
 import cv2 as cv
 import matplotlib
+import numpy as np
 
 from gui.gui_plot import GUIPlot
 
@@ -63,19 +64,51 @@ class PlotManager():
                 max_v = cur_v
 
         for feature_plot in self.feature_plots:
-            x = feature_plot['feature'].x
-            y = feature_plot['feature'].y
-            s = range(0, len(x))
+            x = feature_plot['feature'].x.copy()
+            y = feature_plot['feature'].y.copy()
+            assert len(x) == len(y)
+
+            no_data_indices_x = [i for i, v in enumerate(x) if v == -1]
+            no_data_indices_y = [i for i, v in enumerate(y) if v == -1]
+            assert no_data_indices_x == no_data_indices_y
+
+            no_data_indices = no_data_indices_x
+            s = list(range(0, len(x)))
+
+            if no_data_indices:
+                x_ = x.copy()
+                y_ = y.copy()
+                s_ = s.copy()
+
+                x_ = [i for j, i in enumerate(x_) if j not in no_data_indices]
+                y_ = [i for j, i in enumerate(y_) if j not in no_data_indices]
+                s_ = [i for j, i in enumerate(s_) if j not in no_data_indices]
+
+                x_interp = np.interp(no_data_indices, s_, x_)
+                y_interp = np.interp(no_data_indices, s_, y_)
+                
+                for i, _ in enumerate(x_interp):
+                    x_.insert(no_data_indices[i], x_interp[i])
+                
+                for i, _ in enumerate(y_interp):
+                    y_.insert(no_data_indices[i], y_interp[i])
+
+                s_ = list(range(0, len(x_)))
+
+            
             label_x = feature_plot['name'] + '_x'
             label_y = feature_plot['name'] + '_y'
-            self.gui_plot.feature_plot.plot(s, x, label=label_x)
-            self.gui_plot.feature_plot.plot(s, y, label=label_y)
+            if no_data_indices:
+                self.gui_plot.feature_plot.plot(s_, x_, label=label_x)
+                self.gui_plot.feature_plot.plot(s_, y_, label=label_y)
+                self.gui_plot.feature_plot.plot(no_data_indices, x_interp, 'kx', markersize=8)
+                self.gui_plot.feature_plot.plot(no_data_indices, y_interp, 'kx', markersize=8)
+            else:
+                self.gui_plot.feature_plot.plot(s, x, label=label_x)
+                self.gui_plot.feature_plot.plot(s, y, label=label_y)
 
-        self.gui_plot.feature_plot.set_xlim(0, max_s)
-        self.gui_plot.feature_plot.set_ylim(0, max_v)
-        # self.gui_plot.feature_plot.set_xticks(range(0, 1000, 100))
-        # self.gui_plot.feature_plot.set_yticks(range(0, 1000, 100))
-
+        self.gui_plot.feature_plot.set_xlim(0, max_s + 1)
+        self.gui_plot.feature_plot.set_ylim(0, max_v + 100)
         self.gui_plot.feature_plot.legend()
         self.gui_plot.feature_plot.grid()
         self.gui_plot.feature_canvas.draw()
@@ -141,12 +174,22 @@ class PlotManager():
     def slider_changed(self, value):
         if not self.images:
             return
+        
         value = int(float(value))
         self.slider_value = value
+
         self.image = self.images[self.slider_value]
         image = matplotlib.image.imread(self.image)
-        self._draw_keypoints(image)
-        self._draw_skeleton(image)
+
+        for feature in self.features:
+            if -1 in (feature.x[self.slider_value], feature.y[self.slider_value]):
+                image = cv.putText(image, 'no pose estimations', org=(10, 30), color=(255, 255, 255),
+                                   fontFace=cv.FONT_HERSHEY_SIMPLEX, fontScale=1, thickness=1, lineType=cv.LINE_AA)
+                break
+        else:
+            self._draw_keypoints(image)
+            self._draw_skeleton(image)
+        
         self._gui_set_image(image)
         self._gui_set_image_counter(value=value)
 
