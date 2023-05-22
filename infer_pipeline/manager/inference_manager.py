@@ -78,6 +78,7 @@ class InferenceManager():
             if os.path.exists(metadata_path):
                 metadata = open(metadata_path, 'r', encoding='utf8')
                 self.inferences.append(Inference(json.load(metadata)))
+        self.inferences.sort(key=lambda x: x.name)
 
     def monitor_fetch_inferences(self, thread):
         if thread.is_alive():
