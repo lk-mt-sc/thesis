@@ -176,9 +176,12 @@ class InferenceManager():
         inference_mmdetection_model = self.mmdetection_model_manager.selected_model
         inference_data = self.data_manager.selected_data.copy()
 
-        if inference_mmpose_model is None or inference_mmdetection_model is None or not inference_data:
-            messagebox.showerror(title='', message='Model or data selection missing.')
+        if inference_mmpose_model is None or not inference_data:
+            messagebox.showerror(title='', message='MMPose model or data selection missing.')
             return
+        
+        if inference_mmdetection_model is None:
+            inference_mmdetection_model = self.mmdetection_model_manager.default_model
 
         inference_id = id_generator()
         while (self.inference_id_taken(inference_id)):

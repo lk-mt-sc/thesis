@@ -52,6 +52,8 @@ class MMDetectionModelManager():
                 checkpoint=os.path.join(TRAIN_PIPELINE_MMDETECTION_TRAININGS_DIR, 'non_deterministic_models', 'tood',
                                         'train', 'best_coco_bbox_mAP_epoch_27.pth'),
                 config=os.path.join(INFER_PIPELINE_MMDETECTION_CONFIGS_DIR, 'tood.py')))
+            
+            self.default_model = self.models[0]
 
             self._gui_set_models()
             self.status_manager.remove_status(Status.FETCHING_MMDETECTION_MODELS)
