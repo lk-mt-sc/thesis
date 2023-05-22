@@ -23,8 +23,11 @@ class Inference:
     def __init__(self, metadata):
         self.id = metadata['id']
         self.name = metadata['name']
-        self.datetime_timestamp = None
-        self.datetime = None
+        self.datetime_timestamp = metadata['datetime'] if 'datetime' in metadata else None
+        if self.datetime_timestamp is None:
+            self.datetime = None
+        else:
+            self.datetime = datetime.fromtimestamp(self.datetime_timestamp).strftime('%d.%m.%Y %H:%M:%S')
         self.mmpose_model = metadata['mmpose_model']
         self.mmdetection_model = metadata['mmdetection_model']
         self.data = metadata['data']
@@ -44,7 +47,6 @@ class Inference:
 
     def infer(self, inference_progress, existing_dataset, dataset_type):
         self.datetime_timestamp = datetime.timestamp(datetime.now())
-        self.datetime = datetime.fromtimestamp(self.datetime_timestamp).strftime('%d.%m.%Y %H:%M:%S')
 
         out_dir = os.path.join(INFERENCES_DIR, self.id)
         os.mkdir(out_dir)
