@@ -9,7 +9,7 @@ from manager.status_manager import Status
 from data_types.mmpose_model import MMPoseModel
 from model_zoo import ModelZoo
 from common import INFER_PIPELINE_MMDPOSE_CONFIGS_DIR
-
+from common import MMPOSE_CHECKPOINTS_DIR
 
 class MMPoseModelManager():
     def __init__(self, root, status_manager):
@@ -75,6 +75,7 @@ class MMPoseModelManager():
                 if model.config == config['original_config']:
                     new_custom_model = copy.deepcopy(model)
                     new_custom_model.config = config['custom_config']
+                    new_custom_model.checkpoint = os.path.join(MMPOSE_CHECKPOINTS_DIR, new_custom_model.checkpoint)
                     self.custom_models.append(new_custom_model)
 
     def _gui_set_presets(self):

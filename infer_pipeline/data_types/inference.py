@@ -14,7 +14,7 @@ from torchvision.ops import box_iou
 from data_types.run import Run
 from data_types.feature import Feature
 from utils import collect_image_infos, cvt_to_coco_json
-from common import MMPOSE_DIR, MMPOSE_CHECKPOINTS_DIR, MMPOSE_TEST_SCRIPT, MMPOSE_DATASET_DIR
+from common import MMPOSE_DIR, MMPOSE_TEST_SCRIPT, MMPOSE_DATASET_DIR
 from common import MMDETECTION_DIR, MMDETECTION_TEST_SCRIPT
 from common import INFERENCES_DIR
 
@@ -61,8 +61,7 @@ class Inference:
         mmdetection_checkpoint = self.mmdetection_model.checkpoint
 
         mmpose_config = self.mmpose_model.config
-        mmpose_checkpoint = os.path.join(MMPOSE_CHECKPOINTS_DIR, self.mmpose_model.checkpoint)
-
+        mmpose_checkpoint = self.mmpose_model.checkpoint
         config_name = mmpose_config.split('/')[-1].split('.')[0]
         config = imp.load_source(config_name, mmpose_config)
 
@@ -358,7 +357,11 @@ class Inference:
             'name': self.name,
             'datetime': self.datetime_timestamp,
             'mmpose_model': str(self.mmpose_model),
+            'mmpose_model_config': self.mmpose_model.config,
+            'mmpose_model_checkpoint': self.mmpose_model.checkpoint,
             'mmdetection_model': str(self.mmdetection_model),
+            'mmdetection_model_config': self.mmdetection_model.config,
+            'mmdetection_model_checkpoint': self.mmdetection_model.checkpoint,
             'data': [int(d.id) for d in self.data],
             'duration': self.duration,
             'description': self.description
