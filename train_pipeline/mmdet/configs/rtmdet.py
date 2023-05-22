@@ -237,7 +237,7 @@ param_scheduler = [
 # optimizer
 optim_wrapper = dict(
     type='OptimWrapper',
-    optimizer=dict(type='AdamW', lr=0.004, weight_decay=0.05),
+    optimizer=dict(type='AdamW', lr=0.0001, weight_decay=0.05),
     paramwise_cfg=dict(
         norm_decay_mult=0, bias_decay_mult=0, bypass_duplicate=True))
 auto_scale_lr = dict(enable=False, base_batch_size=16)
