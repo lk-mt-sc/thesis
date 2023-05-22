@@ -215,7 +215,7 @@ test_evaluator = dict(
     backend_args=backend_args)
 
 # loop configs
-train_cfg = dict(type='EpochBasedTrainLoop', max_epochs=300, val_interval=1)
+train_cfg = dict(type='EpochBasedTrainLoop', max_epochs=1000, val_interval=1)
 val_cfg = dict(type='ValLoop')
 test_cfg = dict(type='TestLoop')
 
