@@ -179,7 +179,7 @@ class InferenceManager():
         if inference_mmpose_model is None or not inference_data:
             messagebox.showerror(title='', message='MMPose model or data selection missing.')
             return
-        
+
         if inference_mmdetection_model is None:
             inference_mmdetection_model = self.mmdetection_model_manager.default_model
 
@@ -322,7 +322,7 @@ class InferenceManager():
         self._gui_enable_button_delete()
 
     def data_selected(self, event=None):
-        if len(self.selected_inferences) > 1:
+        if not self.selected_inferences or len(self.selected_inferences) > 1:
             return
 
         selected_inference = self.selected_inferences[0]
