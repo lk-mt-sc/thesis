@@ -1,18 +1,45 @@
 import cv2 as cv
 import matplotlib
+import tkinter as tk
 from tkinter import ttk
+from tkinter import simpledialog
 
 from gui.gui_plot import GUIPlot
-from data_types.plot import Plot, PlotTypes
+from data_types.plot import Plot, PlotLayouts
+
+
+class PlotDialog(tk.Toplevel):
+    def __init__(self, parent):
+        tk.Toplevel.__init__(self, parent)
+        self.title('')
+        self.geometry('+%d+%d' % (self.winfo_screenwidth() / 2 - self.winfo_reqwidth() / 2,
+                                  self.winfo_screenheight() / 2 - self.winfo_reqheight() / 2))
+
+        tk.Label(self, text='Plot Title').pack(side="top", fill="x")
+        self.var_title = tk.StringVar()
+        tk.Entry(self, textvariable=self.var_title).pack()
+
+        tk.Label(self, text='Plot Layout').pack(side="top", fill="x")
+        self.var_layout = tk.StringVar()
+        for layout in PlotLayouts:
+            ttk.Radiobutton(self, variable=self.var_layout, value=layout.value,
+                            text=layout.value, command=self.destroy).pack()
+
+    def show(self):
+        self.wm_deiconify()
+        self.wait_window()
+        layout = self.var_layout.get()
+        plot_layout = PlotLayouts(layout) if PlotLayouts.has_value(layout) else None
+        return plot_layout, self.var_title.get()
 
 
 class PlotManager():
     def __init__(self, root, status_manager):
         self.gui_plot = GUIPlot(
             root,
-            button_add_plot_callback=self.add_plot,
-            button_delete_plot_callback=self.delete_plot,
             notebook_tab_changed_callback=self.notebook_tab_changed,
+            notebook_tab_double_clicked_callback=self.rename_plot,
+            notebook_tab_middle_click_callback=self.delete_plot,
             slider_callback=self.slider_changed
         )
         self.status_manager = status_manager
@@ -23,7 +50,8 @@ class PlotManager():
         self.slider_value = 0
         self.dataset_type = None
         self.plots = []
-        self._gui_set_plot_types()
+        self.manual_tab_changed = False
+        self.old_tab = 0
 
     def set_data(self, run, dataset_type):
         self.images = run.data.get_images()
@@ -119,81 +147,88 @@ class PlotManager():
             y2 = int(second_keypoint.y[self.slider_value])
             image = cv.line(image, pt1=(x1, y1), pt2=(x2, y2), color=color, thickness=2)
 
-    def _gui_set_plot_types(self):
-        self.gui_plot.combobox_plot_type['values'] = [plot_type.value for plot_type in PlotTypes]
-        self.gui_plot.combobox_plot_type.current(0)
-
-    def _gui_add_plot(self, plot_type):
+    def _gui_add_plot(self, plot_layout, title):
         notebook = self.gui_plot.notebook
         frame = ttk.Frame(notebook, width=2445, height=1080, padding=(0, 0))
-        new_plot = Plot(frame, plot_type=plot_type)
+        new_plot = Plot(frame, plot_layout=plot_layout)
         new_plot.place_canvas(x=0, y=0, width=2445, height=1080)
         new_plot.place_toolbar(x=0, y=1040)
         new_plot.place_button_clear(x=5, y=1010, height=30)
         new_plot.draw()
         frame.place(x=0, y=0)
-        notebook.add(frame, text='Unnamed Plot')
+        notebook.insert(len(notebook.tabs()) - 1, frame, text=title)
         n_tabs = len(notebook.tabs())
-        notebook.select(n_tabs - 1)
-        self.plots.append({'tab_id': n_tabs - 1, 'plot': new_plot})
+        self.plots.append({'tab_id': n_tabs - 2, 'internal_tab_id': n_tabs - 1, 'plot': new_plot})
+        self.manual_tab_changed = True
+        notebook.select(n_tabs - 2)
 
-        if n_tabs == 16:
-            self._gui_disable_button_add()
-
-    def _gui_delete_plot(self):
+    def _gui_delete_plot(self, event=None):
         notebook = self.gui_plot.notebook
-        for i, tab in enumerate(notebook.winfo_children()):
-            if i == notebook.index(notebook.select()):
-                tab.destroy()
-                for plot in self.plots:
-                    if plot['tab_id'] == i:
-                        self.plots.remove(plot)
-                        break
-                for plot in self.plots:
-                    if plot['tab_id'] > i:
-                        plot['tab_id'] -= 1
-                if len(notebook.tabs()) < 16:
-                    self._gui_enable_button_add()
-                return
+        clicked_tab = notebook.tk.call(notebook._w, 'identify', 'tab', event.x, event.y)
 
-    def _gui_enable_button_add(self):
-        self.gui_plot.button_add_plot['state'] = 'normal'
+        if clicked_tab in (0, len(notebook.tabs()) - 1):
+            return
 
-    def _gui_disable_button_add(self):
-        self.gui_plot.button_add_plot['state'] = 'disabled'
+        for plot in self.plots:
+            if plot['tab_id'] == clicked_tab:
+                if clicked_tab == notebook.index(notebook.select()):
+                    self.manual_tab_changed = True
+                    notebook.select(0)
 
-    def _gui_enable_button_delete(self):
-        self.gui_plot.button_delete_plot['state'] = 'normal'
+                notebook.winfo_children()[plot['internal_tab_id']].destroy()
 
-    def _gui_disable_button_delete(self):
-        self.gui_plot.button_delete_plot['state'] = 'disabled'
+                self.plots.remove(plot)
+                break
 
-    def _gui_get_plot_type(self):
-        return self.gui_plot.combobox_plot_type.get()
-
-    def _gui_get_selected_tab(self):
-        notebook = self.gui_plot.notebook
-        return notebook.index(notebook.select())
+        for plot in self.plots:
+            if plot['tab_id'] > clicked_tab:
+                plot['tab_id'] -= 1
+                plot['internal_tab_id'] -= 1
 
     def add_plot(self):
-        plot_type = PlotTypes(self._gui_get_plot_type())
-        self._gui_add_plot(plot_type)
+        plot_layout, title = PlotDialog(self.gui_plot.root).show()
+        if plot_layout is None:
+            return
+        if not title:
+            title = 'Unnamed Plot'
+        self._gui_add_plot(plot_layout, title)
 
-    def delete_plot(self):
-        self._gui_delete_plot()
+    def delete_plot(self, event=None):
+        self._gui_delete_plot(event)
 
     def notebook_tab_changed(self, event=None):
-        selected_tab = self._gui_get_selected_tab()
+        notebook = self.gui_plot.notebook
+        selected_tab = notebook.index(notebook.select())
 
-        if selected_tab == 0:
-            self._gui_disable_button_delete()
-        else:
-            self._gui_enable_button_delete()
+        if selected_tab != len(notebook.tabs()) - 1:
+            self.old_tab = selected_tab
+
+        if self.manual_tab_changed:
+            self.manual_tab_changed = False
+            return
+
+        if notebook.select() == notebook.tabs()[-1]:
+            self.manual_tab_changed = True
+            notebook.select(self.old_tab)
+            self.add_plot()
 
     def add_to_plot(self, x, y, plottable):
-        selected_tab = self._gui_get_selected_tab()
+        notebook = self.gui_plot.notebook
+        selected_tab = notebook.index(notebook.select())
         if selected_tab == 0:
             return
 
         current_plot = next(plot['plot'] for plot in self.plots if plot['tab_id'] == selected_tab)
         current_plot.add_to_plot(x, y, plottable=plottable)
+
+    def rename_plot(self, event=None):
+        notebook = self.gui_plot.notebook
+        clicked_tab = notebook.tk.call(notebook._w, 'identify', 'tab', event.x, event.y)
+
+        if clicked_tab in (0, len(notebook.tabs()) - 1):
+            return
+
+        old_title = notebook.tab(clicked_tab, 'text')
+        new_title = simpledialog.askstring('Plot Title', '', parent=self.gui_plot.frame, initialvalue=old_title)
+        if new_title:
+            notebook.tab(clicked_tab, text=new_title)

@@ -11,7 +11,7 @@ from matplotlib.backends.backend_tkagg import NavigationToolbar2Tk
 from common import BACKGROUND_COLOR_HEX
 
 
-class PlotTypes(Enum):
+class PlotLayouts(Enum):
     PLOT1X1 = '1x1'
     PLOT2X1 = '2x1'
     PLOT3X1 = '3x1'
@@ -19,14 +19,18 @@ class PlotTypes(Enum):
     PLOT3X2 = '3x2'
     PLOT3X3 = '3x3'
 
+    @classmethod
+    def has_value(cls, value):
+        return value in cls._value2member_map_
+
 
 class Plot:
-    def __init__(self, frame, plot_type):
+    def __init__(self, frame, plot_layout):
         self.frame = frame
         self.figure = Figure(figsize=(23, 10), dpi=96, facecolor=BACKGROUND_COLOR_HEX)
         self.subplots = []
-        rows = int(plot_type.value[0])
-        columns = int(plot_type.value[2])
+        rows = int(plot_layout.value[0])
+        columns = int(plot_layout.value[2])
         for i in range(0, rows * columns):
             self._add_subplot(rows, columns, i + 1)
         self.canvas = FigureCanvasTkAgg(self.figure, master=frame)
