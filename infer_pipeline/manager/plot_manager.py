@@ -1,16 +1,20 @@
-import copy
-
 import cv2 as cv
 import matplotlib
-import numpy as np
+from tkinter import ttk
 
 from gui.gui_plot import GUIPlot
+from data_types.plot import Plot, PlotTypes
 
 
 class PlotManager():
     def __init__(self, root, status_manager):
-        self.gui_plot = GUIPlot(root, slider_callback=self.slider_changed,
-                                button_clear_callback=self.clear_feature_plot)
+        self.gui_plot = GUIPlot(
+            root,
+            button_add_plot_callback=self.add_plot,
+            button_delete_plot_callback=self.delete_plot,
+            notebook_tab_changed_callback=self.notebook_tab_changed,
+            slider_callback=self.slider_changed
+        )
         self.status_manager = status_manager
         self.images = []
         self.image = None
@@ -18,108 +22,8 @@ class PlotManager():
         self.features = []
         self.slider_value = 0
         self.dataset_type = None
-        self.feature_plots = []
-
-    def toggle_feature_plot(self, name, feature):
-        name = copy.deepcopy(name)
-        feature = copy.deepcopy(feature)
-        for feature_plot in self.feature_plots:
-            if feature_plot['name'] == name:
-                self._remove_feature_plot(feature_plot['name'])
-                break
-        else:
-            self._add_feature_plot(name, feature)
-        self._update_feature_plot()
-
-    def _add_feature_plot(self, name, feature):
-        self.feature_plots.append({
-            'name': name,
-            'feature': feature,
-        })
-
-    def _remove_feature_plot(self, name):
-        for i, _ in enumerate(self.feature_plots):
-            if self.feature_plots[i]['name'] == name:
-                del self.feature_plots[i]
-                break
-
-    def _update_feature_plot(self):
-        self._gui_clear_feature_plot()
-
-        if not self.feature_plots:
-            return
-
-        max_s = 0
-        max_v = 0
-        for feature_plot in self.feature_plots:
-            x = feature_plot['feature'].x
-            y = feature_plot['feature'].y
-            cur_s = len(x)
-            cur_v = max(max(x), max(y))
-
-            if cur_s > max_s:
-                max_s = cur_s
-
-            if cur_v > max_v:
-                max_v = cur_v
-
-        for feature_plot in self.feature_plots:
-            x = feature_plot['feature'].x.copy()
-            y = feature_plot['feature'].y.copy()
-            assert len(x) == len(y)
-
-            no_data_indices_x = [i for i, v in enumerate(x) if v == -1]
-            no_data_indices_y = [i for i, v in enumerate(y) if v == -1]
-            assert no_data_indices_x == no_data_indices_y
-
-            no_data_indices = no_data_indices_x
-            s = list(range(0, len(x)))
-
-            if no_data_indices:
-                x_ = x.copy()
-                y_ = y.copy()
-                s_ = s.copy()
-
-                x_ = [i for j, i in enumerate(x_) if j not in no_data_indices]
-                y_ = [i for j, i in enumerate(y_) if j not in no_data_indices]
-                s_ = [i for j, i in enumerate(s_) if j not in no_data_indices]
-
-                x_interp = np.interp(no_data_indices, s_, x_)
-                y_interp = np.interp(no_data_indices, s_, y_)
-                
-                for i, _ in enumerate(x_interp):
-                    x_.insert(no_data_indices[i], x_interp[i])
-                
-                for i, _ in enumerate(y_interp):
-                    y_.insert(no_data_indices[i], y_interp[i])
-
-                s_ = list(range(0, len(x_)))
-
-            
-            label_x = feature_plot['name'] + '_x'
-            label_y = feature_plot['name'] + '_y'
-            if no_data_indices:
-                self.gui_plot.feature_plot.plot(s_, x_, label=label_x)
-                self.gui_plot.feature_plot.plot(s_, y_, label=label_y)
-                self.gui_plot.feature_plot.plot(no_data_indices, x_interp, 'kx', markersize=8)
-                self.gui_plot.feature_plot.plot(no_data_indices, y_interp, 'kx', markersize=8)
-            else:
-                self.gui_plot.feature_plot.plot(s, x, label=label_x)
-                self.gui_plot.feature_plot.plot(s, y, label=label_y)
-
-        self.gui_plot.feature_plot.set_xlim(0, max_s + 1)
-        self.gui_plot.feature_plot.set_ylim(0, max_v + 100)
-        self.gui_plot.feature_plot.legend()
-        self.gui_plot.feature_plot.grid()
-        self.gui_plot.feature_canvas.draw()
-
-    def _gui_clear_feature_plot(self):
-        self.gui_plot.feature_plot.cla()
-        self.gui_plot.feature_canvas.draw()
-
-    def clear_feature_plot(self):
-        self.feature_plots.clear()
-        self._gui_clear_feature_plot()
+        self.plots = []
+        self._gui_set_plot_types()
 
     def set_data(self, run, dataset_type):
         self.images = run.data.get_images()
@@ -174,7 +78,7 @@ class PlotManager():
     def slider_changed(self, value):
         if not self.images:
             return
-        
+
         value = int(float(value))
         self.slider_value = value
 
@@ -189,7 +93,7 @@ class PlotManager():
         else:
             self._draw_keypoints(image)
             self._draw_skeleton(image)
-        
+
         self._gui_set_image(image)
         self._gui_set_image_counter(value=value)
 
@@ -214,3 +118,82 @@ class PlotManager():
             x2 = int(second_keypoint.x[self.slider_value])
             y2 = int(second_keypoint.y[self.slider_value])
             image = cv.line(image, pt1=(x1, y1), pt2=(x2, y2), color=color, thickness=2)
+
+    def _gui_set_plot_types(self):
+        self.gui_plot.combobox_plot_type['values'] = [plot_type.value for plot_type in PlotTypes]
+        self.gui_plot.combobox_plot_type.current(0)
+
+    def _gui_add_plot(self, plot_type):
+        notebook = self.gui_plot.notebook
+        frame = ttk.Frame(notebook, width=2445, height=1080, padding=(0, 0))
+        new_plot = Plot(frame, plot_type=plot_type)
+        new_plot.place_canvas(x=0, y=0, width=2445, height=1080)
+        new_plot.place_toolbar(x=0, y=1040)
+        new_plot.place_button_clear(x=5, y=1010, height=30)
+        new_plot.draw()
+        frame.place(x=0, y=0)
+        notebook.add(frame, text='Unnamed Plot')
+        n_tabs = len(notebook.tabs())
+        notebook.select(n_tabs - 1)
+        self.plots.append({'tab_id': n_tabs - 1, 'plot': new_plot})
+
+        if n_tabs == 16:
+            self._gui_disable_button_add()
+
+    def _gui_delete_plot(self):
+        notebook = self.gui_plot.notebook
+        for i, tab in enumerate(notebook.winfo_children()):
+            if i == notebook.index(notebook.select()):
+                tab.destroy()
+                for plot in self.plots:
+                    if plot['tab_id'] == i:
+                        self.plots.remove(plot)
+                        break
+                for plot in self.plots:
+                    if plot['tab_id'] > i:
+                        plot['tab_id'] -= 1
+                if len(notebook.tabs()) < 16:
+                    self._gui_enable_button_add()
+                return
+
+    def _gui_enable_button_add(self):
+        self.gui_plot.button_add_plot['state'] = 'normal'
+
+    def _gui_disable_button_add(self):
+        self.gui_plot.button_add_plot['state'] = 'disabled'
+
+    def _gui_enable_button_delete(self):
+        self.gui_plot.button_delete_plot['state'] = 'normal'
+
+    def _gui_disable_button_delete(self):
+        self.gui_plot.button_delete_plot['state'] = 'disabled'
+
+    def _gui_get_plot_type(self):
+        return self.gui_plot.combobox_plot_type.get()
+
+    def _gui_get_selected_tab(self):
+        notebook = self.gui_plot.notebook
+        return notebook.index(notebook.select())
+
+    def add_plot(self):
+        plot_type = PlotTypes(self._gui_get_plot_type())
+        self._gui_add_plot(plot_type)
+
+    def delete_plot(self):
+        self._gui_delete_plot()
+
+    def notebook_tab_changed(self, event=None):
+        selected_tab = self._gui_get_selected_tab()
+
+        if selected_tab == 0:
+            self._gui_disable_button_delete()
+        else:
+            self._gui_enable_button_delete()
+
+    def add_to_plot(self, x, y, plottable):
+        selected_tab = self._gui_get_selected_tab()
+        if selected_tab == 0:
+            return
+
+        current_plot = next(plot['plot'] for plot in self.plots if plot['tab_id'] == selected_tab)
+        current_plot.add_to_plot(x, y, plottable=plottable)

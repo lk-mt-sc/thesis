@@ -1,5 +1,7 @@
 import os
 
+import matplotlib
+
 WORKING_DIR = os.path.dirname(os.path.realpath(__file__))
 
 THESIS_DIR = os.environ['THESIS_DIR']
@@ -24,3 +26,6 @@ MMDETECTION_DIR = os.environ['MMDETECTION_DIR']
 MMDETECTION_DATA_DIR = os.path.join(MMDETECTION_DIR, 'data', 'sc')
 MMDETECTION_CHECKPOINTS_DIR = os.path.join(MMDETECTION_DIR, 'checkpoints')
 MMDETECTION_TEST_SCRIPT = os.path.join(MMDETECTION_DIR, 'tools', 'test.py')
+
+BACKGROUND_COLOR_HEX = '#DCDAD5'
+BACKGROUND_COLOR_RGB = matplotlib.colors.to_rgb(BACKGROUND_COLOR_HEX)
