@@ -3,6 +3,7 @@ from enum import Enum
 
 import numpy as np
 from tkinter import ttk
+from tkinter import simpledialog
 from matplotlib.figure import Figure
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 from matplotlib.backends.backend_tkagg import NavigationToolbar2Tk
@@ -30,6 +31,7 @@ class Plot:
             self._add_subplot(rows, columns, i + 1)
         self.canvas = FigureCanvasTkAgg(self.figure, master=frame)
         self.canvas.mpl_connect('pick_event', self.on_pick)
+        self.canvas.mpl_connect('button_press_event', self.on_click)
         self.toolbar = NavigationToolbar2Tk(self.canvas, self.frame, pack_toolbar=False)
         self.toolbar.update()
         self.button_clear = ttk.Button(
@@ -90,19 +92,42 @@ class Plot:
                         plottable = line['plottable']
                         self._delete_from_subplot(subplot, plottable)
 
-    def add_to_plot(self, x, y, plottable):
-        for subplot in self.subplots:
-            # matplotlib bboxes coordinates have lower left origin
-            bbox = subplot['plot'].bbox.get_points().tolist()
-            bbox = [i for j in bbox for i in j]
-            bbox[0] += 978
-            bbox[1] = 1172 - bbox[1]
-            bbox[2] += 978
-            bbox[3] = 1172 - bbox[3]
-            bbox = [int(i) for i in bbox]
+    def on_click(self, event=None):
+        button = event.button
+        double_click = event.dblclick
+        in_axes = event.inaxes
+        if button == 1 and double_click and in_axes is not None:
+            subplot = self._find_subplot(axes=in_axes)
+            old_title = subplot['plot'].title
+            new_title = simpledialog.askstring('Subplot Title', '', parent=self.frame,
+                                               initialvalue=old_title.get_text())
+            if new_title:
+                subplot['plot'].title.set_text(new_title)
+            self.draw()
 
-            if x in range(bbox[0], bbox[2]) and y in range(bbox[3], bbox[1]):
-                self._add_to_subplot(subplot, plottable)
+    def add_to_plot(self, x, y, plottable):
+        subplot = self._find_subplot(x=x, y=y)
+        self._add_to_subplot(subplot, plottable)
+
+    def _find_subplot(self, x=None, y=None, axes=None):
+        if axes is not None:
+            for subplot in self.subplots:
+                if subplot['plot'] == axes:
+                    return subplot
+
+        if not None in (x, y):
+            for subplot in self.subplots:
+                # matplotlib bboxes coordinates have lower left origin
+                bbox = subplot['plot'].bbox.get_points().tolist()
+                bbox = [i for j in bbox for i in j]
+                bbox[0] += 978
+                bbox[1] = 1172 - bbox[1]
+                bbox[2] += 978
+                bbox[3] = 1172 - bbox[3]
+                bbox = [int(i) for i in bbox]
+
+                if x in range(bbox[0], bbox[2]) and y in range(bbox[3], bbox[1]):
+                    return subplot
 
     def _add_to_subplot(self, subplot, plottable):
         plottable = copy.deepcopy(plottable)
