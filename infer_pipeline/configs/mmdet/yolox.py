@@ -105,7 +105,7 @@ model = dict(
             loss_weight=1.0),
         loss_l1=dict(type='L1Loss', reduction='sum', loss_weight=1.0)),
     train_cfg=dict(assigner=dict(type='SimOTAAssigner', center_radius=2.5)),
-    test_cfg=dict(score_thr=0.3, nms=dict(type='nms', iou_threshold=0.65)))
+    test_cfg=dict(score_thr=0.25, nms=dict(type='nms', iou_threshold=0.65)))
 
 # dataset
 dataset_type = 'CocoDataset'
