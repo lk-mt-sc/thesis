@@ -57,6 +57,9 @@ class FeatureManager():
                 self.selected_feature_values = feature.y
 
     def on_drag(self, event=None):
+        if self.selected_feature_name is None:
+            return
+
         self.gui_feature.root.configure(cursor='plus')
 
     def on_drop(self, event=None):
