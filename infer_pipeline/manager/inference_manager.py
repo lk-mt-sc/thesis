@@ -301,6 +301,11 @@ class InferenceManager():
             self.selected_inferences.append(
                 next(inference for inference in self.inferences if inference.id == inference_id))
 
+        if len(self.selected_inferences) == 1:
+            self._gui_set_details()
+        else:
+            self._gui_clear_details()
+
         self.plot_manager.clear_image()
         self.feature_manager.clear()
         self.selected_data = None
