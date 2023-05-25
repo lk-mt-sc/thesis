@@ -48,6 +48,9 @@ class PlotManager():
         self.image = None
         self.n_images = 0
         self.features = []
+        self.bboxes = []
+        self.detection_scores = []
+        self.pose_estimation_scores = []
         self.slider_value = 0
         self.dataset_type = None
         self.plots = []
@@ -58,6 +61,9 @@ class PlotManager():
         self.images = run.data.get_images()
         self.n_images = len(self.images)
         self.features = run.features.copy()
+        self.bboxes = run.bboxes.copy()
+        self.detection_scores = run.detection_scores.copy()
+        self.pose_estimation_scores = run.pose_estimation_scores.copy()
         self.slider_value = 0
         self.image = self.images[self.slider_value]
         self.dataset_type = dataset_type
@@ -113,6 +119,9 @@ class PlotManager():
 
         self.image = self.images[self.slider_value]
         image = matplotlib.image.imread(self.image)
+        bbox = self.bboxes[self.slider_value]
+        detection_score = self.detection_scores[self.slider_value]
+        pose_estimation_score = self.pose_estimation_scores[self.slider_value]
 
         for feature in self.features:
             if -1 in (feature.x[self.slider_value], feature.y[self.slider_value]):
@@ -122,6 +131,7 @@ class PlotManager():
         else:
             self._draw_keypoints(image)
             self._draw_skeleton(image)
+            self._draw_bounding_box_and_scores(image, bbox, detection_score, pose_estimation_score)
 
         self._gui_set_image(image)
         self._gui_set_image_counter(value=value)
@@ -151,6 +161,14 @@ class PlotManager():
             x2 = int(second_keypoint.x[self.slider_value])
             y2 = int(second_keypoint.y[self.slider_value])
             image = cv.line(image, pt1=(x1, y1), pt2=(x2, y2), color=color, thickness=2)
+
+    def _draw_bounding_box_and_scores(self, image, bbox, detection_score, pose_estimation_score):
+        bbox = [int(i) for i in bbox]
+        x, y, w, h = bbox[0], bbox[1], bbox[2], bbox[3]
+        image = cv.rectangle(image, pt1=(x, y), pt2=(x + w, y + h), color=(0, 0, 255), thickness=2)
+        score = '{:.4f}'.format(round(detection_score, 4)) + '/' + '{:.4f}'.format(round(pose_estimation_score, 4))
+        image = cv.putText(image, score, org=(x, y - 7), color=(0, 0, 255),
+                           fontFace=cv.FONT_HERSHEY_SIMPLEX, fontScale=0.65, thickness=1, lineType=cv.LINE_AA)
 
     def _gui_add_plot(self, plot_layout, title):
         notebook = self.gui_plot.notebook

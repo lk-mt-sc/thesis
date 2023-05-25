@@ -207,9 +207,6 @@ class Inference:
         mmpose_work_dir = os.path.join(out_dir, 'mmpose_work_dir')
         os.mkdir(mmpose_work_dir)
 
-        mmpose_show_dir = os.path.join(out_dir, 'mmpose_show_dir')
-        os.mkdir(mmpose_show_dir)
-
         mmpose_outfile_prefix = os.path.join(mmpose_result_dir, str(self.id))
 
         inference_progress.value = 'POSE EST. STARTUP'
@@ -263,8 +260,10 @@ class Inference:
             annotations = json.load(annotations_file)
 
         if data_mode == 'bottomup':
-            with open(os.path.join(INFERENCES_DIR, 'bbox_bottomup.json'), 'r') as bbox_file:
-                pred_bboxes = json.load(bbox_file)
+            bbox_file_path = os.path.join(INFERENCES_DIR, 'bbox_bottomup.json')
+
+        with open(bbox_file_path, 'r') as bbox_file:
+            pred_bboxes = json.load(bbox_file)
 
         with open(results_json_file_path, 'r') as results_file:
             results = json.load(results_file)
@@ -276,6 +275,9 @@ class Inference:
             inference_progress.value = 'SAVING INFER RES. ' + f'{progress_percentage}%'
 
             images = data.get_images()
+            bboxes = []
+            detection_scores = []
+            pose_estimation_scores = []
             features = []
             dataset_keypoints = dataset_type.keypoints
             n_keypoints = len(dataset_keypoints)
@@ -287,6 +289,11 @@ class Inference:
                     if dataset_image['file_name'].split('/')[-1] == image_filename:
                         image_id = dataset_image['id']
 
+                pred_bbox = None
+                for bbox in pred_bboxes:
+                    if bbox['image_id'] == image_id:
+                        pred_bbox = bbox
+
                 if data_mode == 'topdown':
                     result = next(result for result in results if result['image_id'] == image_id)
                     keypoints = result['keypoints']
@@ -296,11 +303,6 @@ class Inference:
                         features[i].add(x, y)
 
                 if data_mode == 'bottomup':
-                    pred_bbox = None
-                    for bbox in pred_bboxes:
-                        if bbox['image_id'] == image_id:
-                            pred_bbox = bbox
-
                     x = int(pred_bbox['bbox'][0])
                     y = int(pred_bbox['bbox'][1])
                     w = int(pred_bbox['bbox'][2])
@@ -340,7 +342,8 @@ class Inference:
                     if not preds:
                         preds.append({
                             'x_coord': [-1 for i in range(n_keypoints)],
-                            'y_coord': [-1 for i in range(n_keypoints)]
+                            'y_coord': [-1 for i in range(n_keypoints)],
+                            'score': -1
                         })
 
                     result = preds[0]
@@ -348,6 +351,10 @@ class Inference:
                     y_coord = result['y_coord']
                     for i, (x, y) in enumerate(zip(x_coord, y_coord)):
                         features[i].add(x, y)
+
+                bboxes.append(pred_bbox['bbox'])
+                detection_scores.append(pred_bbox['score'])
+                pose_estimation_scores.append(result['score'])
 
             left_shoulder = next(f for f in features if f.name == InterpolationKeypoints.LEFT_SHOULDER.value)
             right_shoulder = next(f for f in features if f.name == InterpolationKeypoints.RIGHT_SHOULDER.value)
@@ -360,7 +367,7 @@ class Inference:
             self.interpolate_keypoint(neck, left_shoulder, right_shoulder)
             self.interpolate_keypoint(head, left_ear, right_ear)
 
-            run = Run(data.id, data, features)
+            run = Run(data.id, data, features, bboxes, detection_scores, pose_estimation_scores)
             run.save(os.path.join(out_dir, f'run_{data.id}.pkl'))
 
         self.store_metadata(out_dir)
