@@ -139,6 +139,9 @@ class Plot:
                     return subplot
 
     def _add_to_subplot(self, subplot, plottable):
+        if subplot is None:
+            return
+
         plottable = copy.deepcopy(plottable)
         subplot['plottables'].append(plottable)
         self._update_subplot(subplot)
