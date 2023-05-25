@@ -41,7 +41,9 @@ class InferenceManager():
             button_delete_callback=self.ask_for_ok_delete_inferences,
             button_refresh_callback=self.fetch_inferences,
             listbox_inferences_callback=self.inference_selected,
-            listbox_data_callback=self.data_selected)
+            listbox_data_select_callback=self.data_selected,
+            listbox_data_drag_callback=self.on_drag,
+            listbox_data_drop_callback=self.on_drop)
         self.status_manager = status_manager
         self.dataset_manager = dataset_manager
         self.mmpose_model_manager = mmpose_model_manager
@@ -56,7 +58,7 @@ class InferenceManager():
         self.selected_inferences = []
         self.queue_inferences = []
         self.queue_selected_inferences = []
-        self.selected_data = None
+        self.selected_run = None
         self.dataset_type = self.dataset_manager.datasets[Datasets.COCO.value]
         self.multiprocessing_manager = torch.multiprocessing.Manager()
         self.fetch_inferences()
@@ -306,9 +308,9 @@ class InferenceManager():
         else:
             self._gui_clear_details()
 
-        self.plot_manager.clear_image()
+        self.plot_manager.clear_images()
         self.feature_manager.clear()
-        self.selected_data = None
+        self.selected_run = None
 
         self._gui_enable_button_delete()
 
@@ -325,8 +327,8 @@ class InferenceManager():
         run_id = data_id
 
         run = next(run for run in selected_inference.runs if run.id == run_id)
-        self.plot_manager.set_data(run, self.dataset_type)
-        self.feature_manager.set_data(run, selected_inference.name)
+        self.selected_run = run
+        self.feature_manager.set_data(self.selected_run, selected_inference.name)
 
     def ask_for_ok_delete_inferences(self):
         if len(self.selected_inferences) == 1:
@@ -347,7 +349,22 @@ class InferenceManager():
         self.fetch_inferences()
         self._gui_clear_details()
         self._gui_disable_button_delete()
-        self.plot_manager.clear_image()
-        self.plot_manager.clear_feature_plot()
+        self.plot_manager.clear_images()
         self.feature_manager.clear()
-        self.selected_data = None
+        self.selected_run = None
+
+    def on_drag(self, event=None):
+        if self.selected_run is None:
+            return
+
+        self.gui_inference.root.configure(cursor='plus')
+
+    def on_drop(self, event=None):
+        self.gui_inference.root.configure(cursor='')
+
+        selected_run = self.selected_run
+        if selected_run is None:
+            return
+
+        x, y = event.widget.winfo_pointerxy()
+        self.plot_manager.plot_image(x, y, selected_run, self.dataset_type)
