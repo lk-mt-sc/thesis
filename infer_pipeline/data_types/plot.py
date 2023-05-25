@@ -37,6 +37,9 @@ class Plot:
         self.canvas.mpl_connect('pick_event', self.on_pick)
         self.canvas.mpl_connect('button_press_event', self.on_click)
         self.toolbar = NavigationToolbar2Tk(self.canvas, self.frame, pack_toolbar=False)
+        self.toolbar.config(background=BACKGROUND_COLOR_HEX)
+        for button in self.toolbar.winfo_children():
+            button.config(background=BACKGROUND_COLOR_HEX, highlightbackground=BACKGROUND_COLOR_HEX)
         self.toolbar.update()
         self.button_clear = ttk.Button(
             self.frame,
@@ -44,6 +47,8 @@ class Plot:
             style='Button.TButton',
             width=8,
             command=self.clear_plot)
+
+        self.figure.subplots_adjust(left=0.02, bottom=0.075, right=0.99, top=0.975, wspace=0.1, hspace=0.25)
 
     def _add_subplot(self, rows, columns, index):
         self.subplots.append(
