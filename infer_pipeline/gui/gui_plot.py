@@ -1,4 +1,3 @@
-import matplotlib
 import numpy as np
 import tkinter as tk
 from tkinter import ttk
@@ -40,6 +39,7 @@ class GUIPlot():
         self.default_image = np.full((100, int(ratio * 100), 3), BACKGROUND_COLOR_RGB)
         self.image = self.default_image
         self.image_figure = Figure(figsize=(ratio * 10, 10), dpi=96, facecolor=BACKGROUND_COLOR_HEX)
+        self.image_figure.subplots_adjust(bottom=0.02, top=0.98)
         self.image_plot = self.image_figure.add_subplot(111)
         self.image_plot.axis('off')
         self.image_plot.format_coord = lambda x, y: ''
@@ -51,6 +51,9 @@ class GUIPlot():
         self.image_toolbar = NavigationToolbar2Tk(self.image_canvas,
                                                   self.frame_image_plot,
                                                   pack_toolbar=False)
+        self.image_toolbar.config(background=BACKGROUND_COLOR_HEX)
+        for button in self.image_toolbar.winfo_children():
+            button.config(background=BACKGROUND_COLOR_HEX, highlightbackground=BACKGROUND_COLOR_HEX)
         self.image_toolbar.update()
         self.image_toolbar.place(x=0, y=1040)
         self.image_canvas.get_tk_widget().place(x=0, y=0, width=2445, height=1080)
