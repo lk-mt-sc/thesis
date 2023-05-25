@@ -1,115 +1,78 @@
 # model
 model = dict(
-    type='FasterRCNN',
+    type='TOOD',
     data_preprocessor=dict(
         type='DetDataPreprocessor',
-        mean=[103.53, 116.28, 123.675],
-        std=[1.0, 1.0, 1.0],
-        bgr_to_rgb=False,
+        mean=[123.675, 116.28, 103.53],
+        std=[58.395, 57.12, 57.375],
+        bgr_to_rgb=True,
         pad_size_divisor=32),
     backbone=dict(
         type='ResNet',
-        depth=50,
+        depth=101,
         num_stages=4,
         out_indices=(0, 1, 2, 3),
         frozen_stages=1,
-        norm_cfg=dict(type='BN', requires_grad=False),
+        norm_cfg=dict(type='BN', requires_grad=True),
         norm_eval=True,
-        style='caffe',
-        init_cfg=dict(
-            type='Pretrained',
-            checkpoint='open-mmlab://detectron2/resnet50_caffe')),
+        style='pytorch',
+        init_cfg=dict(type='Pretrained', checkpoint='torchvision://resnet101'),
+        dcn=dict(type='DCNv2', deformable_groups=1, fallback_on_stride=False),
+        stage_with_dcn=(False, True, True, True)),
     neck=dict(
         type='FPN',
         in_channels=[256, 512, 1024, 2048],
         out_channels=256,
+        start_level=1,
+        add_extra_convs='on_output',
         num_outs=5),
-    rpn_head=dict(
-        type='RPNHead',
+    bbox_head=dict(
+        type='TOODHead',
+        num_classes=1,
         in_channels=256,
+        stacked_convs=6,
         feat_channels=256,
+        anchor_type='anchor_free',
         anchor_generator=dict(
             type='AnchorGenerator',
-            scales=[8],
-            ratios=[0.5, 1.0, 2.0],
-            strides=[4, 8, 16, 32, 64]),
+            ratios=[1.0],
+            octave_base_scale=8,
+            scales_per_octave=1,
+            strides=[8, 16, 32, 64, 128]),
         bbox_coder=dict(
             type='DeltaXYWHBBoxCoder',
             target_means=[0.0, 0.0, 0.0, 0.0],
-            target_stds=[1.0, 1.0, 1.0, 1.0]),
+            target_stds=[0.1, 0.1, 0.2, 0.2]),
+        initial_loss_cls=dict(
+            type='FocalLoss',
+            use_sigmoid=True,
+            activated=True,
+            gamma=2.0,
+            alpha=0.25,
+            loss_weight=1.0),
         loss_cls=dict(
-            type='CrossEntropyLoss', use_sigmoid=True, loss_weight=1.0),
-        loss_bbox=dict(type='L1Loss', loss_weight=1.0)),
-    roi_head=dict(
-        type='StandardRoIHead',
-        bbox_roi_extractor=dict(
-            type='SingleRoIExtractor',
-            roi_layer=dict(type='RoIAlign', output_size=7, sampling_ratio=0),
-            out_channels=256,
-            featmap_strides=[4, 8, 16, 32]),
-        bbox_head=dict(
-            type='Shared2FCBBoxHead',
-            in_channels=256,
-            fc_out_channels=1024,
-            roi_feat_size=7,
-            num_classes=1,
-            bbox_coder=dict(
-                type='DeltaXYWHBBoxCoder',
-                target_means=[0.0, 0.0, 0.0, 0.0],
-                target_stds=[0.1, 0.1, 0.2, 0.2]),
-            reg_class_agnostic=False,
-            loss_cls=dict(
-                type='CrossEntropyLoss', use_sigmoid=False, loss_weight=1.0),
-            loss_bbox=dict(type='L1Loss', loss_weight=1.0))),
+            type='QualityFocalLoss',
+            use_sigmoid=True,
+            activated=True,
+            beta=2.0,
+            loss_weight=1.0),
+        loss_bbox=dict(type='GIoULoss', loss_weight=2.0),
+        num_dcn=2),
     train_cfg=dict(
-        rpn=dict(
-            assigner=dict(
-                type='MaxIoUAssigner',
-                pos_iou_thr=0.7,
-                neg_iou_thr=0.3,
-                min_pos_iou=0.3,
-                match_low_quality=True,
-                ignore_iof_thr=-1),
-            sampler=dict(
-                type='RandomSampler',
-                num=256,
-                pos_fraction=0.5,
-                neg_pos_ub=-1,
-                add_gt_as_proposals=False),
-            allowed_border=-1,
-            pos_weight=-1,
-            debug=False),
-        rpn_proposal=dict(
-            nms_pre=2000,
-            max_per_img=1000,
-            nms=dict(type='nms', iou_threshold=0.7),
-            min_bbox_size=0),
-        rcnn=dict(
-            assigner=dict(
-                type='MaxIoUAssigner',
-                pos_iou_thr=0.5,
-                neg_iou_thr=0.5,
-                min_pos_iou=0.5,
-                match_low_quality=False,
-                ignore_iof_thr=-1),
-            sampler=dict(
-                type='RandomSampler',
-                num=512,
-                pos_fraction=0.25,
-                neg_pos_ub=-1,
-                add_gt_as_proposals=True),
-            pos_weight=-1,
-            debug=False)),
+        initial_epoch=4,
+        initial_assigner=dict(type='ATSSAssigner', topk=9),
+        assigner=dict(type='TaskAlignedAssigner', topk=13),
+        alpha=1,
+        beta=6,
+        allowed_border=-1,
+        pos_weight=-1,
+        debug=False),
     test_cfg=dict(
-        rpn=dict(
-            nms_pre=1000,
-            max_per_img=1000,
-            nms=dict(type='nms', iou_threshold=0.7),
-            min_bbox_size=0),
-        rcnn=dict(
-            score_thr=0.05,
-            nms=dict(type='nms', iou_threshold=0.5),
-            max_per_img=100)))
+        nms_pre=1000,
+        min_bbox_size=0,
+        score_thr=0.05,
+        nms=dict(type='nms', iou_threshold=0.6),
+        max_per_img=100))
 
 # dataset
 dataset_type = 'CocoDataset'
@@ -121,9 +84,7 @@ train_pipeline = [
     dict(type='LoadImageFromFile', backend_args=backend_args),
     dict(type='LoadAnnotations', with_bbox=True),
     dict(
-        type='RandomChoiceResize',
-        scales=[(1333, 640), (1333, 672), (1333, 704), (1333, 736),
-                (1333, 768), (1333, 800)],
+        type='RandomResize', scale=[(1333, 480), (1333, 800)],
         keep_ratio=True),
     dict(type='RandomFlip', prob=0.5),
     dict(type='PackDetInputs')
@@ -221,7 +182,7 @@ param_scheduler = [
 # optimizer
 optim_wrapper = dict(
     type='OptimWrapper',
-    optimizer=dict(type='SGD', lr=0.02, momentum=0.9, weight_decay=0.0001))
+    optimizer=dict(type='SGD', lr=0.01, momentum=0.9, weight_decay=0.0001))
 auto_scale_lr = dict(enable=False, base_batch_size=16)
 
 # hooks
@@ -247,7 +208,7 @@ env_cfg = dict(
     dist_cfg=dict(backend='nccl'))
 vis_backends = [dict(type='LocalVisBackend'),
                 dict(type='MLflowVisBackend',
-                     exp_name='MMDET_SIN_FASTER_RCNN',
+                     exp_name='MMDET_SIN_TOOD',
                      run_name='RUN_01',
                      save_dir='../thesis/train_pipeline/mmdet/mlruns')]
 visualizer = dict(
@@ -256,5 +217,5 @@ visualizer = dict(
     name='visualizer')
 log_processor = dict(type='LogProcessor', window_size=50, by_epoch=True)
 log_level = 'INFO'
-load_from = '../thesis/train_pipeline/mmdet/trainings/faster-rcnn/faster-rcnn/train/best_coco_bbox_mAP_epoch_21.pth'
+load_from = '../thesis/train_pipeline/mmdet/trainings/tood/tood/train/best_coco_bbox_mAP_epoch_32.pth'
 randomness = dict(seed=0)
