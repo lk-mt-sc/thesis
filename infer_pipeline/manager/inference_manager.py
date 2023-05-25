@@ -38,7 +38,6 @@ class InferenceManager():
             button_delete_callback=self.queue_inference_delete)
         self.gui_inference = GUIInference(
             root,
-            button_compare_callback=self.compare_inference,
             button_delete_callback=self.ask_for_ok_delete_inferences,
             button_refresh_callback=self.fetch_inferences,
             listbox_inferences_callback=self.inference_selected,
@@ -126,12 +125,6 @@ class InferenceManager():
 
     def _gui_disable_button_delete(self):
         self.gui_inference.button_delete['state'] = 'disabled'
-
-    def _gui_enable_button_compare(self):
-        self.gui_inference.button_compare['state'] = 'normal'
-
-    def _gui_disable_button_compare(self):
-        self.gui_inference.button_compare['state'] = 'disabled'
 
     def _gui_update_inference_progress(self, inference_id, inference_progress):
         for i, inference in enumerate(self.queue_inferences):
@@ -308,13 +301,6 @@ class InferenceManager():
             self.selected_inferences.append(
                 next(inference for inference in self.inferences if inference.id == inference_id))
 
-        if len(self.selected_inferences) == 1:
-            self._gui_set_details()
-            self._gui_disable_button_compare()
-        else:
-            self._gui_enable_button_compare()
-            self._gui_clear_details()
-
         self.plot_manager.clear_image()
         self.feature_manager.clear()
         self.selected_data = None
@@ -356,11 +342,7 @@ class InferenceManager():
         self.fetch_inferences()
         self._gui_clear_details()
         self._gui_disable_button_delete()
-        self._gui_disable_button_compare()
         self.plot_manager.clear_image()
         self.plot_manager.clear_feature_plot()
         self.feature_manager.clear()
         self.selected_data = None
-
-    def compare_inference(self):
-        pass

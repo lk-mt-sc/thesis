@@ -6,7 +6,6 @@ class GUIInference():
     def __init__(
             self,
             root,
-            button_compare_callback,
             button_delete_callback,
             button_refresh_callback,
             listbox_inferences_callback,
@@ -18,15 +17,6 @@ class GUIInference():
 
         self.title = ttk.Label(self.frame, text='Inferences', font=self.root.font_title)
         self.title.place(x=0, y=0)
-
-        self.button_compare = ttk.Button(
-            self.frame,
-            text='Compare',
-            style='Button.TButton',
-            width=8,
-            command=button_compare_callback)
-        self.button_compare.place(x=300, y=0, height=20)
-        self.button_compare['state'] = 'disabled'
 
         self.button_delete = ttk.Button(
             self.frame,
