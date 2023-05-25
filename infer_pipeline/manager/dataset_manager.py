@@ -1,17 +1,46 @@
 from enum import Enum
 
 from data_types.dataset import Dataset
-from datasets.aic import dataset_info as aic_dataset_info
 from datasets.coco import dataset_info as coco_dataset_info
-from datasets.crowdpose import dataset_info as crowdpose_dataset_info
-from datasets.mpii import dataset_info as mpii_dataset_info
 
 
 class Datasets(Enum):
-    AIC = 'aic'
     COCO = 'coco'
-    CROWDPOSE = 'crowdpose'
-    MPII = 'mpii'
+
+
+class HiddenKeypointsImagePlot(Enum):
+    NOSE = 'nose'
+    LEFT_EYE = 'left_eye'
+    RIGHT_EYE = 'right_eye'
+    LEFT_EAR = 'left_ear'
+    RIGHT_EAR = 'right_ear'
+
+    @classmethod
+    def has_value(cls, value):
+        return value in cls._value2member_map_
+
+
+class HiddenKeypointsFeaturePlot(Enum):
+    NOSE = 'nose'
+    LEFT_EYE = 'left_eye'
+    RIGHT_EYE = 'right_eye'
+    LEFT_EAR = 'left_ear'
+    RIGHT_EAR = 'right_ear'
+    HEAD = 'head'
+    NECK = 'neck'
+
+    @classmethod
+    def has_value(cls, value):
+        return value in cls._value2member_map_
+
+
+class InterpolationKeypoints(Enum):
+    HEAD = 'head'
+    NECK = 'neck'
+    LEFT_SHOULDER = 'left_shoulder'
+    RIGHT_SHOULDER = 'right_shoulder'
+    LEFT_EAR = 'left_ear'
+    RIGHT_EAR = 'right_ear'
 
 
 class DatasetManager():
@@ -19,10 +48,7 @@ class DatasetManager():
         self.datasets = {}
 
     def create_datasets(self):
-        self.datasets[Datasets.AIC.value] = self._create_dataset(aic_dataset_info)
         self.datasets[Datasets.COCO.value] = self._create_dataset(coco_dataset_info)
-        self.datasets[Datasets.CROWDPOSE.value] = self._create_dataset(crowdpose_dataset_info)
-        self.datasets[Datasets.MPII.value] = self._create_dataset(mpii_dataset_info)
 
     def _create_dataset(self, dataset):
         name = dataset['dataset_name']

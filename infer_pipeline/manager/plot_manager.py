@@ -6,6 +6,7 @@ from tkinter import simpledialog
 
 from gui.gui_plot import GUIPlot
 from data_types.plot import Plot, PlotLayouts
+from manager.dataset_manager import HiddenKeypointsImagePlot
 
 
 class PlotDialog(tk.Toplevel):
@@ -128,7 +129,8 @@ class PlotManager():
     def _draw_keypoints(self, image):
         for key, keypoint in self.dataset_type.keypoints.items():
             for feature in self.features:
-                if feature.name == key:
+                feature_name = feature.name
+                if feature_name == key and not HiddenKeypointsImagePlot.has_value(feature_name):
                     x = int(feature.x[self.slider_value])
                     y = int(feature.y[self.slider_value])
                     color = keypoint['color']
@@ -140,6 +142,9 @@ class PlotManager():
                                   limb['first_keypoint']['name'])
             second_keypoint = next(feature for feature in self.features if feature.name ==
                                    limb['second_keypoint']['name'])
+            if HiddenKeypointsImagePlot.has_value(first_keypoint.name) \
+                    or HiddenKeypointsImagePlot.has_value(second_keypoint.name):
+                continue
             color = limb['color']
             x1 = int(first_keypoint.x[self.slider_value])
             y1 = int(first_keypoint.y[self.slider_value])
@@ -152,8 +157,8 @@ class PlotManager():
         frame = ttk.Frame(notebook, width=2445, height=1080, padding=(0, 0))
         new_plot = Plot(frame, plot_layout=plot_layout)
         new_plot.place_canvas(x=0, y=0, width=2445, height=1080)
-        new_plot.place_toolbar(x=0, y=1040)
-        new_plot.place_button_clear(x=5, y=1010, height=30)
+        new_plot.place_toolbar(x=65, y=1039)
+        new_plot.place_button_clear(x=5, y=1045, height=30)
         new_plot.draw()
         frame.place(x=0, y=0)
         notebook.insert(len(notebook.tabs()) - 1, frame, text=title)

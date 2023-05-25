@@ -1,6 +1,7 @@
 import tkinter as tk
 
 from gui.gui_feature import GUIFeature
+from manager.dataset_manager import HiddenKeypointsFeaturePlot
 
 
 class FeatureManager():
@@ -28,16 +29,14 @@ class FeatureManager():
         self.run_id = None
         self.inference_name = None
         self.features.clear()
-        self._gui_clear_features()
+        self._gui_set_features()
 
     def _gui_set_features(self):
         self.gui_feature.listbox_features.delete(0, tk.END)
         for feature in self.features:
-            self.gui_feature.listbox_features.insert(tk.END, feature.name.upper() + '_X')
-            self.gui_feature.listbox_features.insert(tk.END, feature.name.upper() + '_Y')
-
-    def _gui_clear_features(self):
-        self.gui_feature.listbox_features.delete(0, tk.END)
+            if not HiddenKeypointsFeaturePlot.has_value(feature.name):
+                self.gui_feature.listbox_features.insert(tk.END, feature.name.upper() + '_X')
+                self.gui_feature.listbox_features.insert(tk.END, feature.name.upper() + '_Y')
 
     def feature_selected(self, event=None):
         selection = self.gui_feature.listbox_features.curselection()

@@ -14,6 +14,7 @@ from torchvision.ops import box_iou
 from data_types.run import Run
 from data_types.feature import Feature
 from utils import collect_image_infos, cvt_to_coco_json
+from manager.dataset_manager import InterpolationKeypoints
 from common import MMPOSE_DIR, MMPOSE_TEST_SCRIPT, MMPOSE_DATASET_DIR
 from common import MMDETECTION_DIR, MMDETECTION_TEST_SCRIPT
 from common import INFERENCES_DIR
@@ -348,11 +349,34 @@ class Inference:
                     for i, (x, y) in enumerate(zip(x_coord, y_coord)):
                         features[i].add(x, y)
 
+            left_shoulder = next(f for f in features if f.name == InterpolationKeypoints.LEFT_SHOULDER.value)
+            right_shoulder = next(f for f in features if f.name == InterpolationKeypoints.RIGHT_SHOULDER.value)
+            neck = next(f for f in features if f.name == InterpolationKeypoints.NECK.value)
+
+            left_ear = next(f for f in features if f.name == InterpolationKeypoints.LEFT_EAR.value)
+            right_ear = next(f for f in features if f.name == InterpolationKeypoints.RIGHT_EAR.value)
+            head = next(f for f in features if f.name == InterpolationKeypoints.HEAD.value)
+
+            self.interpolate_keypoint(neck, left_shoulder, right_shoulder)
+            self.interpolate_keypoint(head, left_ear, right_ear)
+
             run = Run(data.id, data, features)
             run.save(os.path.join(out_dir, f'run_{data.id}.pkl'))
 
         self.store_metadata(out_dir)
         self.load_runs()
+
+    def interpolate_keypoint(self, target, source_1, source_2):
+        assert len(source_1.x) == len(source_2.x)
+        assert len(source_1.y) == len(source_2.y)
+        for s1_x, s1_y, s2_x, s2_y in zip(source_1.x, source_1.y, source_2.x, source_2.y):
+            if -1 in (s1_x, s1_y, s2_x, s2_y):
+                continue
+            x1 = min(s1_x, s2_x)
+            y1 = min(s1_y, s2_y)
+            x2 = max(s1_x, s2_x)
+            y2 = max(s1_y, s2_y)
+            target.add(x1 + (x2 - x1) / 2, y1 + (y2 - y1) / 2)
 
     def store_metadata(self, out_dir):
         metadata_file = open(os.path.join(out_dir, 'metadata.json'), 'w', encoding='utf8')
