@@ -304,7 +304,7 @@ class Inference:
                     y = int(pred_bbox['bbox'][1])
                     w = int(pred_bbox['bbox'][2])
                     h = int(pred_bbox['bbox'][3])
-                    pred_bbox_xyxy = [x, y, x + w, x + h]
+                    pred_bbox_xyxy = [x, y, x + w, y + h]
                     pred_bbox_tensor = torch.FloatTensor(pred_bbox_xyxy)
                     pred_bbox_tensor = pred_bbox_tensor.unsqueeze(0)
 
@@ -324,25 +324,29 @@ class Inference:
                         bbox_tensor = bbox_tensor.unsqueeze(0)
 
                         iou = box_iou(pred_bbox_tensor, bbox_tensor)
-                        preds.append({
-                            'iou': iou,
-                            'bbox': bbox,
-                            'x_coord': x_coord,
-                            'y_coord': y_coord
-                        })
+                        score = pose['score']
+                        if iou > 0.3:
+                            preds.append({
+                                'iou': iou,
+                                'bbox': bbox,
+                                'x_coord': x_coord,
+                                'y_coord': y_coord,
+                                'score': score
+                            })
 
-                    preds = sorted(preds, key=lambda d: d['iou'], reverse=True)
+                    preds = sorted(preds, key=lambda d: d['score'], reverse=True)
+
                     if not preds:
                         preds.append({
-                            'x_coord': [None for i in range(n_keypoints)],
-                            'y_coord': [None for i in range(n_keypoints)]
+                            'x_coord': [-1 for i in range(n_keypoints)],
+                            'y_coord': [-1 for i in range(n_keypoints)]
                         })
-                    else:
-                        result = preds[0]
-                        x_coord = result['x_coord']
-                        y_coord = result['y_coord']
-                        for i, (x, y) in enumerate(zip(x_coord, y_coord)):
-                            features[i].add(x, y)
+
+                    result = preds[0]
+                    x_coord = result['x_coord']
+                    y_coord = result['y_coord']
+                    for i, (x, y) in enumerate(zip(x_coord, y_coord)):
+                        features[i].add(x, y)
 
             run = Run(data.id, data, features)
             run.save(os.path.join(out_dir, f'run_{data.id}.pkl'))
