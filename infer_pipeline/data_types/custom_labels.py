@@ -10,7 +10,7 @@ class ExplorerLabel():
         self.frame = frame
         self.textvariable = textvariable
         self.label = ttk.Label(self.frame, textvariable=self.textvariable,
-                               wraplength=wraplength or 10000, foreground='#058AFF')
+                               wraplength=wraplength or 10000, foreground='#0384FC')
         self.label.bind('<Button-1>', self.on_click)
         self.label.bind("<Enter>", self.on_enter)
         self.label.bind("<Leave>", self.on_leave)
