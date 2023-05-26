@@ -30,6 +30,8 @@ class Pipeline():
 
         self.root.font = font.nametofont('TkDefaultFont')
         self.root.font.configure(family='Noto', size=8)
+        self.root.font_bold = self.root.font.copy()
+        self.root.font_bold.configure(weight='bold')
         self.root.font_title = self.root.font.copy()
         self.root.font_title.configure(weight='bold', size=10)
         self.root.font_status = self.root.font.copy()
