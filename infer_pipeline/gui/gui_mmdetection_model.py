@@ -31,10 +31,10 @@ class GUIMMDetectionModel():
         self.listbox_models_scrollbar.config(command=self.listbox_models.yview)
 
         ttk.Label(self.frame, text='Model Details', font=self.root.font_title).place(x=0, y=110)
-        ttk.Label(self.frame, text='Name').place(x=0, y=140)
-        ttk.Label(self.frame, text='Key Metric').place(x=0, y=170)
-        ttk.Label(self.frame, text='Checkpoint').place(x=0, y=200)
-        ttk.Label(self.frame, text='Configuration').place(x=0, y=230)
+        ttk.Label(self.frame, text='Name', font=self.root.font_bold).place(x=0, y=140)
+        ttk.Label(self.frame, text='Key Metric', font=self.root.font_bold).place(x=0, y=170)
+        ttk.Label(self.frame, text='Checkpoint', font=self.root.font_bold).place(x=0, y=200)
+        ttk.Label(self.frame, text='Configuration', font=self.root.font_bold).place(x=0, y=230)
 
         self.details_name_var = tk.StringVar()
         ttk.Label(self.frame, textvariable=self.details_name_var).place(x=120, y=140)

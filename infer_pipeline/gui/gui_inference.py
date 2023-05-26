@@ -57,17 +57,18 @@ class GUIInference():
         self.listbox_inferences_scrollbar.config(command=self.listbox_inferences.yview)
 
         ttk.Label(self.frame, text='Inference Details', font=self.root.font_title).place(x=0, y=305)
-        ttk.Label(self.frame, text='ID').place(x=0, y=335)
-        ttk.Label(self.frame, text='Name').place(x=0, y=365)
-        ttk.Label(self.frame, text='Date').place(x=0, y=395)
-        ttk.Label(self.frame, text='Model MMPose').place(x=0, y=425)
-        ttk.Label(self.frame, text='Model MMDetection').place(x=0, y=455)
-        ttk.Label(self.frame, text='Data').place(x=0, y=485)
-        ttk.Label(self.frame, text='Duration (total - avg. per data - avg. per image)').place(x=0, y=655)
-        ttk.Label(self.frame, text='Detection').place(x=20, y=675)
-        ttk.Label(self.frame, text='Pose Estimation').place(x=20, y=695)
-        ttk.Label(self.frame, text='Average Confidence').place(x=0, y=725)
-        ttk.Label(self.frame, text='Description').place(x=0, y=755)
+        ttk.Label(self.frame, text='ID', font=self.root.font_bold).place(x=0, y=335)
+        ttk.Label(self.frame, text='Name', font=self.root.font_bold).place(x=0, y=365)
+        ttk.Label(self.frame, text='Date', font=self.root.font_bold).place(x=0, y=395)
+        ttk.Label(self.frame, text='Model MMPose', font=self.root.font_bold).place(x=0, y=425)
+        ttk.Label(self.frame, text='Model MMDetection', font=self.root.font_bold).place(x=0, y=455)
+        ttk.Label(self.frame, text='Data', font=self.root.font_bold).place(x=0, y=485)
+        ttk.Label(self.frame, text='Duration (total - avg. per data - avg. per image)',
+                  font=self.root.font_bold).place(x=0, y=655)
+        ttk.Label(self.frame, text='Detection', font=self.root.font_bold).place(x=20, y=675)
+        ttk.Label(self.frame, text='Pose Estimation', font=self.root.font_bold).place(x=20, y=695)
+        ttk.Label(self.frame, text='Average Confidence', font=self.root.font_bold).place(x=0, y=725)
+        ttk.Label(self.frame, text='Description', font=self.root.font_bold).place(x=0, y=755)
 
         self.details_listbox_data_var = tk.Variable()
         self.details_listbox_data = tk.Listbox(
@@ -90,28 +91,28 @@ class GUIInference():
         self.details_listbox_data_scrollbar.config(command=self.details_listbox_data.yview)
 
         self.details_id_var = tk.StringVar()
-        ttk.Label(self.frame, textvariable=self.details_id_var).place(x=120, y=335)
+        ttk.Label(self.frame, textvariable=self.details_id_var).place(x=130, y=335)
 
         self.details_name_var = tk.StringVar()
-        ttk.Label(self.frame, textvariable=self.details_name_var).place(x=120, y=365)
+        ttk.Label(self.frame, textvariable=self.details_name_var).place(x=130, y=365)
 
         self.details_date_var = tk.StringVar()
-        ttk.Label(self.frame, textvariable=self.details_date_var).place(x=120, y=395)
+        ttk.Label(self.frame, textvariable=self.details_date_var).place(x=130, y=395)
 
         self.details_model_mmpose_var = tk.StringVar()
-        ttk.Label(self.frame, textvariable=self.details_model_mmpose_var, wraplength=320).place(x=120, y=425)
+        ttk.Label(self.frame, textvariable=self.details_model_mmpose_var, wraplength=320).place(x=130, y=425)
 
         self.details_model_mmdetection_var = tk.StringVar()
-        ttk.Label(self.frame, textvariable=self.details_model_mmdetection_var, wraplength=320).place(x=120, y=455)
+        ttk.Label(self.frame, textvariable=self.details_model_mmdetection_var, wraplength=320).place(x=130, y=455)
 
         self.details_duration_bb_detection_var = tk.StringVar()
-        ttk.Label(self.frame, textvariable=self.details_duration_bb_detection_var).place(x=180, y=675)
+        ttk.Label(self.frame, textvariable=self.details_duration_bb_detection_var).place(x=190, y=675)
 
         self.details_duration_pose_estimation_var = tk.StringVar()
-        ttk.Label(self.frame, textvariable=self.details_duration_pose_estimation_var).place(x=180, y=695)
+        ttk.Label(self.frame, textvariable=self.details_duration_pose_estimation_var).place(x=190, y=695)
 
         self.details_score_var = tk.StringVar()
-        ttk.Label(self.frame, textvariable=self.details_score_var).place(x=120, y=725)
+        ttk.Label(self.frame, textvariable=self.details_score_var).place(x=130, y=725)
 
         self.details_description_var = tk.StringVar()
-        ttk.Label(self.frame, textvariable=self.details_description_var, wraplength=320).place(x=120, y=755)
+        ttk.Label(self.frame, textvariable=self.details_description_var, wraplength=320).place(x=130, y=755)
