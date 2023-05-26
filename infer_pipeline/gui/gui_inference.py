@@ -11,6 +11,7 @@ class GUIInference():
             listbox_inferences_select_callback,
             listbox_inferences_double_click_callback,
             listbox_data_select_callback,
+            listbox_data_double_click_callback,
             listbox_data_drag_callback,
             listbox_data_drop_callback):
         self.root = root
@@ -78,6 +79,7 @@ class GUIInference():
         )
         self.details_listbox_data.configure(exportselection=False)
         self.details_listbox_data.bind('<<ListboxSelect>>', listbox_data_select_callback)
+        self.details_listbox_data.bind('<Double-Button-1>', listbox_data_double_click_callback)
         self.details_listbox_data.bind('<B1-Motion>', listbox_data_drag_callback)
         self.details_listbox_data.bind('<ButtonRelease-1>', listbox_data_drop_callback)
         self.details_listbox_data.bind("<B1-Leave>", lambda event: "break")

@@ -44,6 +44,7 @@ class InferenceManager():
             listbox_inferences_select_callback=self.inference_selected,
             listbox_inferences_double_click_callback=self.on_inference_double_click,
             listbox_data_select_callback=self.data_selected,
+            listbox_data_double_click_callback=self.on_data_double_click,
             listbox_data_drag_callback=self.on_drag,
             listbox_data_drop_callback=self.on_drop)
         self.status_manager = status_manager
@@ -379,9 +380,19 @@ class InferenceManager():
         if not self.selected_inferences:
             return
 
-        selected_inference = self.selected_inferences[0]
-        path = os.path.join(INFERENCES_DIR, selected_inference.id).replace('/', '\\')
+        path = self.selected_inferences[0].path.replace('/', '\\')
         subprocess.run([
             'explorer.exe',
+            f'\\{WSL_PREFIX}{path}'
+        ], check=False)
+
+    def on_data_double_click(self, event=None):
+        if self.selected_run is None:
+            return
+
+        path = self.selected_run.path.replace('/', '\\')
+        subprocess.run([
+            'explorer.exe',
+            '/select,'
             f'\\{WSL_PREFIX}{path}'
         ], check=False)

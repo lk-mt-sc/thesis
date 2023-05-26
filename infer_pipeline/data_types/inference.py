@@ -42,6 +42,7 @@ class Inference:
         self.score_detection = metadata['score_detection'] if 'score_detection' in metadata else None
         self.score_pose_estimation = metadata['score_pose_estimation'] if 'score_pose_estimation' in metadata else None
         self.description = metadata['description']
+        self.path = metadata['path'] if 'path' in metadata else None
         self.runs = []
 
         self.load_runs()
@@ -59,6 +60,7 @@ class Inference:
 
         out_dir = os.path.join(INFERENCES_DIR, self.id)
         os.mkdir(out_dir)
+        self.path = out_dir
 
         mmdetection_result_dir = os.path.join(out_dir, 'mmdetection_result_dir')
         os.mkdir(mmdetection_result_dir)
@@ -382,8 +384,10 @@ class Inference:
             self.interpolate_keypoint(neck, left_shoulder, right_shoulder)
             self.interpolate_keypoint(head, left_ear, right_ear)
 
-            run = Run(data.id, data, features, bboxes, detection_scores, pose_estimation_scores)
-            run.save(os.path.join(out_dir, f'run_{data.id}.pkl'))
+            run_id = data.id
+            run_path = os.path.join(self.path, f'run_{run_id}.pkl')
+            run = Run(run_id, run_path, data, features, bboxes, detection_scores, pose_estimation_scores)
+            run.save(run_path)
 
         self.end_datetime_timestamp = datetime.timestamp(datetime.now())
         self.store_metadata(out_dir)
@@ -419,7 +423,8 @@ class Inference:
             'pose_estimation_duration': self.pose_estimation_duration,
             'score_detection': self.score_detection,
             'score_pose_estimation': self.score_pose_estimation,
-            'description': self.description
+            'description': self.description,
+            'path': self.path
         }
         json.dump(metadata, metadata_file)
 

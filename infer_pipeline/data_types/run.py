@@ -2,8 +2,9 @@ import pickle
 
 
 class Run:
-    def __init__(self, id_, data, features, bboxes, detection_scores, pose_estimation_scores):
+    def __init__(self, id_, path, data, features, bboxes, detection_scores, pose_estimation_scores):
         self.id = id_
+        self.path = path
         self.data = data
         self.features = features
         self.bboxes = bboxes
