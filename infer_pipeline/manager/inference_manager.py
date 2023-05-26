@@ -141,7 +141,8 @@ class InferenceManager():
         selected_inference = self.selected_inferences[0]
         self.gui_inference.details_id_var.set(selected_inference.id)
         self.gui_inference.details_name_var.set(selected_inference.name)
-        self.gui_inference.details_date_var.set(selected_inference.datetime)
+        self.gui_inference.details_date_var.set(
+            f'{selected_inference.start_datetime} - {selected_inference.end_datetime}')
         self.gui_inference.details_model_mmpose_var.set(selected_inference.mmpose_model)
         self.gui_inference.details_model_mmdetection_var.set(selected_inference.mmdetection_model)
         self.gui_inference.details_duration_bb_detection_var.set('-/-/-')

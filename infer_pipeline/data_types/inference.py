@@ -24,11 +24,16 @@ class Inference:
     def __init__(self, metadata):
         self.id = metadata['id']
         self.name = metadata['name']
-        self.datetime_timestamp = metadata['datetime'] if 'datetime' in metadata else None
-        if self.datetime_timestamp is None:
-            self.datetime = None
+        self.start_datetime_timestamp = metadata['start_datetime'] if 'start_datetime' in metadata else None
+        if self.start_datetime_timestamp is None:
+            self.start_datetime = None
         else:
-            self.datetime = datetime.fromtimestamp(self.datetime_timestamp).strftime('%d.%m.%Y %H:%M:%S')
+            self.start_datetime = datetime.fromtimestamp(self.start_datetime_timestamp).strftime('%d.%m.%Y %H:%M:%S')
+        self.end_datetime_timestamp = metadata['end_datetime'] if 'end_datetime' in metadata else None
+        if self.end_datetime_timestamp is None:
+            self.end_datetime = None
+        else:
+            self.end_datetime = datetime.fromtimestamp(self.end_datetime_timestamp).strftime('%d.%m.%Y %H:%M:%S')
         self.mmpose_model = metadata['mmpose_model']
         self.mmdetection_model = metadata['mmdetection_model']
         self.data = metadata['data']
@@ -40,14 +45,14 @@ class Inference:
 
     def __str__(self):
         print_str = f'{self.name}'
-        if self.datetime is not None:
-            print_str += f' | {self.datetime} | {self.id}'
+        if self.start_datetime is not None:
+            print_str += f' | {self.start_datetime} | {self.id}'
         else:
             print_str += f' | {self.id}'
         return print_str
 
     def infer(self, inference_progress, existing_dataset, dataset_type):
-        self.datetime_timestamp = datetime.timestamp(datetime.now())
+        self.start_datetime_timestamp = datetime.timestamp(datetime.now())
 
         out_dir = os.path.join(INFERENCES_DIR, self.id)
         os.mkdir(out_dir)
@@ -373,6 +378,7 @@ class Inference:
             run = Run(data.id, data, features, bboxes, detection_scores, pose_estimation_scores)
             run.save(os.path.join(out_dir, f'run_{data.id}.pkl'))
 
+        self.end_datetime_timestamp = datetime.timestamp(datetime.now())
         self.store_metadata(out_dir)
         self.load_runs()
 
@@ -393,7 +399,8 @@ class Inference:
         metadata = {
             'id': self.id,
             'name': self.name,
-            'datetime': self.datetime_timestamp,
+            'start_datetime': self.start_datetime_timestamp,
+            'end_datetime': self.end_datetime_timestamp,
             'mmpose_model': str(self.mmpose_model),
             'mmpose_model_config': self.mmpose_model.config,
             'mmpose_model_checkpoint': self.mmpose_model.checkpoint,
