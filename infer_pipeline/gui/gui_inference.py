@@ -8,7 +8,8 @@ class GUIInference():
             root,
             button_delete_callback,
             button_refresh_callback,
-            listbox_inferences_callback,
+            listbox_inferences_select_callback,
+            listbox_inferences_double_click_callback,
             listbox_data_select_callback,
             listbox_data_drag_callback,
             listbox_data_drop_callback):
@@ -46,7 +47,8 @@ class GUIInference():
             font=self.root.font_small
         )
         self.listbox_inferences.configure(exportselection=False)
-        self.listbox_inferences.bind('<<ListboxSelect>>', listbox_inferences_callback)
+        self.listbox_inferences.bind('<<ListboxSelect>>', listbox_inferences_select_callback)
+        self.listbox_inferences.bind('<Double-Button-1>', listbox_inferences_double_click_callback)
         self.listbox_inferences.place(x=0, y=30, width=440)
         self.listbox_inferences_scrollbar = ttk.Scrollbar(self.frame)
         self.listbox_inferences_scrollbar.place(x=440, y=30, width=20, height=263)

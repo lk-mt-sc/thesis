@@ -3,6 +3,7 @@ import glob
 import json
 import shutil
 import ctypes
+import subprocess
 import tkinter as tk
 from tkinter import messagebox
 from threading import Thread
@@ -10,7 +11,7 @@ from threading import Thread
 import torch
 
 from utils import id_generator
-from common import INFERENCES_DIR
+from common import INFERENCES_DIR, WSL_PREFIX
 from gui.gui_inference_queue import GUIInferenceQueue
 from gui.gui_inference import GUIInference
 from manager.status_manager import Status
@@ -40,7 +41,8 @@ class InferenceManager():
             root,
             button_delete_callback=self.ask_for_ok_delete_inferences,
             button_refresh_callback=self.fetch_inferences,
-            listbox_inferences_callback=self.inference_selected,
+            listbox_inferences_select_callback=self.inference_selected,
+            listbox_inferences_double_click_callback=self.on_inference_double_click,
             listbox_data_select_callback=self.data_selected,
             listbox_data_drag_callback=self.on_drag,
             listbox_data_drop_callback=self.on_drop)
@@ -372,3 +374,14 @@ class InferenceManager():
         title = self.selected_inferences[0].name + ' - Run ' + str(selected_run.id).zfill(2)
         x, y = event.widget.winfo_pointerxy()
         self.plot_manager.plot_image(x, y, selected_run, title, self.dataset_type)
+
+    def on_inference_double_click(self, event=None):
+        if not self.selected_inferences:
+            return
+
+        selected_inference = self.selected_inferences[0]
+        path = os.path.join(INFERENCES_DIR, selected_inference.id).replace('/', '\\')
+        subprocess.run([
+            'explorer.exe',
+            f'\\{WSL_PREFIX}{path}'
+        ], check=False)
