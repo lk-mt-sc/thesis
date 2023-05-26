@@ -91,6 +91,9 @@ class Inference:
             dataset_dir = existing_dataset
             ann_file = os.path.join(dataset_dir, 'ann_file.json')
 
+        n_runs = len(self.data)
+        n_images = len(glob.glob(os.path.join(dataset_dir, '*.png')))
+
         if data_mode == 'topdown':
             persistent_detection_found = False
             if existing_dataset is not None:
@@ -156,7 +159,7 @@ class Inference:
                 end = time.time()
                 duration = end-start
                 print('Duration of bounding box detection on the inference data (tot./avg. run/avg. image):')
-                print(f'{str(round(duration / 60, 2))} min/{str(round(duration / 64, 2))} sec/{str(round(duration / 12372, 4))} sec')
+                print(f'{str(round(duration / 60, 2))} min/{str(round(duration / n_runs, 2))} sec/{str(round(duration / n_images, 4))} sec')
                 results_pickle_file_path = mmdetection_result_dump_file
                 results_json_file_path = mmdetection_outfile_prefix + '.bbox.json'
 
@@ -194,7 +197,7 @@ class Inference:
                 scores = []
                 with open(results_json_file_path, 'r', encoding='utf8') as results_file:
                     results = json.load(results_file)
-                    assert len(results) == 12372
+                    assert len(results) == n_images
 
                     for result in results:
                         scores.append(result['score'])
@@ -253,7 +256,7 @@ class Inference:
         end = time.time()
         duration = end-start
         print('Duration of pose estimation on the inference data (tot./avg. run/avg. image):')
-        print(str(round(duration / 60, 2)), str(round(duration / 64, 2)), str(round(duration / 12372, 4)))
+        print(str(round(duration / 60, 2)), str(round(duration / n_runs, 2)), str(round(duration / n_images, 4)))
         results_json_file_path = mmpose_outfile_prefix + '.keypoints.json'
 
         with open(ann_file, 'r') as annotations_file:
