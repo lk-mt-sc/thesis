@@ -37,7 +37,8 @@ class Inference:
         self.mmpose_model = metadata['mmpose_model']
         self.mmdetection_model = metadata['mmdetection_model']
         self.data = metadata['data']
-        self.duration = metadata['duration']
+        self.detection_duration = metadata['detection_duration'] if 'detection_duration' in metadata else None
+        self.pose_estimation_duration = metadata['pose_estimation_duration'] if 'pose_estimation_duration' in metadata else None
         self.description = metadata['description']
         self.runs = []
 
@@ -118,6 +119,7 @@ class Inference:
                     shutil.copyfile(persistent_results_pickle_file_path, results_pickle_file_path)
                     shutil.copyfile(persistent_results_json_file_path, results_json_file_path)
                     ann_file = os.path.join(existing_dataset, 'ann_file.json')
+                    self.detection_duration = (0, 0, 0)
 
             if not persistent_detection_found:
                 mmdetection_outfile_prefix = os.path.join(mmdetection_result_dir, str(self.id))
@@ -162,9 +164,10 @@ class Inference:
                         inference_progress.value = 'BB. DETECTION ' + f'{progress_percentage}%'
 
                 end = time.time()
-                duration = end-start
-                print('Duration of bounding box detection on the inference data (tot./avg. run/avg. image):')
-                print(f'{str(round(duration / 60, 2))} min/{str(round(duration / n_runs, 2))} sec/{str(round(duration / n_images, 4))} sec')
+                duration = end - start
+                self.detection_duration = (round(duration / 60, 2),
+                                           round(duration / n_runs, 2),
+                                           round(duration / n_images, 4))
                 results_pickle_file_path = mmdetection_result_dump_file
                 results_json_file_path = mmdetection_outfile_prefix + '.bbox.json'
 
@@ -259,9 +262,10 @@ class Inference:
                 inference_progress.value = 'POSE EST. ' + f'{progress_percentage}%'
 
         end = time.time()
-        duration = end-start
-        print('Duration of pose estimation on the inference data (tot./avg. run/avg. image):')
-        print(str(round(duration / 60, 2)), str(round(duration / n_runs, 2)), str(round(duration / n_images, 4)))
+        duration = end - start
+        self.pose_estimation_duration = (round(duration / 60, 2),
+                                         round(duration / n_runs, 2),
+                                         round(duration / n_images, 4))
         results_json_file_path = mmpose_outfile_prefix + '.keypoints.json'
 
         with open(ann_file, 'r') as annotations_file:
@@ -408,7 +412,8 @@ class Inference:
             'mmdetection_model_config': self.mmdetection_model.config,
             'mmdetection_model_checkpoint': self.mmdetection_model.checkpoint,
             'data': [int(d.id) for d in self.data],
-            'duration': self.duration,
+            'detection_duration': self.detection_duration,
+            'pose_estimation_duration': self.pose_estimation_duration,
             'description': self.description
         }
         json.dump(metadata, metadata_file)

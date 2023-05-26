@@ -145,8 +145,12 @@ class InferenceManager():
             f'{selected_inference.start_datetime} - {selected_inference.end_datetime}')
         self.gui_inference.details_model_mmpose_var.set(selected_inference.mmpose_model)
         self.gui_inference.details_model_mmdetection_var.set(selected_inference.mmdetection_model)
-        self.gui_inference.details_duration_bb_detection_var.set('-/-/-')
-        self.gui_inference.details_duration_pose_estimation_var.set('-/-/-')
+        duration = selected_inference.detection_duration
+        self.gui_inference.details_duration_bb_detection_var.set(
+            f'{str(duration[0])} min - {str(duration[1])} sec - {str(duration[2])} sec')
+        duration = selected_inference.pose_estimation_duration
+        self.gui_inference.details_duration_pose_estimation_var.set(
+            f'{str(duration[0])} min - {str(duration[1])} sec - {str(duration[2])} sec')
         self.gui_inference.details_description_var.set(selected_inference.description)
 
         self.gui_inference.details_listbox_data.delete(0, tk.END)
@@ -198,15 +202,12 @@ class InferenceManager():
         if not inference_description:
             inference_description = 'No description provided.'
 
-        inference_duration = []
-
         inference = Inference(metadata={
             'id': inference_id,
             'name': inference_name,
             'mmpose_model': inference_mmpose_model,
             'mmdetection_model': inference_mmdetection_model,
             'data': inference_data,
-            'duration': inference_duration,
             'description': inference_description
         })
 

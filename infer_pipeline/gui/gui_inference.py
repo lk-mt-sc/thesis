@@ -60,7 +60,7 @@ class GUIInference():
         ttk.Label(self.frame, text='Model MMPose').place(x=0, y=425)
         ttk.Label(self.frame, text='Model MMDetection').place(x=0, y=455)
         ttk.Label(self.frame, text='Data').place(x=0, y=485)
-        ttk.Label(self.frame, text='Duration (total/avg. per data/avg. per image)').place(x=0, y=655)
+        ttk.Label(self.frame, text='Duration (total - avg. per data - avg. per image)').place(x=0, y=655)
         ttk.Label(self.frame, text='Bounding Box Detection').place(x=20, y=675)
         ttk.Label(self.frame, text='Pose Estimation').place(x=20, y=695)
         ttk.Label(self.frame, text='Description').place(x=0, y=725)
