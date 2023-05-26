@@ -1,6 +1,8 @@
 import tkinter as tk
 from tkinter import ttk
 
+from data_types.custom_labels import ExplorerLabel
+
 
 class GUIMMDetectionModel():
     def __init__(self, root, listbox_models_callback):
@@ -41,7 +43,9 @@ class GUIMMDetectionModel():
         ttk.Label(self.frame, textvariable=self.details_key_metric_var).place(x=120, y=170)
 
         self.details_checkpoint_var = tk.StringVar()
-        ttk.Label(self.frame, textvariable=self.details_checkpoint_var, wraplength=320).place(x=120, y=200)
+        checkpoint_label = ExplorerLabel(self.frame, textvariable=self.details_checkpoint_var, wraplength=320)
+        checkpoint_label.place(x=120, y=200)
 
         self.details_config_var = tk.StringVar()
-        ttk.Label(self.frame, textvariable=self.details_config_var, wraplength=320).place(x=120, y=230)
+        config_label = ExplorerLabel(self.frame, textvariable=self.details_config_var, wraplength=320)
+        config_label.place(x=120, y=230)
