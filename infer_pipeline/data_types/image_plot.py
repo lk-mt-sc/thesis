@@ -1,7 +1,8 @@
-import cv2 as cv
-import matplotlib
 import tkinter as tk
 from tkinter import ttk
+
+import cv2 as cv
+import matplotlib
 from matplotlib.figure import Figure
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 from matplotlib.backends.backend_tkagg import NavigationToolbar2Tk
@@ -140,7 +141,7 @@ class ImagePlot():
 
         for feature in self.features:
             if -1 in (feature.x[self.slider_value], feature.y[self.slider_value]):
-                image = cv.putText(image, 'no pose estimations', org=(10, 30), color=(255, 255, 255),
+                image = cv.putText(image, 'no pose estimations', org=(10, 30), color=(1.0, 1.0, 1.0),
                                    fontFace=cv.FONT_HERSHEY_SIMPLEX, fontScale=1, thickness=1, lineType=cv.LINE_AA)
                 break
         else:
@@ -158,7 +159,7 @@ class ImagePlot():
                 if feature_name == key and not HiddenKeypointsImagePlot.has_value(feature_name):
                     x = int(feature.x[self.slider_value])
                     y = int(feature.y[self.slider_value])
-                    color = keypoint['color']
+                    color = [c / 256 for c in keypoint['color']]
                     image = cv.circle(image, center=(x, y), radius=5, thickness=-1, color=color)
 
     def _draw_skeleton(self, image):
@@ -170,7 +171,7 @@ class ImagePlot():
             if HiddenKeypointsImagePlot.has_value(first_keypoint.name) \
                     or HiddenKeypointsImagePlot.has_value(second_keypoint.name):
                 continue
-            color = limb['color']
+            color = [c / 256 for c in limb['color']]
             x1 = int(first_keypoint.x[self.slider_value])
             y1 = int(first_keypoint.y[self.slider_value])
             x2 = int(second_keypoint.x[self.slider_value])
@@ -180,7 +181,7 @@ class ImagePlot():
     def _draw_bounding_box_and_scores(self, image, bbox, detection_score, pose_estimation_score):
         bbox = [int(i) for i in bbox]
         x, y, w, h = bbox[0], bbox[1], bbox[2], bbox[3]
-        image = cv.rectangle(image, pt1=(x, y), pt2=(x + w, y + h), color=(0, 0, 255), thickness=2)
+        image = cv.rectangle(image, pt1=(x, y), pt2=(x + w, y + h), color=(0, 0, 1.0), thickness=2)
         score = '{:.4f}'.format(round(detection_score, 4)) + '/' + '{:.4f}'.format(round(pose_estimation_score, 4))
-        image = cv.putText(image, score, org=(x, y - 7), color=(0, 0, 255),
+        image = cv.putText(image, score, org=(x, y - 7), color=(0, 0, 1.0),
                            fontFace=cv.FONT_HERSHEY_SIMPLEX, fontScale=0.65, thickness=1, lineType=cv.LINE_AA)
