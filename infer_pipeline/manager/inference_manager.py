@@ -305,8 +305,8 @@ class InferenceManager():
             self._gui_set_details()
         else:
             self._gui_clear_details()
+            self.plot_manager.clear_images()
 
-        self.plot_manager.clear_images()
         self.feature_manager.clear()
         self.selected_run = None
 
