@@ -18,6 +18,7 @@ class ImagePlot():
         self.default_image = default_image
         self.image = self.default_image
         self.title = tk.StringVar()
+        self.title.set('No Inference Selected')
         self.figure = Figure(figsize=(self.ratio * 10, 10), dpi=96, facecolor=BACKGROUND_COLOR_HEX)
         self.plot = self.figure.add_subplot()
         self.figure.subplots_adjust(left=0.03, bottom=0, right=0.97, top=1)
@@ -91,7 +92,7 @@ class ImagePlot():
         self.detection_scores.clear()
         self.pose_estimation_scores.clear()
         self.slider_value = 0
-        self.title.set('')
+        self.title.set('No Inference Selected')
         self.dataset_type = None
         self._gui_clear_image()
 
