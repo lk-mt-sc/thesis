@@ -11,6 +11,7 @@ from model_zoo import ModelZoo
 from common import INFER_PIPELINE_MMDPOSE_CONFIGS_DIR
 from common import MMPOSE_CHECKPOINTS_DIR
 
+
 class MMPoseModelManager():
     def __init__(self, root, status_manager):
         self.gui_mmpose_model = GUIMMPoseModel(
@@ -63,6 +64,7 @@ class MMPoseModelManager():
         if thread.is_alive():
             self.gui_mmpose_model.root.after(50, lambda: self.monitor_fetch_thread(thread))
         else:
+            self.custom_models.clear()
             self.fetch_custom_models()
             self.selected_model = None
             self.filter()
