@@ -145,7 +145,6 @@ class InferenceManager():
         self.gui_inference.details_model_mmpose_var.set(selected_inference.mmpose_model)
         self.gui_inference.details_model_mmdetection_var.set(selected_inference.mmdetection_model)
         self.gui_inference.details_duration_bb_detection_var.set('-/-/-')
-        self.gui_inference.details_duration_bb_classification_var.set('-/-/-')
         self.gui_inference.details_duration_pose_estimation_var.set('-/-/-')
         self.gui_inference.details_description_var.set(selected_inference.description)
 
@@ -160,7 +159,6 @@ class InferenceManager():
         self.gui_inference.details_model_mmpose_var.set('')
         self.gui_inference.details_model_mmdetection_var.set('')
         self.gui_inference.details_duration_bb_detection_var.set('')
-        self.gui_inference.details_duration_bb_classification_var.set('')
         self.gui_inference.details_duration_pose_estimation_var.set('')
         self.gui_inference.details_description_var.set('')
 

@@ -24,7 +24,7 @@ class GUIInferenceQueue():
         self.text_infer_name.insert('1.0', 'New Inference')
         self.text_infer_name.place(x=80, y=30, width=250)
 
-        ttk.Label(self.frame, text='Description \n(max. 320)').place(x=0, y=60)
+        ttk.Label(self.frame, text='Description \n(max. 400)').place(x=0, y=60)
         self.text_infer_description = tk.Text(self.frame, height=3, font=self.root.font_small)
         self.text_infer_description.place(x=80, y=60, width=250)
 

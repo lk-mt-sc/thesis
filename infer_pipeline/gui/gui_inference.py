@@ -60,16 +60,15 @@ class GUIInference():
         ttk.Label(self.frame, text='Model MMPose').place(x=0, y=425)
         ttk.Label(self.frame, text='Model MMDetection').place(x=0, y=455)
         ttk.Label(self.frame, text='Data').place(x=0, y=485)
-        ttk.Label(self.frame, text='Duration (total/avg. per data/avg. per image)').place(x=0, y=590)
-        ttk.Label(self.frame, text='Bounding Box Detection').place(x=20, y=610)
-        ttk.Label(self.frame, text='Bounding Box Classification').place(x=20, y=630)
-        ttk.Label(self.frame, text='Pose Estimation').place(x=20, y=650)
-        ttk.Label(self.frame, text='Description').place(x=0, y=680)
+        ttk.Label(self.frame, text='Duration (total/avg. per data/avg. per image)').place(x=0, y=655)
+        ttk.Label(self.frame, text='Bounding Box Detection').place(x=20, y=675)
+        ttk.Label(self.frame, text='Pose Estimation').place(x=20, y=695)
+        ttk.Label(self.frame, text='Description').place(x=0, y=725)
 
         self.details_listbox_data_var = tk.Variable()
         self.details_listbox_data = tk.Listbox(
             self.frame,
-            height=5,
+            height=10,
             listvariable=self.details_listbox_data_var,
             selectmode=tk.SINGLE,
             font=self.root.font_small
@@ -81,7 +80,7 @@ class GUIInference():
         self.details_listbox_data.bind("<B1-Leave>", lambda event: "break")
         self.details_listbox_data.place(x=0, y=510, width=440)
         self.details_listbox_data_scrollbar = ttk.Scrollbar(self.frame)
-        self.details_listbox_data_scrollbar.place(x=440, y=510, width=20, height=68)
+        self.details_listbox_data_scrollbar.place(x=440, y=510, width=20, height=132)
         self.details_listbox_data.config(yscrollcommand=self.details_listbox_data_scrollbar.set)
         self.details_listbox_data_scrollbar.config(command=self.details_listbox_data.yview)
 
@@ -101,13 +100,10 @@ class GUIInference():
         ttk.Label(self.frame, textvariable=self.details_model_mmdetection_var, wraplength=320).place(x=120, y=455)
 
         self.details_duration_bb_detection_var = tk.StringVar()
-        ttk.Label(self.frame, textvariable=self.details_duration_bb_detection_var).place(x=180, y=610)
-
-        self.details_duration_bb_classification_var = tk.StringVar()
-        ttk.Label(self.frame, textvariable=self.details_duration_bb_classification_var).place(x=180, y=630)
+        ttk.Label(self.frame, textvariable=self.details_duration_bb_detection_var).place(x=180, y=675)
 
         self.details_duration_pose_estimation_var = tk.StringVar()
-        ttk.Label(self.frame, textvariable=self.details_duration_pose_estimation_var).place(x=180, y=650)
+        ttk.Label(self.frame, textvariable=self.details_duration_pose_estimation_var).place(x=180, y=695)
 
         self.details_description_var = tk.StringVar()
-        ttk.Label(self.frame, textvariable=self.details_description_var, wraplength=320).place(x=120, y=680)
+        ttk.Label(self.frame, textvariable=self.details_description_var, wraplength=320).place(x=120, y=725)
