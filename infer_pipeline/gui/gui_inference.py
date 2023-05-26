@@ -91,28 +91,28 @@ class GUIInference():
         self.details_listbox_data_scrollbar.config(command=self.details_listbox_data.yview)
 
         self.details_id_var = tk.StringVar()
-        ttk.Label(self.frame, textvariable=self.details_id_var).place(x=130, y=335)
+        ttk.Label(self.frame, textvariable=self.details_id_var).place(x=135, y=335)
 
         self.details_name_var = tk.StringVar()
-        ttk.Label(self.frame, textvariable=self.details_name_var).place(x=130, y=365)
+        ttk.Label(self.frame, textvariable=self.details_name_var).place(x=135, y=365)
 
         self.details_date_var = tk.StringVar()
-        ttk.Label(self.frame, textvariable=self.details_date_var).place(x=130, y=395)
+        ttk.Label(self.frame, textvariable=self.details_date_var).place(x=135, y=395)
 
         self.details_model_mmpose_var = tk.StringVar()
-        ttk.Label(self.frame, textvariable=self.details_model_mmpose_var, wraplength=320).place(x=130, y=425)
+        ttk.Label(self.frame, textvariable=self.details_model_mmpose_var, wraplength=310).place(x=135, y=425)
 
         self.details_model_mmdetection_var = tk.StringVar()
-        ttk.Label(self.frame, textvariable=self.details_model_mmdetection_var, wraplength=320).place(x=130, y=455)
+        ttk.Label(self.frame, textvariable=self.details_model_mmdetection_var, wraplength=310).place(x=135, y=455)
 
         self.details_duration_bb_detection_var = tk.StringVar()
-        ttk.Label(self.frame, textvariable=self.details_duration_bb_detection_var).place(x=190, y=675)
+        ttk.Label(self.frame, textvariable=self.details_duration_bb_detection_var).place(x=135, y=675)
 
         self.details_duration_pose_estimation_var = tk.StringVar()
-        ttk.Label(self.frame, textvariable=self.details_duration_pose_estimation_var).place(x=190, y=695)
+        ttk.Label(self.frame, textvariable=self.details_duration_pose_estimation_var).place(x=135, y=695)
 
         self.details_score_var = tk.StringVar()
-        ttk.Label(self.frame, textvariable=self.details_score_var).place(x=130, y=725)
+        ttk.Label(self.frame, textvariable=self.details_score_var).place(x=135, y=725)
 
         self.details_description_var = tk.StringVar()
-        ttk.Label(self.frame, textvariable=self.details_description_var, wraplength=320).place(x=130, y=755)
+        ttk.Label(self.frame, textvariable=self.details_description_var, wraplength=310).place(x=135, y=755)
