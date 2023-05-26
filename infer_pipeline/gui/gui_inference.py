@@ -61,9 +61,10 @@ class GUIInference():
         ttk.Label(self.frame, text='Model MMDetection').place(x=0, y=455)
         ttk.Label(self.frame, text='Data').place(x=0, y=485)
         ttk.Label(self.frame, text='Duration (total - avg. per data - avg. per image)').place(x=0, y=655)
-        ttk.Label(self.frame, text='Bounding Box Detection').place(x=20, y=675)
+        ttk.Label(self.frame, text='Detection').place(x=20, y=675)
         ttk.Label(self.frame, text='Pose Estimation').place(x=20, y=695)
-        ttk.Label(self.frame, text='Description').place(x=0, y=725)
+        ttk.Label(self.frame, text='Average Confidence').place(x=0, y=725)
+        ttk.Label(self.frame, text='Description').place(x=0, y=755)
 
         self.details_listbox_data_var = tk.Variable()
         self.details_listbox_data = tk.Listbox(
@@ -105,5 +106,8 @@ class GUIInference():
         self.details_duration_pose_estimation_var = tk.StringVar()
         ttk.Label(self.frame, textvariable=self.details_duration_pose_estimation_var).place(x=180, y=695)
 
+        self.details_score_var = tk.StringVar()
+        ttk.Label(self.frame, textvariable=self.details_score_var).place(x=120, y=725)
+
         self.details_description_var = tk.StringVar()
-        ttk.Label(self.frame, textvariable=self.details_description_var, wraplength=320).place(x=120, y=725)
+        ttk.Label(self.frame, textvariable=self.details_description_var, wraplength=320).place(x=120, y=755)

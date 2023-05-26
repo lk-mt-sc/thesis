@@ -39,6 +39,8 @@ class Inference:
         self.data = metadata['data']
         self.detection_duration = metadata['detection_duration'] if 'detection_duration' in metadata else None
         self.pose_estimation_duration = metadata['pose_estimation_duration'] if 'pose_estimation_duration' in metadata else None
+        self.score_detection = metadata['score_detection'] if 'score_detection' in metadata else None
+        self.score_pose_estimation = metadata['score_pose_estimation'] if 'score_pose_estimation' in metadata else None
         self.description = metadata['description']
         self.runs = []
 
@@ -202,15 +204,10 @@ class Inference:
 
                 inference_progress.value = 'CALC. AVG. CONFIDENCE'
 
-                scores = []
                 with open(results_json_file_path, 'r', encoding='utf8') as results_file:
                     results = json.load(results_file)
-                    assert len(results) == n_images
-
-                    for result in results:
-                        scores.append(result['score'])
-
-                print(f'Average confidence of bounding box detection on the inference data: {mean(scores)}')
+                    n_results = len(results)
+                    assert n_results == n_images, f'Missing detection for {n_images - n_results} images.'
 
         mmpose_result_dir = os.path.join(out_dir, 'mmpose_result_dir')
         os.mkdir(mmpose_result_dir)
@@ -368,6 +365,12 @@ class Inference:
                 detection_scores.append(pred_bbox['score'])
                 pose_estimation_scores.append(result['score'])
 
+            detection_scores_for_mean = detection_scores
+            self.score_detection = mean(detection_scores_for_mean)
+
+            pose_estimation_scores_for_mean = [score for score in pose_estimation_scores if score != -1]
+            self.score_pose_estimation = mean(pose_estimation_scores_for_mean)
+
             left_shoulder = next(f for f in features if f.name == InterpolationKeypoints.LEFT_SHOULDER.value)
             right_shoulder = next(f for f in features if f.name == InterpolationKeypoints.RIGHT_SHOULDER.value)
             neck = next(f for f in features if f.name == InterpolationKeypoints.NECK.value)
@@ -414,6 +417,8 @@ class Inference:
             'data': [int(d.id) for d in self.data],
             'detection_duration': self.detection_duration,
             'pose_estimation_duration': self.pose_estimation_duration,
+            'score_detection': self.score_detection,
+            'score_pose_estimation': self.score_pose_estimation,
             'description': self.description
         }
         json.dump(metadata, metadata_file)

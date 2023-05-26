@@ -152,6 +152,9 @@ class InferenceManager():
         self.gui_inference.details_duration_pose_estimation_var.set(
             f'{str(duration[0])} min - {str(duration[1])} sec - {str(duration[2])} sec')
         self.gui_inference.details_description_var.set(selected_inference.description)
+        score = '{:.4f} (Detection)'.format(round(selected_inference.score_detection, 4))
+        score += ' - {:.4f} (Pose Estimation)'.format(round(selected_inference.score_pose_estimation, 4))
+        self.gui_inference.details_score_var.set(score)
 
         self.gui_inference.details_listbox_data.delete(0, tk.END)
         for data in selected_inference.data:
