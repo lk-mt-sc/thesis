@@ -17,7 +17,6 @@ class ImagePlot():
         self.default_image = default_image
         self.image = self.default_image
         self.title = tk.StringVar()
-        self.title.set('jojojo')
         self.figure = Figure(figsize=(self.ratio * 10, 10), dpi=96, facecolor=BACKGROUND_COLOR_HEX)
         self.plot = self.figure.add_subplot()
         self.figure.subplots_adjust(left=0.03, bottom=0, right=0.97, top=1)
@@ -28,7 +27,7 @@ class ImagePlot():
         self.canvas = FigureCanvasTkAgg(self.figure, master=self.frame)
         self.canvas.draw()
 
-        self.label_title = ttk.Label(self.frame, text=self.title.get())
+        self.label_title = ttk.Label(self.frame, textvariable=self.title)
         self.label_title.place(x=25, y=80)
 
         self.toolbar = NavigationToolbar2Tk(self.canvas,
@@ -67,7 +66,7 @@ class ImagePlot():
         self.slider_value = 0
         self.dataset_type = None
 
-    def plot_image(self, images, features, bboxes, detection_scores, pose_estimation_scores, dataset_type):
+    def plot_image(self, images, features, bboxes, detection_scores, pose_estimation_scores, title, dataset_type):
         self.images = images
         self.n_images = len(self.images)
         self.features = features
@@ -76,6 +75,7 @@ class ImagePlot():
         self.pose_estimation_scores = pose_estimation_scores
         self.slider_value = 0
         self.image = self.images[self.slider_value]
+        self.title.set(title)
         self.dataset_type = dataset_type
         self._gui_enable_slider()
         self._gui_set_slider_from_to(from_=0, to=self.n_images-1)
@@ -90,6 +90,7 @@ class ImagePlot():
         self.detection_scores.clear()
         self.pose_estimation_scores.clear()
         self.slider_value = 0
+        self.title.set('')
         self.dataset_type = None
         self._gui_clear_image()
 

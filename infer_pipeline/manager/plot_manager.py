@@ -49,7 +49,7 @@ class PlotManager():
         self.manual_tab_changed = False
         self.old_tab = 0
 
-    def plot_image(self, x, y, run, dataset_type):
+    def plot_image(self, x, y, run, title, dataset_type):
         for image_plot in self.image_plots:
             frame = image_plot.frame
             fx, fy, fw, fh = frame.winfo_rootx(), frame.winfo_rooty(), frame.winfo_width(), frame.winfo_height()
@@ -60,6 +60,7 @@ class PlotManager():
                     run.bboxes.copy(),
                     run.detection_scores.copy(),
                     run.pose_estimation_scores.copy(),
+                    title,
                     dataset_type
                 )
                 break

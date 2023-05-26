@@ -364,5 +364,6 @@ class InferenceManager():
         if selected_run is None:
             return
 
+        title = self.selected_inferences[0].name + ' - Run ' + str(selected_run.id).zfill(2)
         x, y = event.widget.winfo_pointerxy()
-        self.plot_manager.plot_image(x, y, selected_run, self.dataset_type)
+        self.plot_manager.plot_image(x, y, selected_run, title, self.dataset_type)
