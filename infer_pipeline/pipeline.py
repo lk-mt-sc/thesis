@@ -74,20 +74,6 @@ class Pipeline():
         if key == 'q':
             self.root.destroy()
 
-        # DEBUG
-        if key == 'd':
-            self.mmpose_model_manager.gui_mmpose_model.listbox_models.select_set(0)
-            self.mmpose_model_manager.gui_mmpose_model.listbox_models.event_generate('<<ListboxSelect>>')
-
-            self.mmdetection_model_manager.gui_mmdetection_model.listbox_models.select_set(0)
-            self.mmdetection_model_manager.gui_mmdetection_model.listbox_models.event_generate('<<ListboxSelect>>')
-
-            self.data_manager.gui_data.listbox_data.select_set(0)
-            self.data_manager.gui_data.listbox_data.event_generate('<<ListboxSelect>>')
-
-            self.inference_manager.queue_inference_add()
-            self.inference_manager.infer()
-
     def mainloop(self):
         self.root.mainloop()
 
