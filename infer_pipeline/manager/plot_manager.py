@@ -35,8 +35,8 @@ class PlotManager():
     def __init__(self, root, status_manager):
         self.gui_plot = GUIPlot(
             root,
-            notebook_tab_changed_callback=self.notebook_tab_changed,
-            notebook_tab_double_clicked_callback=self.rename_plot,
+            notebook_tab_change_callback=self.notebook_tab_changed,
+            notebook_tab_double_click_callback=self.rename_plot,
             notebook_tab_middle_click_callback=self.delete_plot
         )
         self.status_manager = status_manager

@@ -8,8 +8,8 @@ class GUIPlot():
     def __init__(
         self,
         root,
-        notebook_tab_changed_callback,
-        notebook_tab_double_clicked_callback,
+        notebook_tab_change_callback,
+        notebook_tab_double_click_callback,
         notebook_tab_middle_click_callback,
     ):
         self.root = root
@@ -21,8 +21,8 @@ class GUIPlot():
         self.title.place(x=0, y=0)
 
         self.notebook = ttk.Notebook(self.frame)
-        self.notebook.bind('<<NotebookTabChanged>>', notebook_tab_changed_callback)
-        self.notebook.bind('<Double-Button-1>', notebook_tab_double_clicked_callback)
+        self.notebook.bind('<<NotebookTabChanged>>', notebook_tab_change_callback)
+        self.notebook.bind('<Double-Button-1>', notebook_tab_double_click_callback)
         self.notebook.bind('<Button-2>', notebook_tab_middle_click_callback)
 
         w = 960
