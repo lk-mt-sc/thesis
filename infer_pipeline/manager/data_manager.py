@@ -1,6 +1,7 @@
 import os
 import glob
 import json
+import subprocess
 import tkinter as tk
 from threading import Thread
 
@@ -19,7 +20,8 @@ class DataManager():
             combobox_data_callback=self.filter,
             button_select_all_callback=self.select_all_data,
             button_refresh_callback=self.fetch_data,
-            listbox_data_callback=self.data_selected)
+            listbox_data_select_callback=self.data_selected,
+            listbox_data_double_click_callback=self.on_double_click)
         self.status_manager = status_manager
         self.data_all = []
         self.data_show = []
@@ -164,3 +166,15 @@ class DataManager():
 
     def get_data(self, id_):
         return next((data for data in self.data_all if data.id == id_), None)
+
+    def on_double_click(self, event=None):
+        if not self.selected_data:
+            return
+
+        selected_data = self.selected_data[0]
+        prefix = '\\wsl.localhost\\Ubuntu-22.04'
+        path = selected_data.path.replace('/', '\\')
+        subprocess.run([
+            'explorer.exe',
+            f'\\{prefix}{path}'
+        ], check=False)

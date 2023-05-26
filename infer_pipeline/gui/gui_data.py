@@ -9,7 +9,8 @@ class GUIData():
             combobox_data_callback,
             button_select_all_callback,
             button_refresh_callback,
-            listbox_data_callback
+            listbox_data_select_callback,
+            listbox_data_double_click_callback
     ):
         self.root = root
 
@@ -61,7 +62,8 @@ class GUIData():
             selectmode=tk.EXTENDED
         )
         self.listbox_data.configure(exportselection=False)
-        self.listbox_data.bind('<<ListboxSelect>>', listbox_data_callback)
+        self.listbox_data.bind('<<ListboxSelect>>', listbox_data_select_callback)
+        self.listbox_data.bind('<Double-Button-1>', listbox_data_double_click_callback)
         self.listbox_data.place(x=0, y=30, width=440)
         self.listbox_data_scrollbar = ttk.Scrollbar(self.frame)
         self.listbox_data_scrollbar.place(x=440, y=30, width=20, height=100)
