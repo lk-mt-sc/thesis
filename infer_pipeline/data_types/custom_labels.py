@@ -2,6 +2,8 @@ import subprocess
 
 from tkinter import ttk
 
+from common import WSL_PREFIX
+
 
 class ExplorerLabel():
     def __init__(self, frame, textvariable, wraplength=None):
@@ -17,12 +19,11 @@ class ExplorerLabel():
         self.label.place(x=x, y=y)
 
     def on_click(self, event=None):
-        prefix = '\\wsl.localhost\\Ubuntu-22.04'
         path = self.textvariable.get().replace('/', '\\')
         subprocess.run([
             'explorer.exe',
             '/select,',
-            f'\\{prefix}{path}'
+            f'\\{WSL_PREFIX}{path}'
         ], check=False)
 
     def on_enter(self, event=None):

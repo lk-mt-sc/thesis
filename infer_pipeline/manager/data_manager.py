@@ -10,7 +10,7 @@ from gui.gui_data import GUIData
 from manager.status_manager import Status
 from data_types.data import Data
 
-from common import MMPOSE_DATA_DIR
+from common import MMPOSE_DATA_DIR, WSL_PREFIX
 
 
 class DataManager():
@@ -172,9 +172,8 @@ class DataManager():
             return
 
         selected_data = self.selected_data[0]
-        prefix = '\\wsl.localhost\\Ubuntu-22.04'
         path = selected_data.path.replace('/', '\\')
         subprocess.run([
             'explorer.exe',
-            f'\\{prefix}{path}'
+            f'\\{WSL_PREFIX}{path}'
         ], check=False)

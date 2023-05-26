@@ -29,3 +29,5 @@ MMDETECTION_TEST_SCRIPT = os.path.join(MMDETECTION_DIR, 'tools', 'test.py')
 
 BACKGROUND_COLOR_HEX = '#DCDAD5'
 BACKGROUND_COLOR_RGB = matplotlib.colors.to_rgb(BACKGROUND_COLOR_HEX)
+
+WSL_PREFIX = '\\wsl.localhost\\Ubuntu-22.04'
