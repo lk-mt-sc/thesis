@@ -23,11 +23,12 @@ class InferenceManager():
     def __init__(
             self,
             root,
-            status_manager,
             dataset_manager,
+            status_manager,
             mmpose_model_manager,
             mmdetection_model_manager,
             data_manager,
+            metric_manager,
             plot_manager,
             feature_manager
     ):
@@ -47,11 +48,12 @@ class InferenceManager():
             listbox_data_double_click_callback=self.on_data_double_click,
             listbox_data_drag_callback=self.on_drag,
             listbox_data_drop_callback=self.on_drop)
-        self.status_manager = status_manager
         self.dataset_manager = dataset_manager
+        self.status_manager = status_manager
         self.mmpose_model_manager = mmpose_model_manager
         self.mmdetection_model_manager = mmdetection_model_manager
         self.data_manager = data_manager
+        self.metric_manager = metric_manager
         self.plot_manager = plot_manager
         self.feature_manager = feature_manager
         self.active_processes = []
@@ -311,9 +313,9 @@ class InferenceManager():
 
         if len(self.selected_inferences) == 1:
             self._gui_set_details()
+            self.metric_manager.set_inference(self.selected_inferences[0])
         else:
             self._gui_clear_details()
-            self.plot_manager.clear_images()
 
         self.feature_manager.clear()
         self.selected_run = None
@@ -335,6 +337,7 @@ class InferenceManager():
         run = next(run for run in selected_inference.runs if run.id == run_id)
         self.selected_run = run
         self.feature_manager.set_data(self.selected_run, selected_inference.name)
+        self.metric_manager.set_data(self.selected_run)
 
     def ask_for_ok_delete_inferences(self):
         if len(self.selected_inferences) == 1:
@@ -357,6 +360,7 @@ class InferenceManager():
         self._gui_disable_button_delete()
         self.plot_manager.clear_images()
         self.feature_manager.clear()
+        self.metric_manager.clear_compared_inferences()
         self.selected_run = None
 
     def on_drag(self, event=None):
@@ -368,13 +372,14 @@ class InferenceManager():
     def on_drop(self, event=None):
         self.gui_inference.root.configure(cursor='')
 
+        selected_inference = self.selected_inferences[0]
         selected_run = self.selected_run
         if selected_run is None:
             return
 
         title = self.selected_inferences[0].name + ' - Run ' + str(selected_run.id).zfill(2)
         x, y = event.widget.winfo_pointerxy()
-        self.plot_manager.plot_image(x, y, selected_run, title, self.dataset_type)
+        self.plot_manager.plot_image(x, y, selected_inference, selected_run, title, self.dataset_type)
 
     def on_inference_double_click(self, event=None):
         if not self.selected_inferences:

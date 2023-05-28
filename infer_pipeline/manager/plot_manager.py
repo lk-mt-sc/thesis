@@ -32,14 +32,16 @@ class PlotDialog(tk.Toplevel):
 
 
 class PlotManager():
-    def __init__(self, root, status_manager):
+    def __init__(self, root, status_manager, metric_manager):
         self.gui_plot = GUIPlot(
             root,
             notebook_tab_change_callback=self.notebook_tab_changed,
             notebook_tab_double_click_callback=self.rename_plot,
-            notebook_tab_middle_click_callback=self.delete_plot
+            notebook_tab_middle_click_callback=self.delete_plot,
+            image_plot_middle_click_callback=self.clear_image
         )
         self.status_manager = status_manager
+        self.metric_manager = metric_manager
         self.plots = []
         self.image_plots = [
             self.gui_plot.image_plot_1,
@@ -49,25 +51,44 @@ class PlotManager():
         self.manual_tab_changed = False
         self.old_tab = 0
 
-    def plot_image(self, x, y, run, title, dataset_type):
-        for image_plot in self.image_plots:
+    def plot_image(self, x, y, inference, run, title, dataset_type):
+        image_plot, position = self._find_image_plot(x, y)
+        if not None in (image_plot, position):
+            image_plot.plot_image(
+                run.data.get_images(),
+                run.features.copy(),
+                run.bboxes.copy(),
+                run.detection_scores.copy(),
+                run.pose_estimation_scores.copy(),
+                title,
+                dataset_type
+            )
+            self.metric_manager.add_to_compared_inferences(inference, position)
+
+    def clear_image(self, event=None, position=None):
+        if position is not None:
+            self.image_plots[position].clear()
+
+        if event is not None:
+            x = self.gui_plot.root.winfo_pointerx()
+            y = self.gui_plot.root.winfo_pointery()
+            image_plot, position = self._find_image_plot(x, y)
+            if not None in (image_plot, position):
+                image_plot.clear()
+                self.metric_manager.remove_from_compared_inferences(position)
+
+    def clear_images(self):
+        for i, _ in enumerate(self.image_plots):
+            self.clear_image(position=i)
+
+    def _find_image_plot(self, x, y):
+        for i, image_plot in enumerate(self.image_plots):
             frame = image_plot.frame
             fx, fy, fw, fh = frame.winfo_rootx(), frame.winfo_rooty(), frame.winfo_width(), frame.winfo_height()
             if x in range(fx, fx + fw) and y in range(fy, fy + fh):
-                image_plot.plot_image(
-                    run.data.get_images(),
-                    run.features.copy(),
-                    run.bboxes.copy(),
-                    run.detection_scores.copy(),
-                    run.pose_estimation_scores.copy(),
-                    title,
-                    dataset_type
-                )
-                break
+                return image_plot, i
 
-    def clear_images(self):
-        for image_plot in self.image_plots:
-            image_plot.clear()
+        return None, None
 
     def _gui_add_plot(self, plot_layout, title):
         notebook = self.gui_plot.notebook
@@ -134,14 +155,14 @@ class PlotManager():
             notebook.select(self.old_tab)
             self.add_plot()
 
-    def add_to_plot(self, x, y, plottable):
+    def add_to_plot(self, x, y, plottables):
         notebook = self.gui_plot.notebook
         selected_tab = notebook.index(notebook.select())
         if selected_tab == 0:
             return
 
         current_plot = next(plot['plot'] for plot in self.plots if plot['tab_id'] == selected_tab)
-        current_plot.add_to_plot(x, y, plottable=plottable)
+        current_plot.add_to_plot(x, y, plottables=plottables)
 
     def rename_plot(self, event=None):
         notebook = self.gui_plot.notebook

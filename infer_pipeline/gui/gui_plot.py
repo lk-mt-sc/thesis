@@ -11,6 +11,7 @@ class GUIPlot():
         notebook_tab_change_callback,
         notebook_tab_double_click_callback,
         notebook_tab_middle_click_callback,
+        image_plot_middle_click_callback
     ):
         self.root = root
 
@@ -42,9 +43,26 @@ class GUIPlot():
         self.frame_image_plot_3 = ttk.Frame(self.frame_image_plots, width=815, height=1080, padding=(0, 0))
         self.frame_image_plot_3.place(x=1630, y=0)
 
-        self.image_plot_1 = ImagePlot(self.frame_image_plot_1, ratio, self.default_image)
-        self.image_plot_2 = ImagePlot(self.frame_image_plot_2, ratio, self.default_image)
-        self.image_plot_3 = ImagePlot(self.frame_image_plot_3, ratio, self.default_image)
+        self.image_plot_1 = ImagePlot(
+            self.frame_image_plot_1,
+            ratio,
+            self.default_image,
+            image_plot_middle_click_callback
+        )
+
+        self.image_plot_2 = ImagePlot(
+            self.frame_image_plot_2,
+            ratio,
+            self.default_image,
+            image_plot_middle_click_callback
+        )
+
+        self.image_plot_3 = ImagePlot(
+            self.frame_image_plot_3,
+            ratio,
+            self.default_image,
+            image_plot_middle_click_callback
+        )
 
         self.frame_add_plot = ttk.Frame(self.notebook, width=2445, height=1080, padding=(0, 0))
         self.frame_add_plot.place(x=0, y=0)

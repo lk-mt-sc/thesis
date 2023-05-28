@@ -8,11 +8,11 @@ from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 from matplotlib.backends.backend_tkagg import NavigationToolbar2Tk
 
 from common import BACKGROUND_COLOR_HEX
-from manager.dataset_manager import HiddenKeypointsImagePlot
+from manager.dataset_manager import KeyPointsImagePlot
 
 
 class ImagePlot():
-    def __init__(self, frame, ratio, default_image):
+    def __init__(self, frame, ratio, default_image, image_plot_middle_click_callback):
         self.frame = frame
         self.ratio = ratio
         self.default_image = default_image
@@ -27,6 +27,7 @@ class ImagePlot():
         self.imshow = self.plot.imshow(self.image)
         self.imshow.format_cursor_data = lambda e: ''
         self.canvas = FigureCanvasTkAgg(self.figure, master=self.frame)
+        self.canvas.mpl_connect('button_press_event', self.on_click)
         self.canvas.draw()
 
         self.label_title = ttk.Label(self.frame, textvariable=self.title)
@@ -67,6 +68,7 @@ class ImagePlot():
         self.pose_estimation_scores = []
         self.slider_value = 0
         self.dataset_type = None
+        self.image_plot_middle_click_callback = image_plot_middle_click_callback
 
     def plot_image(self, images, features, bboxes, detection_scores, pose_estimation_scores, title, dataset_type):
         self.images = images
@@ -141,7 +143,7 @@ class ImagePlot():
         pose_estimation_score = self.pose_estimation_scores[self.slider_value]
 
         for feature in self.features:
-            if -1 in (feature.x[self.slider_value], feature.y[self.slider_value]):
+            if feature.values[self.slider_value] == -1:
                 image = cv.putText(image, 'no pose estimations', org=(10, 30), color=(1.0, 1.0, 1.0),
                                    fontFace=cv.FONT_HERSHEY_SIMPLEX, fontScale=1, thickness=1, lineType=cv.LINE_AA)
                 break
@@ -154,29 +156,29 @@ class ImagePlot():
         self._gui_set_image_counter(value=value)
 
     def _draw_keypoints(self, image):
-        for key, keypoint in self.dataset_type.keypoints.items():
-            for feature in self.features:
-                feature_name = feature.name
-                if feature_name == key and not HiddenKeypointsImagePlot.has_value(feature_name):
-                    x = int(feature.x[self.slider_value])
-                    y = int(feature.y[self.slider_value])
-                    color = [c / 256 for c in keypoint['color']]
-                    image = cv.circle(image, center=(x, y), radius=5, thickness=-1, color=color)
+        drawn_keypoints = []
+        for keypoint_name, keypoint in self.dataset_type.keypoints.items():
+            keypoint_name = keypoint_name[:-2]
+            if KeyPointsImagePlot.has_value(keypoint_name) and not keypoint_name in drawn_keypoints:
+                x = int(next(f for f in self.features if f.name == keypoint_name + '_x').values[self.slider_value])
+                y = int(next(f for f in self.features if f.name == keypoint_name + '_y').values[self.slider_value])
+                color = [c / 256 for c in keypoint['color']]
+                image = cv.circle(image, center=(x, y), radius=5, thickness=-1, color=color)
+                drawn_keypoints.append(keypoint_name)
 
     def _draw_skeleton(self, image):
         for key, limb in self.dataset_type.skeleton.items():
-            first_keypoint = next(feature for feature in self.features if feature.name ==
-                                  limb['first_keypoint']['name'])
-            second_keypoint = next(feature for feature in self.features if feature.name ==
-                                   limb['second_keypoint']['name'])
-            if HiddenKeypointsImagePlot.has_value(first_keypoint.name) \
-                    or HiddenKeypointsImagePlot.has_value(second_keypoint.name):
+            keypoint_1_name = limb['keypoint_1'][0]['name']
+            keypoint_2_name = limb['keypoint_2'][0]['name']
+
+            if False in (KeyPointsImagePlot.has_value(keypoint_1_name), KeyPointsImagePlot.has_value(keypoint_2_name)):
                 continue
+
+            x1 = int(next(f for f in self.features if f.name == keypoint_1_name + '_x').values[self.slider_value])
+            y1 = int(next(f for f in self.features if f.name == keypoint_1_name + '_y').values[self.slider_value])
+            x2 = int(next(f for f in self.features if f.name == keypoint_2_name + '_x').values[self.slider_value])
+            y2 = int(next(f for f in self.features if f.name == keypoint_2_name + '_y').values[self.slider_value])
             color = [c / 256 for c in limb['color']]
-            x1 = int(first_keypoint.x[self.slider_value])
-            y1 = int(first_keypoint.y[self.slider_value])
-            x2 = int(second_keypoint.x[self.slider_value])
-            y2 = int(second_keypoint.y[self.slider_value])
             image = cv.line(image, pt1=(x1, y1), pt2=(x2, y2), color=color, thickness=2)
 
     def _draw_bounding_box_and_scores(self, image, bbox, detection_score, pose_estimation_score):
@@ -186,3 +188,7 @@ class ImagePlot():
         score = '{:.4f}'.format(round(detection_score, 4)) + '/' + '{:.4f}'.format(round(pose_estimation_score, 4))
         image = cv.putText(image, score, org=(x, y - 7), color=(0, 0, 1.0),
                            fontFace=cv.FONT_HERSHEY_SIMPLEX, fontScale=0.65, thickness=1, lineType=cv.LINE_AA)
+
+    def on_click(self, event=None):
+        if event.button == 2:
+            self.image_plot_middle_click_callback(event=event)

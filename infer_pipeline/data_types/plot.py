@@ -114,9 +114,9 @@ class Plot:
                 subplot['plot'].title.set_text(new_title)
             self.draw()
 
-    def add_to_plot(self, x, y, plottable):
+    def add_to_plot(self, x, y, plottables):
         subplot = self._find_subplot(x=x, y=y)
-        self._add_to_subplot(subplot, plottable)
+        self._add_to_subplot(subplot, plottables)
 
     def _find_subplot(self, x=None, y=None, axes=None):
         if axes is not None:
@@ -138,12 +138,14 @@ class Plot:
                 if x in range(bbox[0], bbox[2]) and y in range(bbox[3], bbox[1]):
                     return subplot
 
-    def _add_to_subplot(self, subplot, plottable):
+    def _add_to_subplot(self, subplot, plottables):
         if subplot is None:
             return
 
-        plottable = copy.deepcopy(plottable)
-        subplot['plottables'].append(plottable)
+        plottables = copy.deepcopy(plottables)
+        for plottable in plottables:
+            subplot['plottables'].append(plottable)
+
         self._update_subplot(subplot)
 
     def _delete_from_subplot(self, subplot, plottable):
@@ -161,8 +163,9 @@ class Plot:
         max_s = 0
         max_v = 0
         for plottable in subplot['plottables']:
-            v = plottable['values']
-            cur_s = len(v)
+            v = plottable.values
+            s = plottable.steps
+            cur_s = len(s)
             cur_v = max(v)
 
             if cur_s > max_s:
@@ -171,29 +174,7 @@ class Plot:
             if cur_v > max_v:
                 max_v = cur_v
 
-        for plottable in subplot['plottables']:
-            v = plottable['values']
-            s = list(range(0, len(v)))
-            no_data_indices = [i for i, x in enumerate(v) if x == -1]
-
-            if no_data_indices:
-                v_ = v.copy()
-                s_ = s.copy()
-
-                v_ = [i for j, i in enumerate(v_) if j not in no_data_indices]
-                s_ = [i for j, i in enumerate(s_) if j not in no_data_indices]
-
-                v_interp = np.interp(no_data_indices, s_, v_)
-                for i, _ in enumerate(v_interp):
-                    v_.insert(no_data_indices[i], v_interp[i])
-
-                s_ = list(range(0, len(v_)))
-
-            if no_data_indices:
-                subplot['plot'].plot(s_, v_, label=plottable['name'])
-                subplot['plot'].plot(no_data_indices, v_interp, 'kx', markersize=8)
-            else:
-                subplot['plot'].plot(s, v, label=plottable['name'])
+            subplot['plot'].plot(s, v, linestyle=plottable.linestyle, label=plottable.legend.upper())
 
         subplot['plot'].set_xlim(0, max_s + 1)
         subplot['plot'].set_ylim(0, max_v + 100)

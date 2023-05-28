@@ -14,7 +14,8 @@ from torchvision.ops import box_iou
 from data_types.run import Run
 from data_types.feature import Feature
 from utils import collect_image_infos, cvt_to_coco_json
-from manager.dataset_manager import InterpolationKeypoints
+from manager.dataset_manager import KeypointsInterpolation
+from manager.metric_manager import StandardMetrics
 from common import MMPOSE_DIR, MMPOSE_TEST_SCRIPT, MMPOSE_DATASET_DIR
 from common import MMDETECTION_DIR, MMDETECTION_TEST_SCRIPT
 from common import INFERENCES_DIR
@@ -294,7 +295,7 @@ class Inference:
             n_keypoints = len(dataset_keypoints)
             for keypoint in dataset_keypoints:
                 features.append(Feature(keypoint))
-            for image in images:
+            for s, image in enumerate(images):
                 image_filename = str(data.id) + '_' + image.split('/')[-1]
                 for dataset_image in annotations['images']:
                     if dataset_image['file_name'].split('/')[-1] == image_filename:
@@ -311,7 +312,8 @@ class Inference:
                     x_coord = keypoints[0:: 3]
                     y_coord = keypoints[1:: 3]
                     for i, (x, y) in enumerate(zip(x_coord, y_coord)):
-                        features[i].add(x, y)
+                        features[i * 2].add(s, x)
+                        features[i * 2 + 1].add(s, y)
 
                 if data_mode == 'bottomup':
                     x = int(pred_bbox['bbox'][0])
@@ -361,7 +363,8 @@ class Inference:
                     x_coord = result['x_coord']
                     y_coord = result['y_coord']
                     for i, (x, y) in enumerate(zip(x_coord, y_coord)):
-                        features[i].add(x, y)
+                        features[i * 2].add(s, x)
+                        features[i * 2 + 1].add(s, y)
 
                 bboxes.append(pred_bbox['bbox'])
                 detection_scores.append(pred_bbox['score'])
@@ -373,37 +376,42 @@ class Inference:
             pose_estimation_scores_for_mean = [score for score in pose_estimation_scores if score != -1]
             self.score_pose_estimation = mean(pose_estimation_scores_for_mean)
 
-            left_shoulder = next(f for f in features if f.name == InterpolationKeypoints.LEFT_SHOULDER.value)
-            right_shoulder = next(f for f in features if f.name == InterpolationKeypoints.RIGHT_SHOULDER.value)
-            neck = next(f for f in features if f.name == InterpolationKeypoints.NECK.value)
+            self.interpolate_keypoint(features,
+                                      KeypointsInterpolation.NECK,
+                                      KeypointsInterpolation.LEFT_SHOULDER,
+                                      KeypointsInterpolation.RIGHT_SHOULDER)
+            self.interpolate_keypoint(features,
+                                      KeypointsInterpolation.HEAD,
+                                      KeypointsInterpolation.LEFT_EAR,
+                                      KeypointsInterpolation.RIGHT_EAR)
 
-            left_ear = next(f for f in features if f.name == InterpolationKeypoints.LEFT_EAR.value)
-            right_ear = next(f for f in features if f.name == InterpolationKeypoints.RIGHT_EAR.value)
-            head = next(f for f in features if f.name == InterpolationKeypoints.HEAD.value)
-
-            self.interpolate_keypoint(neck, left_shoulder, right_shoulder)
-            self.interpolate_keypoint(head, left_ear, right_ear)
+            metrics = StandardMetrics(features).calculate().copy()
 
             run_id = data.id
             run_path = os.path.join(self.path, f'run_{run_id}.pkl')
-            run = Run(run_id, run_path, data, features, bboxes, detection_scores, pose_estimation_scores)
+            run = Run(run_id, run_path, data, features, bboxes, detection_scores, pose_estimation_scores, metrics)
             run.save(run_path)
 
         self.end_datetime_timestamp = datetime.timestamp(datetime.now())
         self.store_metadata(out_dir)
         self.load_runs()
 
-    def interpolate_keypoint(self, target, source_1, source_2):
-        assert len(source_1.x) == len(source_2.x)
-        assert len(source_1.y) == len(source_2.y)
-        for s1_x, s1_y, s2_x, s2_y in zip(source_1.x, source_1.y, source_2.x, source_2.y):
+    def interpolate_keypoint(self, features, target, source_1, source_2):
+        s1_x_f = next(f for f in features if f.name == source_1.value + '_x')
+        s1_y_f = next(f for f in features if f.name == source_1.value + '_y')
+        s2_x_f = next(f for f in features if f.name == source_2.value + '_x')
+        s2_y_f = next(f for f in features if f.name == source_2.value + '_y')
+        t_x_f = next(f for f in features if f.name == target.value + '_x')
+        t_y_f = next(f for f in features if f.name == target.value + '_y')
+        for s, (s1_x, s1_y, s2_x, s2_y) in enumerate(zip(s1_x_f.values, s1_y_f.values, s2_x_f.values, s2_y_f.values)):
             if -1 in (s1_x, s1_y, s2_x, s2_y):
                 continue
             x1 = min(s1_x, s2_x)
             y1 = min(s1_y, s2_y)
             x2 = max(s1_x, s2_x)
             y2 = max(s1_y, s2_y)
-            target.add(x1 + (x2 - x1) / 2, y1 + (y2 - y1) / 2)
+            t_x_f.add(s, x1 + (x2 - x1) / 2)
+            t_y_f.add(s, y1 + (y2 - y1) / 2)
 
     def store_metadata(self, out_dir):
         metadata_file = open(os.path.join(out_dir, 'metadata.json'), 'w', encoding='utf8')
