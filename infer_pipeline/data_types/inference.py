@@ -105,112 +105,112 @@ class Inference:
         n_runs = len(self.data)
         n_images = len(glob.glob(os.path.join(dataset_dir, '*.png')))
 
-        if data_mode == 'topdown':
-            persistent_detection_found = False
-            if existing_dataset is not None:
-                dataset_properties = existing_dataset.split('/')[-1]
-                dataset_properties = dataset_properties.replace('dataset_', '')
-                config_name = mmdetection_config.split('/')[-1].split('.')[0]
-                persistent_result_dir = os.path.join(INFERENCES_DIR, 'persistent_detections',
-                                                     dataset_properties + '_' + config_name, 'mmdetection_result_dir')
-                persistent_results_pickle_file_path = os.path.join(persistent_result_dir, 'persistent.results.pkl')
-                persistent_results_json_file_path = os.path.join(persistent_result_dir, 'persistent.bbox.json')
+        # if data_mode == 'topdown':
+        persistent_detection_found = False
+        if existing_dataset is not None:
+            dataset_properties = existing_dataset.split('/')[-1]
+            dataset_properties = dataset_properties.replace('dataset_', '')
+            config_name = mmdetection_config.split('/')[-1].split('.')[0]
+            persistent_result_dir = os.path.join(INFERENCES_DIR, 'persistent_detections',
+                                                 dataset_properties + '_' + config_name, 'mmdetection_result_dir')
+            persistent_results_pickle_file_path = os.path.join(persistent_result_dir, 'persistent.results.pkl')
+            persistent_results_json_file_path = os.path.join(persistent_result_dir, 'persistent.bbox.json')
 
-                if os.path.exists(persistent_results_pickle_file_path) and \
-                        os.path.exists(persistent_results_json_file_path):
-                    persistent_detection_found = True
-                    results_pickle_file_path = os.path.join(mmdetection_result_dir, str(self.id) + '.results.pkl')
-                    results_json_file_path = os.path.join(mmdetection_result_dir, str(self.id) + '.bbox.json')
-                    shutil.copyfile(persistent_results_pickle_file_path, results_pickle_file_path)
-                    shutil.copyfile(persistent_results_json_file_path, results_json_file_path)
-                    ann_file = os.path.join(existing_dataset, 'ann_file.json')
-                    self.detection_duration = (0, 0, 0)
+            if os.path.exists(persistent_results_pickle_file_path) and \
+                    os.path.exists(persistent_results_json_file_path):
+                persistent_detection_found = True
+                results_pickle_file_path = os.path.join(mmdetection_result_dir, str(self.id) + '.results.pkl')
+                results_json_file_path = os.path.join(mmdetection_result_dir, str(self.id) + '.bbox.json')
+                shutil.copyfile(persistent_results_pickle_file_path, results_pickle_file_path)
+                shutil.copyfile(persistent_results_json_file_path, results_json_file_path)
+                ann_file = os.path.join(existing_dataset, 'ann_file.json')
+                self.detection_duration = (0, 0, 0)
 
-            if not persistent_detection_found:
-                mmdetection_outfile_prefix = os.path.join(mmdetection_result_dir, str(self.id))
-                mmdetection_result_dump_file = os.path.join(mmdetection_result_dir,  str(self.id) + '.results.pkl')
+        if not persistent_detection_found:
+            mmdetection_outfile_prefix = os.path.join(mmdetection_result_dir, str(self.id))
+            mmdetection_result_dump_file = os.path.join(mmdetection_result_dir,  str(self.id) + '.results.pkl')
 
-                inference_progress.value = 'BB. DETECTION STARTUP'
+            inference_progress.value = 'BB. DETECTION STARTUP'
 
-                mmdetection_args = [
-                    'python',
-                    MMDETECTION_TEST_SCRIPT,
-                    mmdetection_config,
-                    mmdetection_checkpoint,
-                    '--work-dir',
-                    mmdetection_work_dir,
-                    '--out',
-                    mmdetection_result_dump_file,
-                    '--cfg-options',
-                    f'test_dataloader.dataset.ann_file={ann_file}',
-                    f'test_evaluator.ann_file={ann_file}',
-                    f'test_evaluator.outfile_prefix={mmdetection_outfile_prefix}'
-                ]
+            mmdetection_args = [
+                'python',
+                MMDETECTION_TEST_SCRIPT,
+                mmdetection_config,
+                mmdetection_checkpoint,
+                '--work-dir',
+                mmdetection_work_dir,
+                '--out',
+                mmdetection_result_dump_file,
+                '--cfg-options',
+                f'test_dataloader.dataset.ann_file={ann_file}',
+                f'test_evaluator.ann_file={ann_file}',
+                f'test_evaluator.outfile_prefix={mmdetection_outfile_prefix}'
+            ]
 
-                start = time.time()
+            start = time.time()
 
-                detection = subprocess.Popen(
-                    mmdetection_args,
-                    cwd=MMDETECTION_DIR,
-                    stdout=subprocess.PIPE,
-                    bufsize=1,
-                    universal_newlines=True
-                )
+            detection = subprocess.Popen(
+                mmdetection_args,
+                cwd=MMDETECTION_DIR,
+                stdout=subprocess.PIPE,
+                bufsize=1,
+                universal_newlines=True
+            )
 
-                while True:
-                    line = detection.stdout.readline()
-                    if not line:
-                        print()
-                        break
-                    line = line.rstrip()
-                    if 'mmengine - INFO - Epoch(test)' in line:
-                        tracker = line[line.find('[') + 1: line.find(']')].split('/')
-                        progress_percentage = int(int(tracker[0])/int(tracker[1]) * 100)
-                        inference_progress.value = 'BB. DETECTION ' + f'{progress_percentage}%'
+            while True:
+                line = detection.stdout.readline()
+                if not line:
+                    print()
+                    break
+                line = line.rstrip()
+                if 'mmengine - INFO - Epoch(test)' in line:
+                    tracker = line[line.find('[') + 1: line.find(']')].split('/')
+                    progress_percentage = int(int(tracker[0])/int(tracker[1]) * 100)
+                    inference_progress.value = 'BB. DETECTION ' + f'{progress_percentage}%'
 
-                end = time.time()
-                duration = end - start
-                self.detection_duration = (round(duration / 60, 2),
-                                           round(duration / n_runs, 2),
-                                           round(duration / n_images, 4))
-                results_pickle_file_path = mmdetection_result_dump_file
-                results_json_file_path = mmdetection_outfile_prefix + '.bbox.json'
+            end = time.time()
+            duration = end - start
+            self.detection_duration = (round(duration / 60, 2),
+                                       round(duration / n_runs, 2),
+                                       round(duration / n_images, 4))
+            results_pickle_file_path = mmdetection_result_dump_file
+            results_json_file_path = mmdetection_outfile_prefix + '.bbox.json'
 
-                inference_progress.value = 'REMOVING LOW SCORES'
+            inference_progress.value = 'REMOVING LOW SCORES'
 
-                with open(results_json_file_path, 'r', encoding='utf8') as results_file:
-                    results = json.load(results_file)
+            with open(results_json_file_path, 'r', encoding='utf8') as results_file:
+                results = json.load(results_file)
 
-                    image_ids = []
+                image_ids = []
+                for result in results:
+                    image_ids.append(result['image_id'])
+
+                ids = set()
+                duplicate_ids = []
+                for id_ in image_ids:
+                    if id_ in ids:
+                        duplicate_ids.append(id_)
+                    else:
+                        ids.add(id_)
+
+                for id_ in duplicate_ids:
+                    duplicates = []
                     for result in results:
-                        image_ids.append(result['image_id'])
+                        if result['image_id'] == id_:
+                            duplicates.append(result)
+                    duplicates = sorted(duplicates, key=lambda d: d['score'], reverse=True)
+                    for duplicate in duplicates[1:]:
+                        results.remove(duplicate)
 
-                    ids = set()
-                    duplicate_ids = []
-                    for id_ in image_ids:
-                        if id_ in ids:
-                            duplicate_ids.append(id_)
-                        else:
-                            ids.add(id_)
+            with open(results_json_file_path, 'w', encoding='utf8') as results_file:
+                json.dump(results, results_file)
 
-                    for id_ in duplicate_ids:
-                        duplicates = []
-                        for result in results:
-                            if result['image_id'] == id_:
-                                duplicates.append(result)
-                        duplicates = sorted(duplicates, key=lambda d: d['score'], reverse=True)
-                        for duplicate in duplicates[1:]:
-                            results.remove(duplicate)
+            inference_progress.value = 'CALC. AVG. CONFIDENCE'
 
-                with open(results_json_file_path, 'w', encoding='utf8') as results_file:
-                    json.dump(results, results_file)
-
-                inference_progress.value = 'CALC. AVG. CONFIDENCE'
-
-                with open(results_json_file_path, 'r', encoding='utf8') as results_file:
-                    results = json.load(results_file)
-                    n_results = len(results)
-                    assert n_results == n_images, f'Missing detection for {n_images - n_results} images.'
+            with open(results_json_file_path, 'r', encoding='utf8') as results_file:
+                results = json.load(results_file)
+                n_results = len(results)
+                assert n_results == n_images, f'Missing detection for {n_images - n_results} images.'
 
         mmpose_result_dir = os.path.join(out_dir, 'mmpose_result_dir')
         os.mkdir(mmpose_result_dir)
@@ -235,9 +235,10 @@ class Inference:
             f'test_evaluator.outfile_prefix={mmpose_outfile_prefix}'
         ]
 
+        bbox_file_path = os.path.join(mmpose_work_dir, 'bbox_file.json')
+        shutil.copyfile(results_json_file_path, bbox_file_path)
+
         if data_mode == 'topdown':
-            bbox_file_path = os.path.join(mmpose_work_dir, 'bbox_file.json')
-            shutil.copyfile(results_json_file_path, bbox_file_path)
             mmpose_args.append(f'test_dataloader.dataset.bbox_file={bbox_file_path}')
 
         start = time.time()
@@ -270,9 +271,6 @@ class Inference:
 
         with open(ann_file, 'r') as annotations_file:
             annotations = json.load(annotations_file)
-
-        if data_mode == 'bottomup':
-            bbox_file_path = os.path.join(INFERENCES_DIR, 'bbox_bottomup.json')
 
         with open(bbox_file_path, 'r') as bbox_file:
             pred_bboxes = json.load(bbox_file)
@@ -354,8 +352,8 @@ class Inference:
 
                     if not preds:
                         preds.append({
-                            'x_coord': [-1 for i in range(n_keypoints)],
-                            'y_coord': [-1 for i in range(n_keypoints)],
+                            'x_coord': [-1 for i in range(int((n_keypoints - 4) / 2))],
+                            'y_coord': [-1 for i in range(int((n_keypoints - 4) / 2))],
                             'score': -1
                         })
 
@@ -396,6 +394,8 @@ class Inference:
         self.store_metadata(out_dir)
         self.load_runs()
 
+        inference_progress.value = 'DONE'
+
     def interpolate_keypoint(self, features, target, source_1, source_2):
         s1_x_f = next(f for f in features if f.name == source_1.value + '_x')
         s1_y_f = next(f for f in features if f.name == source_1.value + '_y')
@@ -405,6 +405,8 @@ class Inference:
         t_y_f = next(f for f in features if f.name == target.value + '_y')
         for s, (s1_x, s1_y, s2_x, s2_y) in enumerate(zip(s1_x_f.values, s1_y_f.values, s2_x_f.values, s2_y_f.values)):
             if -1 in (s1_x, s1_y, s2_x, s2_y):
+                t_x_f.add(s, -1)
+                t_y_f.add(s, -1)
                 continue
             x1 = min(s1_x, s2_x)
             y1 = min(s1_y, s2_y)
