@@ -27,14 +27,18 @@ class MissingPoseEstimations():
             self.values = np.interp(self.steps, interpolation_steps, interpolation_values)
 
     def plottables(self, name=None, legend=None):
-        return [Plottable(
-            name=name or self.name,
-            steps=self.steps,
-            values=self.values,
-            linestyle=None,
-            legend=legend or self.name,
-            type_=PlottableTypes.METRIC
-        )]
+        if self.steps:
+            return [Plottable(
+                name=name or self.name,
+                steps=self.steps,
+                values=self.values,
+                linestyle='None',
+                marker='x',
+                legend=legend or self.name,
+                type_=PlottableTypes.METRIC
+            )]
+        else:
+            return None
 
     def __str__(self):
         return self.name

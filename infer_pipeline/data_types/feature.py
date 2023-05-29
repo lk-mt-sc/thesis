@@ -1,3 +1,5 @@
+import numpy as np
+
 from data_types.plottable import Plottable, PlottableTypes
 
 
@@ -11,12 +13,21 @@ class Feature():
         self.steps.append(step)
         self.values.append(value)
 
+    def clean_steps(self):
+        steps_without_pose_estimations = [i for i, v in enumerate(self.values) if v == -1]
+        return [i for j, i in enumerate(self.steps) if j not in steps_without_pose_estimations]
+
+    def clean_values(self):
+        steps_without_pose_estimations = [i for i, v in enumerate(self.values) if v == -1]
+        return [i for j, i in enumerate(self.values) if j not in steps_without_pose_estimations]
+
     def plottables(self, name=None, legend=None):
         return [Plottable(
             name=name or self.name,
-            steps=self.steps,
-            values=self.values,
-            linestyle=None,
+            steps=self.clean_steps(),
+            values=self.clean_values(),
+            linestyle='solid',
+            marker='None',
             legend=legend or self.name,
             type_=PlottableTypes.FEATURE
         )]

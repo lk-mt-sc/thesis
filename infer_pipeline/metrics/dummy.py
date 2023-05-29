@@ -22,7 +22,8 @@ class Dummy():
             name=name or self.name,
             steps=self.steps,
             values=self.values,
-            linestyle=None,
+            linestyle='solid',
+            marker='None',
             legend=legend or self.name,
             type_=PlottableTypes.METRIC
         )]
