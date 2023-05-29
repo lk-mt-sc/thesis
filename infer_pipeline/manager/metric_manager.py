@@ -157,5 +157,6 @@ class MetricManager():
             self.selected_feature.name + '_' + self.selected_metric.name
         plottables = self.selected_metric.plottables(name=name, legend=name)
 
-        x, y = event.widget.winfo_pointerxy()
-        self.plot_manager.add_to_plot(x, y, plottables=plottables)
+        if plottables is not None:
+            x, y = event.widget.winfo_pointerxy()
+            self.plot_manager.add_to_plot(x, y, plottables=plottables)
