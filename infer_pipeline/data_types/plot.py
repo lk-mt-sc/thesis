@@ -165,7 +165,7 @@ class Plot:
         for plottable in subplot['plottables']:
             v = plottable.values
             s = plottable.steps
-            cur_s = len(s)
+            cur_s = max(s)
             cur_v = max(v)
 
             if cur_s > max_s:
@@ -174,7 +174,14 @@ class Plot:
             if cur_v > max_v:
                 max_v = cur_v
 
-            subplot['plot'].plot(s, v, linestyle=plottable.linestyle, label=plottable.legend.upper())
+            subplot['plot'].plot(
+                s,
+                v,
+                linewidth=plottable.linewidth,
+                linestyle=plottable.linestyle,
+                marker=plottable.marker,
+                markersize=plottable.markersize,
+                label=plottable.legend.upper())
 
         subplot['plot'].set_xlim(0, max_s + 1)
         subplot['plot'].set_ylim(0, max_v + 100)
@@ -188,10 +195,6 @@ class Plot:
         plot_lines = subplot['plot'].get_lines()
         for plot_line in plot_lines:
             plot_line.set_alpha(1.0)
-
-        split_indices = [i for i, plot_line in enumerate(plot_lines) if plot_line._linestyle != 'None']
-        plot_lines = [plot_line.tolist() for plot_line in np.split(plot_lines, split_indices)]
-        del plot_lines[0]
 
         for i, _ in enumerate(legend_lines):
             subplot['lines'].append(
