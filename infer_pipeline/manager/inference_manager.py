@@ -359,6 +359,7 @@ class InferenceManager():
         self._gui_clear_details()
         self._gui_disable_button_delete()
         self.plot_manager.clear_images()
+        self.plot_manager.clear_plots()
         self.feature_manager.clear()
         self.metric_manager.clear_compared_inferences()
         self.selected_run = None
