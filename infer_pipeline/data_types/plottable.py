@@ -16,14 +16,18 @@ class Plottable():
             marker,
             legend,
             type_,
-            linewidth=None,
-            markersize=None):
+            linewidth=1.5,
+            markersize=10,
+            markerfacecolor='None',
+            step_plot=False):
         self.name = name
         self.steps = steps
         self.values = values
-        self.linewidth = linewidth or 1.5
+        self.linewidth = linewidth
         self.linestyle = linestyle
         self.marker = marker
-        self.markersize = markersize or 10
+        self.markersize = markersize
+        self.markerfacecolor = markerfacecolor
         self.legend = legend
         self.type = type_
+        self.step_plot = step_plot

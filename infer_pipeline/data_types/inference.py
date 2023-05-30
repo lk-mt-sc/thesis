@@ -105,7 +105,6 @@ class Inference:
         n_runs = len(self.data)
         n_images = len(glob.glob(os.path.join(dataset_dir, '*.png')))
 
-        # if data_mode == 'topdown':
         persistent_detection_found = False
         if existing_dataset is not None:
             dataset_properties = existing_dataset.split('/')[-1]
@@ -279,13 +278,16 @@ class Inference:
             results = json.load(results_file)
 
         n_data = len(self.data)
+        runs = []
         for i, data in enumerate(self.data):
 
             progress_percentage = int(((i + 1)/n_data) * 100)
-            inference_progress.value = 'SAVING INFER RES. ' + f'{progress_percentage}%'
+            inference_progress.value = 'PREP. INFER RES. ' + f'{progress_percentage}%'
 
             images = data.get_images()
             bboxes = []
+            bboxes_bottomup = []
+            ious = []
             detection_scores = []
             pose_estimation_scores = []
             features = []
@@ -341,7 +343,7 @@ class Inference:
                         score = pose['score']
                         if iou > 0.3:
                             preds.append({
-                                'iou': iou,
+                                'iou': iou.item(),
                                 'bbox': bbox,
                                 'x_coord': x_coord,
                                 'y_coord': y_coord,
@@ -352,6 +354,8 @@ class Inference:
 
                     if not preds:
                         preds.append({
+                            'iou': -1,
+                            'bbox': -1,
                             'x_coord': [-1 for i in range(int((n_keypoints - 4) / 2))],
                             'y_coord': [-1 for i in range(int((n_keypoints - 4) / 2))],
                             'score': -1
@@ -368,7 +372,11 @@ class Inference:
                 detection_scores.append(pred_bbox['score'])
                 pose_estimation_scores.append(result['score'])
 
-            detection_scores_for_mean = detection_scores
+                if data_mode == 'bottomup':
+                    bboxes_bottomup.append(result['bbox'])
+                    ious.append(result['iou'])
+
+            detection_scores_for_mean = [score for score in detection_scores if score != -1]
             self.score_detection = mean(detection_scores_for_mean)
 
             pose_estimation_scores_for_mean = [score for score in pose_estimation_scores if score != -1]
@@ -383,12 +391,39 @@ class Inference:
                                       KeypointsInterpolation.LEFT_EAR,
                                       KeypointsInterpolation.RIGHT_EAR)
 
-            metrics = StandardMetrics(features).calculate().copy()
+            for feature in features:
+                feature.interpolate_values()
 
             run_id = data.id
             run_path = os.path.join(self.path, f'run_{run_id}.pkl')
-            run = Run(run_id, run_path, data, features, bboxes, detection_scores, pose_estimation_scores, metrics)
-            run.save(run_path)
+            runs.append({
+                'id': run_id,
+                'path': run_path,
+                'data': data,
+                'features': features,
+                'bboxes': bboxes,
+                'bboxes_bottomup': bboxes_bottomup,
+                'ious': ious,
+                'detection_scores': detection_scores,
+                'pose_estimation_scores': pose_estimation_scores
+            })
+
+        inference_progress.value = 'SAVING INFER RES. '
+
+        for run in runs:
+            metrics = StandardMetrics(run['features']).calculate().copy()
+            new_run = Run(
+                run['id'],
+                run['path'],
+                run['data'],
+                run['features'],
+                run['bboxes'],
+                run['bboxes_bottomup'],
+                run['ious'],
+                run['detection_scores'],
+                run['pose_estimation_scores'],
+                metrics)
+            new_run.save(run['path'])
 
         self.end_datetime_timestamp = datetime.timestamp(datetime.now())
         self.store_metadata(out_dir)

@@ -1,7 +1,6 @@
 import copy
 from enum import Enum
 
-import numpy as np
 from tkinter import ttk
 from tkinter import simpledialog
 from matplotlib.figure import Figure
@@ -85,13 +84,12 @@ class Plot:
                 if legend_line == event.artist:
                     button = event.mouseevent.button
                     if button == 1:
-                        plot_lines = line['plot_lines']
-                        visible = plot_lines[0].get_alpha() == 1.0
-                        for plot_line in plot_lines:
-                            if visible:
-                                plot_line.set_alpha(0.2)
-                            else:
-                                plot_line.set_alpha(1.0)
+                        plot_line = line['plot_line']
+                        visible = plot_line.get_alpha() == 1.0
+                        if visible:
+                            plot_line.set_alpha(0.2)
+                        else:
+                            plot_line.set_alpha(1.0)
                         if visible:
                             legend_line.set_alpha(0.2)
                         else:
@@ -161,30 +159,53 @@ class Plot:
             return
 
         max_s = 0
+        min_s = 0
         max_v = 0
+        min_v = 0
         for plottable in subplot['plottables']:
-            v = plottable.values
-            s = plottable.steps
-            cur_s = max(s)
-            cur_v = max(v)
+            values = plottable.values
+            steps = plottable.steps
+            cur_max_s = max(steps)
+            cur_min_s = min(steps)
+            cur_max_v = max(values)
+            cur_min_v = min(values)
 
-            if cur_s > max_s:
-                max_s = cur_s
+            if cur_max_s > max_s:
+                max_s = cur_max_s
 
-            if cur_v > max_v:
-                max_v = cur_v
+            if cur_min_s < min_s:
+                min_s = cur_min_s
 
-            subplot['plot'].plot(
-                s,
-                v,
-                linewidth=plottable.linewidth,
-                linestyle=plottable.linestyle,
-                marker=plottable.marker,
-                markersize=plottable.markersize,
-                label=plottable.legend.upper())
+            if cur_max_v > max_v:
+                max_v = cur_max_v
 
-        subplot['plot'].set_xlim(0, max_s + 1)
-        subplot['plot'].set_ylim(0, max_v + 100)
+            if cur_min_v < min_v:
+                min_v = cur_min_v
+
+            plot_function = subplot['plot'].plot if not plottable.step_plot else subplot['plot'].step
+            plot_function(steps,
+                          values,
+                          linewidth=plottable.linewidth,
+                          linestyle=plottable.linestyle,
+                          marker=plottable.marker,
+                          markersize=plottable.markersize,
+                          markerfacecolor=plottable.markerfacecolor,
+                          label=plottable.legend.upper())
+
+        view_s = int(max(abs(min_s), abs(max_s)) * 0.01)
+        view_v = int(max(abs(min_v), abs(max_v)) * 0.05)
+        if min_s < 0:
+            xlim_min = min_s - view_s
+        else:
+            xlim_min = 0
+
+        if min_v < 0:
+            ylim_min = min_v - view_v
+        else:
+            ylim_min = 0
+
+        subplot['plot'].set_xlim(xlim_min, max_s + view_s)
+        subplot['plot'].set_ylim(ylim_min, max_v + view_v)
         subplot['plot'].grid()
 
         legend = subplot['plot'].legend()
@@ -200,7 +221,7 @@ class Plot:
             subplot['lines'].append(
                 {
                     'legend_line': legend_lines[i],
-                    'plot_lines': plot_lines[i],
+                    'plot_line': plot_lines[i],
                     'plottable': subplot['plottables'][i]
                 }
             )

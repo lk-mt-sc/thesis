@@ -10,12 +10,13 @@ class MissingPoseEstimations():
         self.values = []
         self.count = 0
         self.feature = feature
+        self.list_name = None
 
-        self._calculate(self.feature)
+        self._calculate()
 
-    def _calculate(self, feature):
-        feature_steps = feature.steps.copy()
-        feature_values = feature.values.copy()
+    def _calculate(self):
+        feature_steps = self.feature.steps.copy()
+        feature_values = self.feature.values.copy()
 
         self.steps = [i for i, v in enumerate(feature_values) if v == -1]
         self.count = len(self.steps)
@@ -25,6 +26,8 @@ class MissingPoseEstimations():
             interpolation_values = [i for j, i in enumerate(feature_values) if j not in self.steps]
 
             self.values = np.interp(self.steps, interpolation_steps, interpolation_values)
+
+        self.list_name = self.name + f' ({self.count})'
 
     def plottables(self, name=None, legend=None):
         if self.steps:

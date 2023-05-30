@@ -5,18 +5,20 @@ from gui.gui_metric import GUIMetric
 from data_types.metric import Metric
 from manager.dataset_manager import KeypointsNoMetric
 from metrics.missing_pose_estimations import MissingPoseEstimations
-from metrics.dummy import Dummy
+from metrics.peak_detection import PeakDetection
+from metrics.delta import Delta
 
 
 class AllMetrics(Enum):
     MISSING_POSE_ESTIMATIONS = 0
-    OUTLIER = 1
-    LOWPASS = 2
-    HIGHPASS = 3
+    DELTA = 1
+    PEAKS = 2
+    LOWPASS = 3
+    HIGHPASS = 4
 
 
 class CalculableMetrics(Enum):
-    OUTLIER = 'Outlier Detection'
+    PEAKS = 'Peak Detection'
     LOWPASS = 'Low-Pass Filter'
     HIGHPASS = 'High-Pass Filter'
 
@@ -29,13 +31,17 @@ class StandardMetrics():
 
     def calculate(self):
         missing_pose_estimations = []
-        dummies = []
+        peaks = []
+        deltas = []
         for feature in self.features:
             missing_pose_estimations.append(MissingPoseEstimations(feature, name='Missing Pose Estimations'))
-            dummies.append(Dummy(feature, name='Dummy'))
+            delta = Delta(feature, name='Delta')
+            deltas.append(delta)
+            peaks.append(PeakDetection(feature, delta=delta.values, name='Peaks'))
 
         self.metrics.append(Metric('Missing Pose Estimations', missing_pose_estimations))
-        self.metrics.append(Metric('Dummy', dummies))
+        self.metrics.append(Metric('Peaks', peaks))
+        self.metrics.append(Metric('Deltas', deltas))
 
         return self.metrics
 
@@ -90,7 +96,7 @@ class MetricManager():
             case 2:
                 self.compared_inference_3 = inference
 
-        # self.calculate_compared_inference_statistics()
+        self.calculate_compared_inference_statistics()
         self._gui_set_compared_inferences_statistics()
 
     def remove_from_compared_inferences(self, position):
@@ -102,7 +108,7 @@ class MetricManager():
             case 2:
                 self.compared_inference_3 = None
 
-        # self.calculate_compared_inference_statistics()
+        self.calculate_compared_inference_statistics()
         self._gui_set_compared_inferences_statistics()
 
     def clear_compared_inferences(self):
@@ -110,6 +116,9 @@ class MetricManager():
         self.compared_inference_2 = None
         self.compared_inference_3 = None
         self._gui_set_compared_inferences_statistics()
+
+    def calculate_compared_inference_statistics(self):
+        pass
 
     def _gui_set_compared_inferences_statistics(self):
         name_1 = self.compared_inference_1.name if self.compared_inference_1 is not None else 'No Inference Selected'
@@ -129,7 +138,7 @@ class MetricManager():
     def _gui_set_metrics(self):
         self.gui_metric.listbox_metrics.delete(0, tk.END)
         for metric in self.available_metrics:
-            self.gui_metric.listbox_metrics.insert(tk.END, metric.name)
+            self.gui_metric.listbox_metrics.insert(tk.END, metric.list_name)
 
     def metric_selected(self, event=None):
         selection = self.gui_metric.listbox_metrics.curselection()
@@ -139,7 +148,7 @@ class MetricManager():
         selection_str = self.gui_metric.listbox_metrics.get(selection)
 
         for metric in self.available_metrics:
-            if metric.name == selection_str:
+            if metric.list_name == selection_str:
                 self.selected_metric = metric
 
     def on_drag(self, event=None):

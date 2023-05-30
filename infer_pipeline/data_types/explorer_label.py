@@ -1,5 +1,4 @@
 import subprocess
-
 from tkinter import ttk
 
 from common import WSL_PREFIX

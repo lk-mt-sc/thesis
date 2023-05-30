@@ -64,17 +64,22 @@ class ImagePlot():
         self.n_images = 0
         self.features = []
         self.bboxes = []
+        self.bboxes_bottomup = []
+        self.ious = []
         self.detection_scores = []
         self.pose_estimation_scores = []
         self.slider_value = 0
         self.dataset_type = None
         self.image_plot_middle_click_callback = image_plot_middle_click_callback
 
-    def plot_image(self, images, features, bboxes, detection_scores, pose_estimation_scores, title, dataset_type):
+    def plot_image(self, images, features, bboxes, bboxes_bottomup, ious,
+                   detection_scores, pose_estimation_scores, title, dataset_type):
         self.images = images
         self.n_images = len(self.images)
         self.features = features
         self.bboxes = bboxes
+        self.bboxes_bottomup = bboxes_bottomup
+        self.ious = ious
         self.detection_scores = detection_scores
         self.pose_estimation_scores = pose_estimation_scores
         self.slider_value = 0
@@ -91,6 +96,8 @@ class ImagePlot():
         self.n_images = 0
         self.features.clear()
         self.bboxes.clear()
+        self.bboxes_bottomup.clear()
+        self.ious.clear()
         self.detection_scores.clear()
         self.pose_estimation_scores.clear()
         self.slider_value = 0
@@ -138,9 +145,6 @@ class ImagePlot():
 
         self.image = self.images[self.slider_value]
         image = matplotlib.image.imread(self.image)
-        bbox = self.bboxes[self.slider_value]
-        detection_score = self.detection_scores[self.slider_value]
-        pose_estimation_score = self.pose_estimation_scores[self.slider_value]
 
         for feature in self.features:
             if feature.values[self.slider_value] == -1:
@@ -148,9 +152,20 @@ class ImagePlot():
                                    fontFace=cv.FONT_HERSHEY_SIMPLEX, fontScale=1, thickness=1, lineType=cv.LINE_AA)
                 break
         else:
+            bbox = self.bboxes[self.slider_value]
+            detection_score = self.detection_scores[self.slider_value]
+            pose_estimation_score = self.pose_estimation_scores[self.slider_value]
+
+            if self.bboxes_bottomup:
+                bbox_bottomup = self.bboxes_bottomup[self.slider_value]
+                iou = self.ious[self.slider_value]
+            else:
+                bbox_bottomup = None
+                iou = None
+
             self._draw_keypoints(image)
             self._draw_skeleton(image)
-            self._draw_bounding_box_and_scores(image, bbox, detection_score, pose_estimation_score)
+            self._draw_bounding_box_and_scores(image, bbox, bbox_bottomup, iou, detection_score, pose_estimation_score)
 
         self._gui_set_image(image)
         self._gui_set_image_counter(value=value)
@@ -181,13 +196,21 @@ class ImagePlot():
             color = [c / 256 for c in limb['color']]
             image = cv.line(image, pt1=(x1, y1), pt2=(x2, y2), color=color, thickness=2)
 
-    def _draw_bounding_box_and_scores(self, image, bbox, detection_score, pose_estimation_score):
+    def _draw_bounding_box_and_scores(self, image, bbox, bbox_bottomup, iou, detection_score, pose_estimation_score):
         bbox = [int(i) for i in bbox]
-        x, y, w, h = bbox[0], bbox[1], bbox[2], bbox[3]
-        image = cv.rectangle(image, pt1=(x, y), pt2=(x + w, y + h), color=(0, 0, 1.0), thickness=2)
+        x1, y1, x2, y2 = bbox[0], bbox[1], bbox[0] + bbox[2], bbox[1] + bbox[3]
+        image = cv.rectangle(image, pt1=(x1, y1), pt2=(x2, y2), color=(0.0, 0.0, 1.0), thickness=2)
         score = '{:.4f}'.format(round(detection_score, 4)) + '/' + '{:.4f}'.format(round(pose_estimation_score, 4))
-        image = cv.putText(image, score, org=(x, y - 7), color=(0, 0, 1.0),
+        image = cv.putText(image, score, org=(x1, y1 - 7), color=(0.0, 0.0, 1.0),
                            fontFace=cv.FONT_HERSHEY_SIMPLEX, fontScale=0.65, thickness=1, lineType=cv.LINE_AA)
+
+        if not None in (bbox_bottomup, iou):
+            bbox = [int(i) for i in bbox_bottomup]
+            x1, y1, x2, y2 = bbox[0], bbox[1], bbox[2], bbox[3]
+            image = cv.rectangle(image, pt1=(x1, y1), pt2=(x2, y2), color=(1.0, 0.0, 0.43), thickness=2)
+            iou = '{:.4f}'.format(round(iou, 4))
+            image = cv.putText(image, iou, org=(x1 + 5, y1 + 20), color=(1.0, 0.0, 0.43),
+                               fontFace=cv.FONT_HERSHEY_SIMPLEX, fontScale=0.65, thickness=1, lineType=cv.LINE_AA)
 
     def on_click(self, event=None):
         if event.button == 2:

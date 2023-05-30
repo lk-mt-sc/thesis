@@ -22,7 +22,7 @@ class GUIMetric():
 
         ttk.Label(self.frame, text='Standard Metrics', font=self.root.font_bold).place(x=0, y=30)
         ttk.Label(self.frame, text='Missing Pose Estimations').place(x=0, y=50)
-        ttk.Label(self.frame, text='Outlier @XY').place(x=0, y=70)
+        ttk.Label(self.frame, text='Peaks').place(x=0, y=70)
         ttk.Label(self.frame, text='Avg. Error Low-Pass @X Hz').place(x=0, y=90)
         ttk.Label(self.frame, text='Avg. Error High-Pass @X Hz').place(x=0, y=110)
         ttk.Label(self.frame, text='...').place(x=0, y=130)
@@ -67,7 +67,7 @@ class GUIMetric():
 
         ttk.Label(self.frame, text='Type', font=self.root.font_bold).place(x=989, y=30)
         self.add_label_var = tk.StringVar()
-        self.add_label_var.set(calculable_metrics.OUTLIER.value)
+        self.add_label_var.set(calculable_metrics.PEAKS.value)
         for i, metric in enumerate(calculable_metrics):
             ttk.Radiobutton(self.frame, variable=self.add_label_var, value=metric.value,
                             text=metric.value).place(x=989, y=50 + i * 20)
@@ -76,7 +76,7 @@ class GUIMetric():
 
         ttk.Label(self.frame, text='Name:').place(x=1139, y=50)
         self.name_var = tk.StringVar()
-        self.name_var.set('Outlier @XY')
+        self.name_var.set('Peaks')
         ttk.Label(self.frame, textvariable=self.name_var).place(x=1209, y=50)
 
         ttk.Label(self.frame, text='Parameter:').place(x=1139, y=75)
@@ -90,3 +90,4 @@ class GUIMetric():
             width=15,
             command=button_calculate_callback)
         self.button_calculate.place(x=989, y=115, height=25)
+        self.button_calculate['state'] = 'disabled'

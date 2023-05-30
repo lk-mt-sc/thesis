@@ -1,7 +1,7 @@
 import tkinter as tk
 from tkinter import ttk
 
-from data_types.custom_labels import ExplorerLabel
+from data_types.explorer_label import ExplorerLabel
 
 
 class GUIMMDetectionModel():

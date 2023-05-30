@@ -58,6 +58,8 @@ class PlotManager():
                 run.data.get_images(),
                 run.features.copy(),
                 run.bboxes.copy(),
+                run.bboxes_bottomup.copy(),
+                run.ious.copy(),
                 run.detection_scores.copy(),
                 run.pose_estimation_scores.copy(),
                 title,
@@ -163,6 +165,10 @@ class PlotManager():
 
         current_plot = next(plot['plot'] for plot in self.plots if plot['tab_id'] == selected_tab)
         current_plot.add_to_plot(x, y, plottables=plottables)
+
+    def clear_plots(self):
+        for plot in self.plots:
+            plot['plot'].clear_plot()
 
     def rename_plot(self, event=None):
         notebook = self.gui_plot.notebook
