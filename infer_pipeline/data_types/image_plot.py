@@ -132,8 +132,8 @@ class ImagePlot():
             a = 0
             b = 0
         else:
-            a = value + 1
-            b = self.n_images
+            a = value
+            b = self.n_images - 1
         self.counter_var.set(f'{str(a).zfill(3)}/{str(b).zfill(3)}')
 
     def slider_changed(self, value):
