@@ -52,6 +52,11 @@ class PlotManager():
         self.old_tab = 0
 
     def plot_image(self, x, y, inference, run, title, dataset_type):
+        notebook = self.gui_plot.notebook
+        selected_tab = notebook.index(notebook.select())
+        if selected_tab != 0:
+            return
+
         image_plot, position = self._find_image_plot(x, y)
         if not None in (image_plot, position):
             image_plot.plot_image(
