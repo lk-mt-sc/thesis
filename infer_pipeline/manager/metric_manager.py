@@ -2,46 +2,47 @@ import tkinter as tk
 from enum import Enum
 
 from gui.gui_metric import GUIMetric
-from data_types.metric import Metric
 from manager.dataset_manager import KeypointsNoMetric
+from metrics.peaks import Peaks
+from metrics.deltas import Deltas
 from metrics.missing_pose_estimations import MissingPoseEstimations
-from metrics.peak_detection import PeakDetection
-from metrics.delta import Delta
 
 
 class AllMetrics(Enum):
-    MISSING_POSE_ESTIMATIONS = 0
-    DELTA = 1
-    PEAKS = 2
-    LOWPASS = 3
-    HIGHPASS = 4
-
-
-class CalculableMetrics(Enum):
-    PEAKS = 'Peak Detection'
+    MISSING_POSE_ESTIMATIONS = 'Missing Pose Estimations'
+    DELTAS = 'Deltas'
+    PEAKS = 'Peaks'
     LOWPASS = 'Low-Pass Filter'
     HIGHPASS = 'High-Pass Filter'
 
 
+class CalculableMetrics(Enum):
+    PEAKS = AllMetrics.PEAKS.value
+    LOWPASS = AllMetrics.LOWPASS.value
+    HIGHPASS = AllMetrics.HIGHPASS.value
+
+
 class StandardMetrics():
+    def __init__(self):
+        self.metrics = [
+            MissingPoseEstimations(),
+            Deltas(),
+            Peaks()
+        ]
+
+
+class RunMetrics():
     def __init__(self, features):
         self.features = features
         self.features = [f for f in self.features if not KeypointsNoMetric.has_value(f.name[:-2])]
-        self.metrics = []
+        self.metrics = {}
 
     def calculate(self):
-        missing_pose_estimations = []
-        peaks = []
-        deltas = []
-        for feature in self.features:
-            missing_pose_estimations.append(MissingPoseEstimations(feature, name='Missing Pose Estimations'))
-            delta = Delta(feature, name='Delta')
-            deltas.append(delta)
-            peaks.append(PeakDetection(feature, delta=delta.values, name='Peaks'))
-
-        self.metrics.append(Metric('Missing Pose Estimations', missing_pose_estimations))
-        self.metrics.append(Metric('Peaks', peaks))
-        self.metrics.append(Metric('Deltas', deltas))
+        standard_metrics = StandardMetrics()
+        for metric in standard_metrics.metrics:
+            self.metrics[metric.name] = []
+            for feature in self.features:
+                self.metrics[metric.name].append(metric.calculate(feature))
 
         return self.metrics
 
@@ -58,87 +59,109 @@ class MetricManager():
         )
         self.status_manager = status_manager
         self.plot_manager = None
-        self.compared_inference_1 = None
-        self.compared_inference_2 = None
-        self.compared_inference_3 = None
+        self.compared_inferences = [None for _ in range(0, 3)]
         self.selected_metric = None
         self.selected_inference = None
+        self.selected_inference_metrics = {}
         self.selected_data = None
+        self.selected_data_metrics = {}
         self.selected_feature = None
-        self.available_metrics = []
+        self.selected_features_metrics = []
 
     def set_inference(self, inference):
-        self.clear_metrics()
+        self.clear_all_metrics()
         self.selected_inference = inference
+        self.selected_inference_metrics = self.calculate_inference_metrics()
 
-    def set_data(self, data):
-        self.clear_metrics()
-        self.selected_data = data
-        # self.calculate_data_statistics()
+    def calculate_inference_metrics(self):
+        runs = self.selected_inference.runs
+        inference_metrics = {}
+        for metric_name, metrics in runs[0].metrics.items():
+            inference_metrics[metrics[0].display_name] = [0 for _ in range(0, len(metrics[0].display_values))]
 
-    def set_feature(self, feature):
-        self.clear_metrics()
-        self.selected_feature = feature
-        self.find_available_metrics()
-        self._gui_set_metrics()
+        for i, data in enumerate(runs):
+            data_metrics, data_modes = self.calculate_data_metrics(data)
 
-    def clear_metrics(self):
-        self.selected_metric = None
-        self.available_metrics.clear()
-        self._gui_set_metrics()
+            for metric_name, metric_values in data_metrics.items():
+                modes = data_modes[metric_name]
+                for j, mode in enumerate(modes):
+                    if mode in ('single_sum', 'mean', 'sum'):
+                        inference_metrics[metric_name][j] += metric_values[j]
+
+                        if mode == 'mean' and i == len(runs) - 1:
+                            inference_metrics[metric_name][j] /= len(runs)
+
+        return inference_metrics
 
     def add_to_compared_inferences(self, inference, position):
-        match position:
-            case 0:
-                self.compared_inference_1 = inference
-            case 1:
-                self.compared_inference_2 = inference
-            case 2:
-                self.compared_inference_3 = inference
-
-        self.calculate_compared_inference_statistics()
-        self._gui_set_compared_inferences_statistics()
+        set_names = all(i is None for i in self.compared_inferences)
+        self.compared_inferences[position] = inference
+        self._gui_set_inference_metrics(position, title=inference.name, set_names=set_names)
 
     def remove_from_compared_inferences(self, position):
-        match position:
-            case 0:
-                self.compared_inference_1 = None
-            case 1:
-                self.compared_inference_2 = None
-            case 2:
-                self.compared_inference_3 = None
+        self.compared_inferences[position] = None
+        clear_names = all(i is None for i in self.compared_inferences)
+        self._gui_clear_inference_metrics(position, clear_names=clear_names)
 
-        self.calculate_compared_inference_statistics()
-        self._gui_set_compared_inferences_statistics()
+    def set_data(self, data):
+        self.clear_feature_metrics()
+        self.clear_data_metrics()
+        self.selected_data = data
+        self.selected_data_metrics, _ = self.calculate_data_metrics()
+        self._gui_set_data_metrics()
 
-    def clear_compared_inferences(self):
-        self.compared_inference_1 = None
-        self.compared_inference_2 = None
-        self.compared_inference_3 = None
-        self._gui_set_compared_inferences_statistics()
+    def calculate_data_metrics(self, data=None):
+        data = data or self.selected_data
+        data_modes = {}
+        data_metrics = {}
+        for metric_name, metrics in data.metrics.items():
+            name = metrics[0].display_name
+            modes = metrics[0].display_modes
+            values = [0 for i in range(0, len(modes))]
+            for i, mode in enumerate(modes):
+                if mode == 'single_sum':
+                    values[i] = metrics[0].display_values[i]
+                if mode == 'sum':
+                    for metric in metrics:
+                        values[i] += metric.display_values[i]
+                if mode == 'mean':
+                    for metric in metrics:
+                        values[i] += metric.display_values[i]
+                    values[i] /= len(metrics)
+            data_metrics[name] = values
+            data_modes[name] = modes
+        return data_metrics, data_modes
 
-    def calculate_compared_inference_statistics(self):
-        pass
+    def set_feature(self, feature):
+        self.clear_feature_metrics()
+        self.selected_feature = feature
+        self.selected_features_metrics = self.find_feature_metrics()
+        self._gui_set_feature_metrics()
 
-    def _gui_set_compared_inferences_statistics(self):
-        name_1 = self.compared_inference_1.name if self.compared_inference_1 is not None else 'No Inference Selected'
-        name_2 = self.compared_inference_2.name if self.compared_inference_2 is not None else 'No Inference Selected'
-        name_3 = self.compared_inference_3.name if self.compared_inference_3 is not None else 'No Inference Selected'
-        self.gui_metric.inference_1_title_var.set(name_1)
-        self.gui_metric.inference_2_title_var.set(name_2)
-        self.gui_metric.inference_3_title_var.set(name_3)
-        # statistics ...
+    def find_feature_metrics(self):
+        feature_metrics = []
+        for _, metrics in self.selected_data.metrics.items():
+            for metric in metrics:
+                if self.selected_feature == metric.feature:
+                    feature_metrics.append(metric)
+        return feature_metrics
 
-    def find_available_metrics(self):
-        for metric in self.selected_data.metrics:
-            for m in metric.metrics:
-                if self.selected_feature == m.feature:
-                    self.available_metrics.append(m)
+    def clear_all_metrics(self):
+        self.clear_inference_metrics()
+        self.clear_data_metrics()
+        self.clear_feature_metrics()
 
-    def _gui_set_metrics(self):
-        self.gui_metric.listbox_metrics.delete(0, tk.END)
-        for metric in self.available_metrics:
-            self.gui_metric.listbox_metrics.insert(tk.END, metric.list_name)
+    def clear_inference_metrics(self):
+        self.selected_inference_metrics = {}
+
+    def clear_data_metrics(self):
+        self.selected_data_metrics = {}
+        self._gui_set_data_metrics()
+
+    def clear_feature_metrics(self):
+        self.selected_metric = None
+        self.selected_features_metrics.clear()
+        self._gui_set_feature_metrics()
 
     def metric_selected(self, event=None):
         selection = self.gui_metric.listbox_metrics.curselection()
@@ -147,7 +170,7 @@ class MetricManager():
 
         selection_str = self.gui_metric.listbox_metrics.get(selection)
 
-        for metric in self.available_metrics:
+        for metric in self.selected_features_metrics:
             if metric.list_name == selection_str:
                 self.selected_metric = metric
 
@@ -169,3 +192,41 @@ class MetricManager():
         if plottables is not None:
             x, y = event.widget.winfo_pointerxy()
             self.plot_manager.add_to_plot(x, y, plottables=plottables)
+
+    def _gui_set_inference_metrics(self, position, title, set_names=False):
+        for m in enumerate(self.selected_inference_metrics.items()):
+            if set_names:
+                self.gui_metric.inference_metrics_names[m[0]].set(m[1][0])
+
+            self.gui_metric.inference_metrics_values[position][m[0]].set(', '.join(str(round(x, 3)) for x in m[1][1]))
+
+        if len(title) > 20:
+            title = title[: 18] + '...'
+        self.gui_metric.inference_metrics_titles[position].set(title)
+
+    def _gui_clear_inference_metrics(self, position, clear_names=False):
+        if clear_names:
+            for name in self.gui_metric.inference_metrics_names:
+                name.set('...')
+
+        for values in self.gui_metric.inference_metrics_values[position]:
+            values.set('')
+
+        self.gui_metric.inference_metrics_titles[position].set('No Inference Selected')
+
+    def _gui_set_data_metrics(self):
+        if not self.selected_data_metrics:
+            for name in self.gui_metric.data_metrics_names:
+                name.set('...')
+            for values in self.gui_metric.data_metrics_values:
+                values.set('')
+            return
+
+        for m in enumerate(self.selected_data_metrics.items()):
+            self.gui_metric.data_metrics_names[m[0]].set(m[1][0])
+            self.gui_metric.data_metrics_values[m[0]].set(', '.join(str(round(x, 3)) for x in m[1][1]))
+
+    def _gui_set_feature_metrics(self):
+        self.gui_metric.listbox_metrics.delete(0, tk.END)
+        for metric in self.selected_features_metrics:
+            self.gui_metric.listbox_metrics.insert(tk.END, metric.list_name)

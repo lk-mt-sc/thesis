@@ -15,7 +15,7 @@ from data_types.run import Run
 from data_types.feature import Feature
 from utils import collect_image_infos, cvt_to_coco_json
 from manager.dataset_manager import KeypointsInterpolation
-from manager.metric_manager import StandardMetrics
+from manager.metric_manager import RunMetrics
 from common import MMPOSE_DIR, MMPOSE_TEST_SCRIPT, MMPOSE_DATASET_DIR
 from common import MMDETECTION_DIR, MMDETECTION_TEST_SCRIPT
 from common import INFERENCES_DIR
@@ -408,10 +408,12 @@ class Inference:
                 'pose_estimation_scores': pose_estimation_scores
             })
 
-        inference_progress.value = 'SAVING INFER RES. '
-
+        inference_progress.value = 'CALC. METRICS'
         for run in runs:
-            metrics = StandardMetrics(run['features']).calculate().copy()
+            run['metrics'] = RunMetrics(run['features']).calculate().copy()
+
+        inference_progress.value = 'SAVING INFER RES. '
+        for run in runs:
             new_run = Run(
                 run['id'],
                 run['path'],
@@ -422,7 +424,7 @@ class Inference:
                 run['ious'],
                 run['detection_scores'],
                 run['pose_estimation_scores'],
-                metrics)
+                run['metrics'])
             new_run.save(run['path'])
 
         self.end_datetime_timestamp = datetime.timestamp(datetime.now())

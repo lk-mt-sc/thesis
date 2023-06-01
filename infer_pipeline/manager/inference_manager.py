@@ -157,8 +157,8 @@ class InferenceManager():
         self.gui_inference.details_duration_pose_estimation_var.set(
             f'{str(duration[0])} min - {str(duration[1])} sec - {str(duration[2])} sec')
         self.gui_inference.details_description_var.set(selected_inference.description)
-        score = '{:.4f} (Detection)'.format(round(selected_inference.score_detection, 4))
-        score += ' - {:.4f} (Pose Estimation)'.format(round(selected_inference.score_pose_estimation, 4))
+        score = '{:.3f} (Detection)'.format(round(selected_inference.score_detection, 3))
+        score += ' - {:.3f} (Pose Estimation)'.format(round(selected_inference.score_pose_estimation, 3))
         self.gui_inference.details_score_var.set(score)
 
         self.gui_inference.details_listbox_data.delete(0, tk.END)
@@ -174,6 +174,7 @@ class InferenceManager():
         self.gui_inference.details_duration_bb_detection_var.set('')
         self.gui_inference.details_duration_pose_estimation_var.set('')
         self.gui_inference.details_description_var.set('')
+        self.gui_inference.details_score_var.set('')
 
         self.gui_inference.details_listbox_data.delete(0, tk.END)
 
@@ -362,6 +363,7 @@ class InferenceManager():
         self.plot_manager.clear_plots()
         self.feature_manager.clear()
         self.metric_manager.clear_compared_inferences()
+        self.metric_manager.clear_all_metrics()
         self.selected_run = None
 
     def on_drag(self, event=None):
