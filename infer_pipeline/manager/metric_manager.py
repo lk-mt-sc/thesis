@@ -1,22 +1,19 @@
 import tkinter as tk
+from tkinter import messagebox
 from enum import Enum
 
 from gui.gui_metric import GUIMetric
 from manager.dataset_manager import KeypointsNoMetric
-from metrics.peaks import Peaks
-from metrics.deltas import Deltas
+from metrics.all_metrics import AllMetrics
 from metrics.missing_pose_estimations import MissingPoseEstimations
-
-
-class AllMetrics(Enum):
-    MISSING_POSE_ESTIMATIONS = 'Missing Pose Estimations'
-    DELTAS = 'Deltas'
-    PEAKS = 'Peaks'
-    LOWPASS = 'Low-Pass Filter'
-    HIGHPASS = 'High-Pass Filter'
+from metrics.deltas import Deltas
+from metrics.peaks import Peaks
+from metrics.lowpass import Lowpass
+from metrics.highpass import Highpass
 
 
 class CalculableMetrics(Enum):
+    DELTAS = AllMetrics.DELTAS.value
     PEAKS = AllMetrics.PEAKS.value
     LOWPASS = AllMetrics.LOWPASS.value
     HIGHPASS = AllMetrics.HIGHPASS.value
@@ -26,8 +23,7 @@ class StandardMetrics():
     def __init__(self):
         self.metrics = [
             MissingPoseEstimations(),
-            Deltas(),
-            Peaks()
+            Deltas()
         ]
 
 
@@ -55,7 +51,8 @@ class MetricManager():
             listbox_metrics_select_callback=self.metric_selected,
             listbox_metrics_drag_callback=self.on_drag,
             listbox_metrics_drop_callback=self.on_drop,
-            button_calculate_callback=None,
+            radiobutton_metrics_select_callback=self.calculable_metric_selected,
+            button_calculate_callback=self.calculate_metric,
         )
         self.status_manager = status_manager
         self.plot_manager = None
@@ -67,6 +64,11 @@ class MetricManager():
         self.selected_data_metrics = {}
         self.selected_feature = None
         self.selected_features_metrics = []
+        self.session_metrics = []
+
+        # initialize parameter inputs
+        self.calculable_metric_selected()
+        self._gui_disable_button_calculate()
 
     def set_inference(self, inference):
         self.clear_all_metrics()
@@ -102,6 +104,10 @@ class MetricManager():
         self.compared_inferences[position] = None
         clear_names = all(i is None for i in self.compared_inferences)
         self._gui_clear_inference_metrics(position, clear_names=clear_names)
+
+    def clear_compared_inferences(self):
+        for i in range(0, 3):
+            self.remove_from_compared_inferences(i)
 
     def set_data(self, data):
         self.clear_feature_metrics()
@@ -144,6 +150,11 @@ class MetricManager():
             for metric in metrics:
                 if self.selected_feature == metric.feature:
                     feature_metrics.append(metric)
+
+        for metric in self.session_metrics:
+            if self.selected_feature == metric.feature:
+                feature_metrics.append(metric)
+
         return feature_metrics
 
     def clear_all_metrics(self):
@@ -162,8 +173,10 @@ class MetricManager():
         self.selected_metric = None
         self.selected_features_metrics.clear()
         self._gui_set_feature_metrics()
+        self._gui_disable_button_calculate()
 
     def metric_selected(self, event=None):
+        self._gui_clear_parameters(disable_entries=False)
         selection = self.gui_metric.listbox_metrics.curselection()
         if not selection:
             return
@@ -173,6 +186,83 @@ class MetricManager():
         for metric in self.selected_features_metrics:
             if metric.list_name == selection_str:
                 self.selected_metric = metric
+
+        parameters = self.selected_metric.parameters
+        if parameters is not None:
+            self._gui_set_parameter_names(self.selected_metric.parameter_names, self.selected_metric.name)
+            self._gui_set_parameter_values(parameters)
+            self._gui_enable_button_calculate()
+            self._gui_set_calculable_metric(self.selected_metric.type)
+        else:
+            self._gui_clear_parameters()
+            self._gui_disable_button_calculate()
+            self._gui_set_calculable_metric(None)
+
+    def calculable_metric_selected(self, event=None):
+        self._gui_clear_parameters()
+
+        # select bug?
+
+        if self.selected_feature is None:
+            return
+
+        selected_calculable_metric = self.metric_selection_to_class(self.gui_metric.add_metric_var.get())
+        if selected_calculable_metric is None:
+            return
+
+        self._gui_set_parameter_names(selected_calculable_metric.parameter_names, selected_calculable_metric.name)
+        self._gui_enable_button_calculate()
+
+    def calculate_metric(self, event=None):
+        metric_type = self.gui_metric.add_metric_var.get()
+        metric_name = self.gui_metric.metric_name_var.get()
+        selected_calculable_metric = self.metric_selection_to_class(metric_type, metric_name)
+
+        if selected_calculable_metric is None:
+            return
+
+        gui_parameter_name_vars = self.gui_metric.parameter_name_vars
+        gui_parameter_value_vars = self.gui_metric.parameter_value_vars
+
+        parameters = {}
+        for name, value in zip(gui_parameter_name_vars, gui_parameter_value_vars):
+            parameters[name.get()[:-1]] = value.get()
+
+        if selected_calculable_metric.type == AllMetrics.DELTAS and self.selected_metric is not None:
+            calculate_on = self.selected_metric
+        else:
+            calculate_on = self.selected_feature
+
+        new_metric = selected_calculable_metric.calculate(
+            feature=self.selected_feature,
+            calculate_on=calculate_on,
+            parameters=parameters)
+
+        if self._gui_is_metric_name_taken(new_metric.list_name):
+            messagebox.showerror(title='', message='Metric name already used.')
+            return
+
+        self.session_metrics.append(new_metric)
+        self.set_feature(self.selected_feature)
+        self._gui_enable_button_calculate()
+
+    def metric_selection_to_class(self, metric_selection, metric_name=None):
+        if metric_name is None:
+            metric_name = metric_selection
+
+        match metric_selection:
+            case AllMetrics.MISSING_POSE_ESTIMATIONS.value:
+                return MissingPoseEstimations(name=metric_name)
+            case AllMetrics.DELTAS.value:
+                return Deltas(name=metric_name)
+            case AllMetrics.PEAKS.value:
+                return Peaks(name=metric_name)
+            case AllMetrics.LOWPASS.value:
+                return Lowpass(name=metric_name)
+            case AllMetrics.HIGHPASS.value:
+                return Highpass(name=metric_name)
+            case other:
+                return None
 
     def on_drag(self, event=None):
         if self.selected_metric is None:
@@ -230,3 +320,52 @@ class MetricManager():
         self.gui_metric.listbox_metrics.delete(0, tk.END)
         for metric in self.selected_features_metrics:
             self.gui_metric.listbox_metrics.insert(tk.END, metric.list_name)
+
+    def _gui_is_metric_name_taken(self, metric_name):
+        for name in self.gui_metric.listbox_metrics.get(0, tk.END):
+            if name == metric_name:
+                return True
+        return False
+
+    def _gui_enable_button_calculate(self):
+        self.gui_metric.button_calculate['state'] = 'normal'
+
+    def _gui_disable_button_calculate(self):
+        self.gui_metric.button_calculate['state'] = 'disabled'
+
+    def _gui_clear_parameters(self, disable_entries=True):
+        gui_new_metric_name_var = self.gui_metric.metric_name_var
+        gui_new_metric_name_entry = self.gui_metric.metric_name_entry
+        gui_new_metric_name_var.set('')
+        gui_new_metric_name_entry['state'] = 'disabled'
+
+        gui_parameter_name_vars = self.gui_metric.parameter_name_vars
+        gui_parameter_entries = self.gui_metric.parameter_entries
+        for i, _ in enumerate(gui_parameter_name_vars):
+            gui_parameter_name_vars[i].set(f'Parameter {i + 1}:')
+            if disable_entries:
+                gui_parameter_entries[i].delete(0, tk.END)
+                gui_parameter_entries[i]['state'] = 'disabled'
+
+    def _gui_set_parameter_names(self, parameter_names, metric_name):
+        gui_new_metric_name_var = self.gui_metric.metric_name_var
+        gui_new_metric_name_entry = self.gui_metric.metric_name_entry
+        gui_new_metric_name_var.set(metric_name)
+        gui_new_metric_name_entry['state'] = 'normal'
+
+        gui_parameter_name_vars = self.gui_metric.parameter_name_vars
+        gui_parameter_entries = self.gui_metric.parameter_entries
+        for i, parameter_name in enumerate(parameter_names):
+            gui_parameter_name_vars[i].set(parameter_name + ':')
+            gui_parameter_entries[i]['state'] = 'normal'
+
+    def _gui_set_parameter_values(self, parameters):
+        for i, (_, parameter_value) in enumerate(parameters.items()):
+            if parameter_value is None:
+                parameter_value = ''
+            self.gui_metric.parameter_value_vars[i].set(parameter_value)
+
+    def _gui_set_calculable_metric(self, calculable_metric):
+        if calculable_metric is not None:
+            calculable_metric = calculable_metric.value
+        self.gui_metric.add_metric_var.set(calculable_metric)

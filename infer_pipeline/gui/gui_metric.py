@@ -10,6 +10,7 @@ class GUIMetric():
         listbox_metrics_select_callback,
         listbox_metrics_drag_callback,
         listbox_metrics_drop_callback,
+        radiobutton_metrics_select_callback,
         button_calculate_callback
     ):
         self.root = root
@@ -96,33 +97,39 @@ class GUIMetric():
         self.listbox_metrics_scrollbar.config(command=self.listbox_metrics.yview)
 
         ttk.Label(self.frame, text='Type', font=self.root.font_bold).place(x=1339, y=30)
-        self.add_label_var = tk.StringVar()
-        self.add_label_var.set(calculable_metrics.PEAKS.value)
+        self.add_metric_var = tk.StringVar()
         for i, metric in enumerate(calculable_metrics):
-            ttk.Radiobutton(self.frame, variable=self.add_label_var, value=metric.value,
-                            text=metric.value).place(x=1339, y=50 + i * 20)
+            ttk.Radiobutton(
+                self.frame,
+                variable=self.add_metric_var,
+                value=metric.value,
+                text=metric.value,
+                command=radiobutton_metrics_select_callback
+            ).place(x=1339, y=50 + i * 20)
 
         ttk.Label(self.frame, text='Properties', font=self.root.font_bold).place(x=1489, y=30)
 
         parameter_rows = 4
-        parameter_columns = 2
+        parameter_columns = 3
         self.parameter_name_vars = []
         self.parameter_value_vars = []
+        self.parameter_entries = []
         for i in range(parameter_columns):
             for j in range(parameter_rows):
                 name_var = tk.StringVar()
-                name_var.set(f'Parameter {(i + 1) * (j + 1)}:')
+                name_var.set(f'Parameter {(j + 1) + i * parameter_rows}:')
                 value_var = tk.StringVar()
                 self.parameter_name_vars.append(name_var)
                 self.parameter_value_vars.append(value_var)
                 ttk.Label(self.frame, textvariable=name_var).place(x=1489 + i * 191, y=50 + j * 25)
-                ttk.Entry(self.frame, textvariable=value_var).place(
-                    x=1569 + i * 191, y=48 + j * 25, width=100, height=20)
+                entry = tk.Entry(self.frame, textvariable=value_var)
+                entry.place(x=1569 + i * 191, y=48 + j * 25, width=100, height=20)
+                self.parameter_entries.append(entry)
 
         ttk.Label(self.frame, text='Name:').place(x=1523, y=150)
-        self.name_var = tk.StringVar()
-        self.name_var.set('')
-        ttk.Entry(self.frame, textvariable=self.name_var).place(x=1569, y=150, width=291, height=20)
+        self.metric_name_var = tk.StringVar()
+        self.metric_name_entry = tk.Entry(self.frame, textvariable=self.metric_name_var)
+        self.metric_name_entry.place(x=1569, y=150, width=291, height=20)
 
         self.button_calculate = ttk.Button(
             self.frame,
@@ -130,5 +137,4 @@ class GUIMetric():
             style='Button.TButton',
             width=15,
             command=button_calculate_callback)
-        self.button_calculate.place(x=1339, y=115, height=25)
-        self.button_calculate['state'] = 'disabled'
+        self.button_calculate.place(x=1339, y=140, height=25)

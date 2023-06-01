@@ -1,7 +1,10 @@
+from manager.metric_manager import AllMetrics
 from data_types.plottable import Plottable, PlottableTypes
 
 
 class MissingPoseEstimations():
+    parameter_names = []
+
     def __init__(
             self,
             name=None,
@@ -11,7 +14,7 @@ class MissingPoseEstimations():
             feature=None,
             list_name=None,
             display_values=None):
-        self.name = name or 'Missing Pose Estimations'
+        self.name = name or AllMetrics.MISSING_POSE_ESTIMATIONS.value
         self.steps = steps
         self.values = values
         self.count = count
@@ -20,8 +23,10 @@ class MissingPoseEstimations():
         self.display_name = self.name
         self.display_modes = ['single_sum']
         self.display_values = display_values
+        self.parameters = None
+        self.type = AllMetrics.MISSING_POSE_ESTIMATIONS
 
-    def calculate(self, feature):
+    def calculate(self, feature, calculate_on=None, parameters=None):
         feature_values = feature.values.copy()
         feature_values_interp = feature.values_interp.copy()
         steps = [i for i, v in enumerate(feature_values) if v == -1]

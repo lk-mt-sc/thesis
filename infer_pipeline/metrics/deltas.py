@@ -1,9 +1,12 @@
 import numpy as np
 
+from manager.metric_manager import AllMetrics
 from data_types.plottable import Plottable, PlottableTypes
 
 
 class Deltas():
+    parameter_names = []
+
     def __init__(
             self,
             name=None,
@@ -14,7 +17,7 @@ class Deltas():
             feature=None,
             list_name=None,
             display_values=None):
-        self.name = name or 'Deltas'
+        self.name = name or AllMetrics.DELTAS.value
         self.steps = steps
         self.values = values
         self.mean = mean
@@ -24,10 +27,18 @@ class Deltas():
         self.display_name = self.name + ' (mean/std. deviation)'
         self.display_modes = ['mean', 'mean']
         self.display_values = display_values
+        self.parameters = None
+        self.type = AllMetrics.DELTAS
 
-    def calculate(self, feature):
-        steps = feature.steps.copy()
-        values = np.diff(feature.values_interp.copy()).tolist()
+    def calculate(self, feature, calculate_on=None, parameters=None):
+        if calculate_on is None:
+            calculate_on = feature
+
+        steps = calculate_on.steps.copy()
+        if hasattr(calculate_on, 'values_interp'):
+            values = np.diff(calculate_on.values_interp.copy()).tolist()
+        else:
+            values = np.diff(calculate_on.values.copy()).tolist()
         mean = np.mean(values)
         stdd = np.std(values)
         values.insert(0, 0)
