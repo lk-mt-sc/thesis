@@ -23,7 +23,8 @@ class StandardMetrics():
     def __init__(self):
         self.metrics = [
             MissingPoseEstimations(),
-            Deltas()
+            Deltas(),
+            Highpass(parameters={'Order': '4', 'Cutoff Freq.': '0.5', 'Sample Freq.': ''})
         ]
 
 
