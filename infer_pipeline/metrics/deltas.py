@@ -73,5 +73,9 @@ class Deltas():
         else:
             return None
 
+    @classmethod
+    def tracker_plot(cls, image, slider_value, metric_x, metric_y):
+        return
+
     def __str__(self):
         return self.name

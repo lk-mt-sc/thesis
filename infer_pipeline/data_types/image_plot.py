@@ -3,22 +3,26 @@ from tkinter import ttk
 
 import cv2 as cv
 import matplotlib
+import numpy as np
 from matplotlib.figure import Figure
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 from matplotlib.backends.backend_tkagg import NavigationToolbar2Tk
 
 from common import BACKGROUND_COLOR_HEX
 from manager.dataset_manager import KeyPointsImagePlot
+from metrics.all_metrics import AllMetrics
 
 
 class ImagePlot():
-    def __init__(self, frame, ratio, default_image, image_plot_middle_click_callback):
+    def __init__(self, frame, title=None, image_plot_middle_click_callback=None, tracker_plot=False, tracker_update_callback=None):
         self.frame = frame
-        self.ratio = ratio
-        self.default_image = default_image
+        self.tracker_plot = tracker_plot
+        self.tracker_update_callback = tracker_update_callback
+        self.ratio = 960 / 1080
+        self.default_image = np.full((100, int(self.ratio * 100), 3), (255, 255, 255))
         self.image = self.default_image
         self.title = tk.StringVar()
-        self.title.set('No Inference Selected')
+        self.title.set(title or 'No Inference Selected')
         self.figure = Figure(figsize=(self.ratio * 10, 10), dpi=96, facecolor=BACKGROUND_COLOR_HEX)
         self.plot = self.figure.add_subplot()
         self.figure.subplots_adjust(left=0.03, bottom=0, right=0.97, top=1)
@@ -31,7 +35,6 @@ class ImagePlot():
         self.canvas.draw()
 
         self.label_title = ttk.Label(self.frame, textvariable=self.title)
-        self.label_title.place(x=25, y=80)
 
         self.toolbar = NavigationToolbar2Tk(self.canvas,
                                             self.frame,
@@ -40,14 +43,10 @@ class ImagePlot():
         for button in self.toolbar.winfo_children():
             button.config(background=BACKGROUND_COLOR_HEX, highlightbackground=BACKGROUND_COLOR_HEX)
         self.toolbar.update()
-        self.toolbar.place(x=25, y=1000)
-
-        self.canvas.get_tk_widget().place(x=0, y=0, width=815, height=1080)
 
         self.counter_var = tk.StringVar()
         self.counter_var.set('000/000')
         label_counter = ttk.Label(self.frame, textvariable=self.counter_var)
-        label_counter.place(x=30, y=985)
 
         self.slider = ttk.Scale(
             self.frame,
@@ -56,50 +55,36 @@ class ImagePlot():
             orient='horizontal',
             command=self.slider_changed
         )
-        self.slider.place(x=85, y=985, width=165)
+
         self.slider.configure(state='disabled')
 
-        self.images = []
-        self.image = None
-        self.n_images = 0
-        self.features = []
-        self.bboxes = []
-        self.bboxes_bottomup = []
-        self.ious = []
-        self.detection_scores = []
-        self.pose_estimation_scores = []
+        if self.tracker_plot:
+            label_counter.pack()
+            self.slider.pack()
+            self.toolbar.pack()
+            self.canvas.get_tk_widget().pack()
+        else:
+            self.label_title.place(x=25, y=80)
+            self.canvas.get_tk_widget().place(x=0, y=0, width=815, height=1080)
+            self.toolbar.place(x=25, y=1000)
+            label_counter.place(x=30, y=985)
+            self.slider.place(x=85, y=985, width=165)
+
+        self.run = None
         self.slider_value = 0
         self.dataset_type = None
         self.image_plot_middle_click_callback = image_plot_middle_click_callback
 
-    def plot_image(self, images, features, bboxes, bboxes_bottomup, ious,
-                   detection_scores, pose_estimation_scores, title, dataset_type):
-        self.images = images
-        self.n_images = len(self.images)
-        self.features = features
-        self.bboxes = bboxes
-        self.bboxes_bottomup = bboxes_bottomup
-        self.ious = ious
-        self.detection_scores = detection_scores
-        self.pose_estimation_scores = pose_estimation_scores
-        self.slider_value = 0
-        self.image = self.images[self.slider_value]
+    def plot_image(self, run, title, dataset_type):
+        self.run = run
         self.title.set(title)
         self.dataset_type = dataset_type
         self._gui_enable_slider()
-        self._gui_set_slider_from_to(from_=0, to=self.n_images-1)
+        self._gui_set_slider_from_to(from_=0, to=len(self.run.data.get_images())-1)
         self._gui_set_slider_value(self.slider_value)
 
     def clear(self):
-        self.images.clear()
         self.image = None
-        self.n_images = 0
-        self.features.clear()
-        self.bboxes.clear()
-        self.bboxes_bottomup.clear()
-        self.ious.clear()
-        self.detection_scores.clear()
-        self.pose_estimation_scores.clear()
         self.slider_value = 0
         self.title.set('No Inference Selected')
         self.dataset_type = None
@@ -133,31 +118,34 @@ class ImagePlot():
             b = 0
         else:
             a = value
-            b = self.n_images - 1
+            b = len(self.run.data.get_images()) - 1
         self.counter_var.set(f'{str(a).zfill(3)}/{str(b).zfill(3)}')
 
     def slider_changed(self, value):
-        if not self.images:
+        if self.run is None:
             return
 
         value = int(float(value))
         self.slider_value = value
 
-        self.image = self.images[self.slider_value]
+        if self.tracker_update_callback is not None:
+            self.tracker_update_callback(self.slider_value)
+
+        self.image = self.run.data.get_images()[self.slider_value]
         image = matplotlib.image.imread(self.image)
 
-        for feature in self.features:
+        for feature in self.run.features:
             if feature.values[self.slider_value] == -1:
                 image = cv.putText(image, 'no pose estimations', org=(10, 30), color=(1.0, 1.0, 1.0),
                                    fontFace=cv.FONT_HERSHEY_SIMPLEX, fontScale=1, thickness=1, lineType=cv.LINE_AA)
                 break
         else:
-            bbox = self.bboxes[self.slider_value]
-            detection_score = self.detection_scores[self.slider_value]
-            pose_estimation_score = self.pose_estimation_scores[self.slider_value]
+            bbox = self.run.bboxes[self.slider_value]
+            detection_score = self.run.detection_scores[self.slider_value]
+            pose_estimation_score = self.run.pose_estimation_scores[self.slider_value]
 
-            if self.bboxes_bottomup:
-                bbox_bottomup = self.bboxes_bottomup[self.slider_value]
+            if self.run.bboxes_bottomup:
+                bbox_bottomup = self.run.bboxes_bottomup[self.slider_value]
                 iou = self.ious[self.slider_value]
             else:
                 bbox_bottomup = None
@@ -175,11 +163,22 @@ class ImagePlot():
         for keypoint_name, keypoint in self.dataset_type.keypoints.items():
             keypoint_name = keypoint_name[:-2]
             if KeyPointsImagePlot.has_value(keypoint_name) and not keypoint_name in drawn_keypoints:
-                x = int(next(f for f in self.features if f.name == keypoint_name + '_x').values[self.slider_value])
-                y = int(next(f for f in self.features if f.name == keypoint_name + '_y').values[self.slider_value])
+                feature_x = next(f for f in self.run.features if f.name == keypoint_name + '_x')
+                feature_y = next(f for f in self.run.features if f.name == keypoint_name + '_y')
+                x = int(feature_x.values[self.slider_value])
+                y = int(feature_y.values[self.slider_value])
                 color = [c / 256 for c in keypoint['color']]
                 image = cv.circle(image, center=(x, y), radius=5, thickness=-1, color=color)
                 drawn_keypoints.append(keypoint_name)
+
+                if self.tracker_plot:
+                    metric_x = next(
+                        (m for m in self.run.metrics[AllMetrics.HIGHPASS.value] if m.feature == feature_x), None)
+                    metric_y = next(
+                        (m for m in self.run.metrics[AllMetrics.HIGHPASS.value] if m.feature == feature_y), None)
+
+                    for _, metrics in self.run.metrics.items():
+                        metrics[0].tracker_plot(image, self.slider_value, metric_x, metric_y)
 
     def _draw_skeleton(self, image):
         for key, limb in self.dataset_type.skeleton.items():
@@ -189,10 +188,10 @@ class ImagePlot():
             if False in (KeyPointsImagePlot.has_value(keypoint_1_name), KeyPointsImagePlot.has_value(keypoint_2_name)):
                 continue
 
-            x1 = int(next(f for f in self.features if f.name == keypoint_1_name + '_x').values[self.slider_value])
-            y1 = int(next(f for f in self.features if f.name == keypoint_1_name + '_y').values[self.slider_value])
-            x2 = int(next(f for f in self.features if f.name == keypoint_2_name + '_x').values[self.slider_value])
-            y2 = int(next(f for f in self.features if f.name == keypoint_2_name + '_y').values[self.slider_value])
+            x1 = int(next(f for f in self.run.features if f.name == keypoint_1_name + '_x').values[self.slider_value])
+            y1 = int(next(f for f in self.run.features if f.name == keypoint_1_name + '_y').values[self.slider_value])
+            x2 = int(next(f for f in self.run.features if f.name == keypoint_2_name + '_x').values[self.slider_value])
+            y2 = int(next(f for f in self.run.features if f.name == keypoint_2_name + '_y').values[self.slider_value])
             color = [c / 256 for c in limb['color']]
             image = cv.line(image, pt1=(x1, y1), pt2=(x2, y2), color=color, thickness=2)
 

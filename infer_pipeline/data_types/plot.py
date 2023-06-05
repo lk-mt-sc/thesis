@@ -1,13 +1,15 @@
 import copy
 from enum import Enum
-
+import tkinter as tk
 from tkinter import ttk
 from tkinter import simpledialog
+
 from matplotlib.figure import Figure
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 from matplotlib.backends.backend_tkagg import NavigationToolbar2Tk
 
 from common import BACKGROUND_COLOR_HEX
+from data_types.image_plot import ImagePlot
 
 
 class PlotLayouts(Enum):
@@ -23,8 +25,23 @@ class PlotLayouts(Enum):
         return value in cls._value2member_map_
 
 
+class Tracker():
+    def __init__(self, window, plot, subplot):
+        self.window = window
+        self.plot = plot
+        self.subplot = subplot
+        self.image_plot = ImagePlot(self.window, title='', tracker_plot=True,
+                                    tracker_update_callback=self.update)
+        self.step = 0
+
+    def update(self, step):
+        self.step = step
+        self.plot._update_subplot(self.subplot)
+
+
 class Plot:
-    def __init__(self, frame, plot_layout):
+    def __init__(self, root, frame, plot_layout):
+        self.root = root
         self.frame = frame
         self.figure = Figure(figsize=(23, 10), dpi=96, facecolor=BACKGROUND_COLOR_HEX)
         self.subplots = []
@@ -48,6 +65,8 @@ class Plot:
             command=self.clear_plot)
 
         self.figure.subplots_adjust(left=0.02, bottom=0.075, right=0.99, top=0.975, wspace=0.1, hspace=0.25)
+
+        self.trackers = []
 
     def _add_subplot(self, rows, columns, index):
         self.subplots.append(
@@ -111,6 +130,43 @@ class Plot:
             if new_title:
                 subplot['plot'].title.set_text(new_title)
             self.draw()
+        if button == 2 and in_axes is not None:
+            subplot = self._find_subplot(axes=in_axes)
+            self.add_tracker(subplot)
+
+    def add_tracker(self, subplot):
+        for tracker in self.trackers:
+            if tracker.subplot == subplot:
+                return
+
+        window = tk.Toplevel(self.root)
+        tracker = Tracker(window=window, plot=self, subplot=subplot)
+        center_x = self.root.winfo_screenwidth() / 2 - window.winfo_reqwidth() / 2
+        center_y = self.root.winfo_screenheight() / 2 - window.winfo_reqheight() / 2
+        window.geometry(f'960x1080+{int(center_x - 480)}+{int(center_y - 540)}')
+        window.title('Tracker')
+        window.protocol("WM_DELETE_WINDOW", lambda arg=window: self.remove_tracker(arg))
+        self.trackers.append(tracker)
+
+    def remove_tracker(self, window):
+        subplot = None
+        for tracker in self.trackers:
+            if tracker.window == window:
+                subplot = tracker.subplot
+                self.trackers.remove(tracker)
+                window.destroy()
+                self._update_subplot(subplot)
+                break
+
+    def plot_on_tracker_plot(self, x, y, run, dataset_type):
+        for tracker in self.trackers:
+            image_plot = tracker.image_plot
+            frame = image_plot.frame
+            fx, fy, fw, fh = frame.winfo_rootx(), frame.winfo_rooty(), frame.winfo_width(), frame.winfo_height()
+            if x in range(fx, fx + fw) and y in range(fy, fy + fh):
+                title = f'Tracker Run {str(run.id).zfill(2)}'
+                tracker.window.title(title)
+                image_plot.plot_image(run, '', dataset_type)
 
     def add_to_plot(self, x, y, plottables):
         subplot = self._find_subplot(x=x, y=y)
@@ -225,5 +281,9 @@ class Plot:
                     'plottable': subplot['plottables'][i]
                 }
             )
+
+        tracker = next((t for t in self.trackers if t.subplot == subplot), None)
+        if tracker is not None:
+            tracker.subplot['plot'].axvline(x=tracker.step, color='k')
 
         self.draw()

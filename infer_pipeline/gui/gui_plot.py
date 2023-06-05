@@ -26,11 +26,6 @@ class GUIPlot():
         self.notebook.bind('<Double-Button-1>', notebook_tab_double_click_callback)
         self.notebook.bind('<Button-2>', notebook_tab_middle_click_callback)
 
-        w = 960
-        h = 1080
-        ratio = w/h
-
-        self.default_image = np.full((100, int(ratio * 100), 3), (255, 255, 255))
         self.frame_image_plots = ttk.Frame(self.notebook, width=2445, height=1080, padding=(0, 0))
         self.notebook.add(self.frame_image_plots, text='Image Plot')
 
@@ -45,23 +40,17 @@ class GUIPlot():
 
         self.image_plot_1 = ImagePlot(
             self.frame_image_plot_1,
-            ratio,
-            self.default_image,
-            image_plot_middle_click_callback
+            image_plot_middle_click_callback=image_plot_middle_click_callback
         )
 
         self.image_plot_2 = ImagePlot(
             self.frame_image_plot_2,
-            ratio,
-            self.default_image,
-            image_plot_middle_click_callback
+            image_plot_middle_click_callback=image_plot_middle_click_callback
         )
 
         self.image_plot_3 = ImagePlot(
             self.frame_image_plot_3,
-            ratio,
-            self.default_image,
-            image_plot_middle_click_callback
+            image_plot_middle_click_callback=image_plot_middle_click_callback
         )
 
         self.frame_add_plot = ttk.Frame(self.notebook, width=2445, height=1080, padding=(0, 0))

@@ -52,25 +52,24 @@ class PlotManager():
         self.old_tab = 0
 
     def plot_image(self, x, y, inference, run, title, dataset_type):
-        notebook = self.gui_plot.notebook
-        selected_tab = notebook.index(notebook.select())
-        if selected_tab != 0:
-            return
+        focus = self.gui_plot.root.focus_displayof()
+        if 'toplevel' in str(focus):
+            for plot in self.plots:
+                plot['plot'].plot_on_tracker_plot(x, y, run, dataset_type)
+        else:
+            notebook = self.gui_plot.notebook
+            selected_tab = notebook.index(notebook.select())
+            if selected_tab != 0:
+                return
 
-        image_plot, position = self._find_image_plot(x, y)
-        if not None in (image_plot, position):
-            image_plot.plot_image(
-                run.data.get_images(),
-                run.features.copy(),
-                run.bboxes.copy(),
-                run.bboxes_bottomup.copy(),
-                run.ious.copy(),
-                run.detection_scores.copy(),
-                run.pose_estimation_scores.copy(),
-                title,
-                dataset_type
-            )
-            self.metric_manager.add_to_compared_inferences(inference, position)
+            image_plot, position = self._find_image_plot(x, y)
+            if not None in (image_plot, position):
+                image_plot.plot_image(
+                    run,
+                    title,
+                    dataset_type
+                )
+                self.metric_manager.add_to_compared_inferences(inference, position)
 
     def clear_image(self, event=None, position=None):
         if position is not None:
@@ -100,7 +99,7 @@ class PlotManager():
     def _gui_add_plot(self, plot_layout, title):
         notebook = self.gui_plot.notebook
         frame = ttk.Frame(notebook, width=2445, height=1080, padding=(0, 0))
-        new_plot = Plot(frame, plot_layout=plot_layout)
+        new_plot = Plot(self.gui_plot.root, frame, plot_layout=plot_layout)
         new_plot.place_canvas(x=0, y=0, width=2445, height=1080)
         new_plot.place_toolbar(x=65, y=1039)
         new_plot.place_button_clear(x=5, y=1045, height=30)

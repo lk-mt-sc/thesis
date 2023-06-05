@@ -1,3 +1,4 @@
+import cv2 as cv
 import numpy as np
 from scipy.signal import butter, filtfilt, savgol_filter
 
@@ -213,6 +214,15 @@ class Highpass():
             return plottables
         else:
             return None
+
+    @classmethod
+    def tracker_plot(cls, image, slider_value, metric_x, metric_y):
+        if not None in (metric_x, metric_y):
+            if metric_x.values_interp and metric_y.values_interp:
+                x = int(metric_x.values_interp[slider_value])
+                y = int(metric_y.values_interp[slider_value])
+                color = [255 / 256, 20 / 256, 147 / 256]
+                image = cv.circle(image, center=(x, y), radius=5, thickness=-1, color=color)
 
     def __str__(self):
         return self.name
