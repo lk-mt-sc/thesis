@@ -375,6 +375,9 @@ class InferenceManager():
     def on_drop(self, event=None):
         self.gui_inference.root.configure(cursor='')
 
+        if not self.selected_inferences:
+            return
+
         selected_inference = self.selected_inferences[0]
         selected_run = self.selected_run
         if selected_run is None:
