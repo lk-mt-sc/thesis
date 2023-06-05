@@ -2,6 +2,8 @@ import tkinter as tk
 from tkinter import messagebox
 from enum import Enum
 
+import numpy as np
+
 from gui.gui_metric import GUIMetric
 from manager.dataset_manager import KeypointsNoMetric
 from metrics.all_metrics import AllMetrics
@@ -19,12 +21,32 @@ class CalculableMetrics(Enum):
     HIGHPASS = AllMetrics.HIGHPASS.value
 
 
+class InferenceMetrics():
+    def __init__(self):
+        self.features = []
+
+    def add_feature(self, feature):
+        self.features.append(feature)
+
+    def calculate(self):
+        self.features = [f for f in self.features if not KeypointsNoMetric.has_value(f.name[:-2])]
+        highpass_total = []
+        for feature in self.features:
+            highpass = Highpass(parameters={'Order': '4', 'Cutoff Freq.': '0.5',
+                                            'Sample Freq.': '', 'Zeroing Thr.': ''}).calculate(feature)
+            highpass_total += highpass.values_abs
+        StandardMetrics.highpass_zeroing_threshold = np.std(highpass_total) / 2
+
+
 class StandardMetrics():
+    highpass_zeroing_threshold = 5.0
+
     def __init__(self):
         self.metrics = [
             MissingPoseEstimations(),
             Deltas(),
-            Highpass(parameters={'Order': '4', 'Cutoff Freq.': '0.5', 'Sample Freq.': ''})
+            Highpass(parameters={'Order': '4', 'Cutoff Freq.': '0.5',
+                     'Sample Freq.': '', 'Zeroing Thr.': str(StandardMetrics.highpass_zeroing_threshold)})
         ]
 
 
@@ -75,6 +97,7 @@ class MetricManager():
         self.clear_all_metrics()
         self.selected_inference = inference
         self.selected_inference_metrics = self.calculate_inference_metrics()
+        self._gui_set_inference_metrics(position=-1)
 
     def calculate_inference_metrics(self):
         runs = self.selected_inference.runs
@@ -94,6 +117,25 @@ class MetricManager():
                         if mode == 'mean' and i == len(runs) - 1:
                             inference_metrics[metric_name][j] /= len(runs)
 
+        metrics_to_delete = []
+        for metric_name, metric_values in inference_metrics.items():
+            if not metric_values:
+                metrics_to_delete.append(metric_name)
+
+        for metric_name in metrics_to_delete:
+            del inference_metrics[metric_name]
+
+        highpass_total = []
+        for run in runs:
+            for _, metrics in run.metrics.items():
+                if metrics[0].type == AllMetrics.HIGHPASS:
+                    for m in metrics:
+                        highpass_total += m.values_abs
+                    break
+
+        mean = np.mean(highpass_total)
+        std = np.std(highpass_total)
+        inference_metrics['abs. High-Pass (mean/std. dev.)'] = [mean, std]
         return inference_metrics
 
     def add_to_compared_inferences(self, inference, position):
@@ -165,6 +207,7 @@ class MetricManager():
 
     def clear_inference_metrics(self):
         self.selected_inference_metrics = {}
+        self._gui_clear_inference_metrics(position=-1)
 
     def clear_data_metrics(self):
         self.selected_data_metrics = {}
@@ -201,8 +244,6 @@ class MetricManager():
 
     def calculable_metric_selected(self, event=None):
         self._gui_clear_parameters()
-
-        # select bug?
 
         if self.selected_feature is None:
             return
@@ -284,26 +325,41 @@ class MetricManager():
             x, y = event.widget.winfo_pointerxy()
             self.plot_manager.add_to_plot(x, y, plottables=plottables)
 
-    def _gui_set_inference_metrics(self, position, title, set_names=False):
-        for m in enumerate(self.selected_inference_metrics.items()):
-            if set_names:
-                self.gui_metric.inference_metrics_names[m[0]].set(m[1][0])
+    def _gui_set_inference_metrics(self, position, title=None, set_names=False):
+        if position == -1:
+            for m in enumerate(self.selected_inference_metrics.items()):
+                if m[1][1]:
+                    self.gui_metric.inference_metrics_names[m[0]].set(m[1][0])
+                    self.gui_metric.inference_metrics_values[m[0]].set(', '.join(str(round(x, 3)) for x in m[1][1]))
+        else:
+            for m in enumerate(self.selected_inference_metrics.items()):
+                if m[1][1]:
+                    if set_names:
+                        self.gui_metric.inferences_metrics_names[m[0]].set(m[1][0])
 
-            self.gui_metric.inference_metrics_values[position][m[0]].set(', '.join(str(round(x, 3)) for x in m[1][1]))
+                    self.gui_metric.inferences_metrics_values[position][m[0]].set(
+                        ', '.join(str(round(x, 3)) for x in m[1][1]))
 
-        if len(title) > 20:
-            title = title[: 18] + '...'
-        self.gui_metric.inference_metrics_titles[position].set(title)
+            if len(title) > 20:
+                title = title[: 18] + '...'
+            self.gui_metric.inference_metrics_titles[position].set(title)
 
     def _gui_clear_inference_metrics(self, position, clear_names=False):
-        if clear_names:
+        if position == -1:
             for name in self.gui_metric.inference_metrics_names:
                 name.set('...')
+            for values in self.gui_metric.inference_metrics_values:
+                values.set('')
+            return
+        else:
+            if clear_names:
+                for name in self.gui_metric.inferences_metrics_names:
+                    name.set('...')
 
-        for values in self.gui_metric.inference_metrics_values[position]:
-            values.set('')
+            for values in self.gui_metric.inferences_metrics_values[position]:
+                values.set('')
 
-        self.gui_metric.inference_metrics_titles[position].set('No Inference Selected')
+            self.gui_metric.inference_metrics_titles[position].set('No Inference Selected')
 
     def _gui_set_data_metrics(self):
         if not self.selected_data_metrics:
@@ -314,8 +370,9 @@ class MetricManager():
             return
 
         for m in enumerate(self.selected_data_metrics.items()):
-            self.gui_metric.data_metrics_names[m[0]].set(m[1][0])
-            self.gui_metric.data_metrics_values[m[0]].set(', '.join(str(round(x, 3)) for x in m[1][1]))
+            if m[1][1]:
+                self.gui_metric.data_metrics_names[m[0]].set(m[1][0])
+                self.gui_metric.data_metrics_values[m[0]].set(', '.join(str(round(x, 3)) for x in m[1][1]))
 
     def _gui_set_feature_metrics(self):
         self.gui_metric.listbox_metrics.delete(0, tk.END)

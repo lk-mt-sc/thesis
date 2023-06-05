@@ -15,7 +15,7 @@ from data_types.run import Run
 from data_types.feature import Feature
 from utils import collect_image_infos, cvt_to_coco_json
 from manager.dataset_manager import KeypointsInterpolation
-from manager.metric_manager import RunMetrics
+from manager.metric_manager import InferenceMetrics, RunMetrics
 from common import MMPOSE_DIR, MMPOSE_TEST_SCRIPT, MMPOSE_DATASET_DIR
 from common import MMDETECTION_DIR, MMDETECTION_TEST_SCRIPT
 from common import INFERENCES_DIR
@@ -409,6 +409,13 @@ class Inference:
             })
 
         inference_progress.value = 'CALC. METRICS'
+
+        inference_metrics = InferenceMetrics()
+        for run in runs:
+            for feature in run['features']:
+                inference_metrics.add_feature(feature)
+        inference_metrics.calculate()
+
         for run in runs:
             run['metrics'] = RunMetrics(run['features']).calculate().copy()
 
