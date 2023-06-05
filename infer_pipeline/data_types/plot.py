@@ -135,10 +135,6 @@ class Plot:
             self.add_tracker(subplot)
 
     def add_tracker(self, subplot):
-        for tracker in self.trackers:
-            if tracker.subplot == subplot:
-                return
-
         window = tk.Toplevel(self.root)
         tracker = Tracker(window=window, plot=self, subplot=subplot)
         center_x = self.root.winfo_screenwidth() / 2 - window.winfo_reqwidth() / 2
@@ -282,8 +278,8 @@ class Plot:
                 }
             )
 
-        tracker = next((t for t in self.trackers if t.subplot == subplot), None)
-        if tracker is not None:
-            tracker.subplot['plot'].axvline(x=tracker.step, color='k')
+        for tracker in self.trackers:
+            if tracker.subplot == subplot:
+                tracker.subplot['plot'].axvline(x=tracker.step, color='k')
 
         self.draw()
