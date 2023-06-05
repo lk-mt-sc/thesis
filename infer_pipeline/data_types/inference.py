@@ -408,15 +408,9 @@ class Inference:
                 'pose_estimation_scores': pose_estimation_scores
             })
 
-        # import pickle
-        # data = []
         inference_progress.value = 'CALC. METRICS'
         for run in runs:
             run['metrics'] = RunMetrics(run['features']).calculate().copy()
-            # for m in run['metrics']['High-Pass (Butterw.)']:
-            #    data.append(m.values)
-        # with open('data.pkl', 'wb') as f:
-        #    pickle.dump(data, f)
 
         inference_progress.value = 'SAVING INFER RES. '
         for run in runs:
