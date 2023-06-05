@@ -162,7 +162,6 @@ class Highpass():
                     type_=PlottableTypes.METRIC
                 )
             ]
-            print(self.values_abs, type(self.values_abs))
             if self.values_abs:
                 plottables.append(
                     Plottable(
