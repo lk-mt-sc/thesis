@@ -10,7 +10,8 @@ class Highpass():
     parameter_names = [
         'Order',
         'Cutoff Freq.',
-        'Sample Freq.'
+        'Sample Freq.',
+        'Zeroing Thr.'
     ]
 
     def __init__(
@@ -57,6 +58,8 @@ class Highpass():
             func_params.append('ba')
             func_params.append(
                 self.process_parameter(parameters['Sample Freq.'], float) if parameters['Sample Freq.'] else None)
+            zeroing_threshold = self.process_parameter(
+                parameters['Zeroing Thr.'], float) if parameters['Zeroing Thr.'] else 5.0
         else:
             func_params.append(4)
             func_params.append(20)
@@ -64,6 +67,7 @@ class Highpass():
             func_params.append(False)
             func_params.append('ba')
             func_params.append(None)
+            zeroing_threshold = 5.0
 
         b, a = butter(*func_params)
         steps = feature.steps.copy()
@@ -72,7 +76,7 @@ class Highpass():
 
         values_zeroed = []
         for value in values_abs:
-            if value >= 7.264721378213865 / 2:
+            if value >= zeroing_threshold:
                 values_zeroed.append(value)
             else:
                 values_zeroed.append(0)
