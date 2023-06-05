@@ -1,7 +1,7 @@
-from scipy.signal import butter, filtfilt
+import numpy as np
+from scipy.signal import butter, filtfilt, savgol_filter
 
 from metrics.all_metrics import AllMetrics
-from metrics.deltas import Deltas
 from data_types.plottable import Plottable, PlottableTypes
 
 
@@ -17,6 +17,10 @@ class Highpass():
             name=None,
             steps=None,
             values=None,
+            values_abs=None,
+            values_zeroed=None,
+            values_interp=None,
+            values_smoothed=None,
             feature=None,
             list_name=None,
             parameters=None,
@@ -24,6 +28,10 @@ class Highpass():
         self.name = name or AllMetrics.HIGHPASS.value
         self.steps = steps
         self.values = values
+        self.values_abs = values_abs
+        self.values_zeroed = values_zeroed
+        self.values_interp = values_interp
+        self.values_smoothed = values_smoothed
         self.feature = feature
         self.list_name = list_name
         self.display_name = self.name
@@ -35,6 +43,9 @@ class Highpass():
 
     def calculate(self, feature, calculate_on=None, parameters=None):
         func_params = []
+        if self.parameters:
+            parameters = self.parameters
+
         if parameters is not None:
             func_params.append(
                 self.process_parameter(parameters['Order'], float) if parameters['Order'] else 4)
@@ -56,6 +67,60 @@ class Highpass():
         b, a = butter(*func_params)
         steps = feature.steps.copy()
         values = filtfilt(b, a, feature.values_interp.copy())
+        values_abs = list(abs(values))
+
+        values_zeroed = []
+        for value in values_abs:
+            if value >= 7.264721378213865 / 2:
+                values_zeroed.append(value)
+            else:
+                values_zeroed.append(0)
+
+        nonzero_indices = np.nonzero(values_zeroed)[0]
+        if nonzero_indices.size != 0:
+            non_zero_areas = []
+            non_zero_area = [nonzero_indices[0]]
+
+            for i in range(1, len(nonzero_indices)):
+                if nonzero_indices[i] == nonzero_indices[i-1] + 1:
+                    non_zero_area.append(nonzero_indices[i])
+                else:
+                    non_zero_areas.append(non_zero_area)
+                    non_zero_area = [nonzero_indices[i]]
+
+            non_zero_areas.append(non_zero_area)
+
+            for non_zero_area in non_zero_areas:
+                if non_zero_area[0] > 0:
+                    non_zero_area.insert(0, non_zero_area[0] - 1)
+                else:
+                    non_zero_area.insert(0, 0)
+                if non_zero_area[-1] == len(steps) - 1:
+                    non_zero_area.append(non_zero_area[-1])
+                else:
+                    non_zero_area.append(non_zero_area[-1] + 1)
+
+            steps_to_interpolate = []
+            for non_zero_area in non_zero_areas:
+                steps_to_interpolate += non_zero_area
+
+            steps_ = steps.copy()
+            values_ = feature.values_interp.copy()
+
+            steps_ = [i for j, i in enumerate(steps_) if j not in steps_to_interpolate]
+            values_ = [i for j, i in enumerate(values_) if j not in steps_to_interpolate]
+
+            interpolated_values = np.interp(steps_to_interpolate, steps_, values_)
+
+            values_interp = feature.values_interp.copy()
+            for i, index in enumerate(steps_to_interpolate):
+                values_interp[index] = interpolated_values[i]
+
+            values_smoothed = savgol_filter(values_interp, 25, 5).tolist()
+
+        else:
+            values_interp = []
+            values_smoothed = []
 
         list_name = self.name
 
@@ -63,6 +128,10 @@ class Highpass():
             name=self.name,
             steps=steps,
             values=values,
+            values_abs=values_abs,
+            values_zeroed=values_zeroed,
+            values_interp=values_interp,
+            values_smoothed=values_smoothed,
             feature=feature,
             list_name=list_name,
             parameters=parameters,
@@ -79,15 +148,69 @@ class Highpass():
 
     def plottables(self, name=None, legend=None):
         if self.steps:
-            return [Plottable(
-                name=name or self.name,
-                steps=self.steps,
-                values=self.values,
-                linestyle='solid',
-                marker='None',
-                legend=legend or self.name,
-                type_=PlottableTypes.METRIC
-            )]
+            name = name or self.name
+            legend = legend or self.name
+            plottables = [
+                Plottable(
+                    name=name,
+                    steps=self.steps,
+                    values=self.values,
+                    linestyle='solid',
+                    marker='None',
+                    legend=legend,
+                    type_=PlottableTypes.METRIC
+                )
+            ]
+            print(self.values_abs, type(self.values_abs))
+            if self.values_abs:
+                plottables.append(
+                    Plottable(
+                        name=name + '_ABS',
+                        steps=self.steps,
+                        values=self.values_abs,
+                        linestyle='solid',
+                        marker='None',
+                        legend=legend + '_ABS',
+                        type_=PlottableTypes.METRIC
+                    )
+                )
+            if self.values_zeroed:
+                plottables.append(
+                    Plottable(
+                        name=name + '_ZEROED',
+                        steps=self.steps,
+                        values=self.values_zeroed,
+                        linestyle='solid',
+                        marker='None',
+                        legend=legend + '_ZEROED',
+                        type_=PlottableTypes.METRIC
+                    )
+                )
+            if self.values_interp:
+                plottables.append(
+                    Plottable(
+                        name=name + '_INTERPOLATED',
+                        steps=self.steps,
+                        values=self.values_interp,
+                        linestyle='solid',
+                        marker='None',
+                        legend=legend + '_INTERPOLATED',
+                        type_=PlottableTypes.METRIC
+                    )
+                )
+            if self.values_smoothed:
+                plottables.append(
+                    Plottable(
+                        name=name + '_SMOOTHED',
+                        steps=self.steps,
+                        values=self.values_smoothed,
+                        linestyle='solid',
+                        marker='None',
+                        legend=legend + '_SMOOTHED',
+                        type_=PlottableTypes.METRIC
+                    )
+                )
+            return plottables
         else:
             return None
 
