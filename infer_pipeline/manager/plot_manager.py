@@ -55,7 +55,7 @@ class PlotManager():
         focus = self.gui_plot.root.focus_displayof()
         if 'toplevel' in str(focus):
             for plot in self.plots:
-                plot['plot'].plot_on_tracker_plot(x, y, run, dataset_type)
+                plot['plot'].plot_on_tracker_plot(x, y, inference, run, dataset_type)
         else:
             notebook = self.gui_plot.notebook
             selected_tab = notebook.index(notebook.select())

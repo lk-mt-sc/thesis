@@ -154,13 +154,13 @@ class Plot:
                 self._update_subplot(subplot)
                 break
 
-    def plot_on_tracker_plot(self, x, y, run, dataset_type):
+    def plot_on_tracker_plot(self, x, y, inference, run, dataset_type):
         for tracker in self.trackers:
             image_plot = tracker.image_plot
             frame = image_plot.frame
             fx, fy, fw, fh = frame.winfo_rootx(), frame.winfo_rooty(), frame.winfo_width(), frame.winfo_height()
             if x in range(fx, fx + fw) and y in range(fy, fy + fh):
-                title = f'Tracker Run {str(run.id).zfill(2)}'
+                title = f'Tracker {inference.name} - Run {str(run.id).zfill(2)}'
                 tracker.window.title(title)
                 image_plot.plot_image(run, '', dataset_type)
 
