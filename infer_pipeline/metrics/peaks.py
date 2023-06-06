@@ -37,8 +37,8 @@ class Peaks():
         self.display_modes = ['sum']
         self.display_values = display_values
         self.parameters = parameters
-        self.type = AllMetrics.PEAKS
         self.func_params = func_params
+        self.type = AllMetrics.PEAKS
 
     def calculate(self, feature, calculate_on=None, parameters=None):
         func_params = []

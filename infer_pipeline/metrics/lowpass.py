@@ -1,7 +1,6 @@
 from scipy.signal import butter, filtfilt
 
 from metrics.all_metrics import AllMetrics
-from metrics.deltas import Deltas
 from data_types.plottable import Plottable, PlottableTypes
 
 
@@ -30,16 +29,19 @@ class Lowpass():
         self.display_modes = []
         self.display_values = []
         self.parameters = parameters
-        self.type = AllMetrics.LOWPASS
         self.func_params = func_params
+        self.type = AllMetrics.LOWPASS
 
     def calculate(self, feature, calculate_on=None, parameters=None):
         func_params = []
+        if self.parameters:
+            parameters = self.parameters
+
         if parameters is not None:
             func_params.append(
                 self.process_parameter(parameters['Order'], float) if parameters['Order'] else 4)
             func_params.append(
-                self.process_parameter(parameters['Cutoff Freq.'], float) if parameters['Cutoff Freq.'] else 20)
+                self.process_parameter(parameters['Cutoff Freq.'], float) if parameters['Cutoff Freq.'] else 0.5)
             func_params.append('lowpass'),
             func_params.append(False),
             func_params.append('ba')
@@ -47,7 +49,7 @@ class Lowpass():
                 self.process_parameter(parameters['Sample Freq.'], float) if parameters['Sample Freq.'] else None)
         else:
             func_params.append(4)
-            func_params.append(20)
+            func_params.append(0.5)
             func_params.append('lowpass')
             func_params.append(False)
             func_params.append('ba')

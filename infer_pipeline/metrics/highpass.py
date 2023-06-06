@@ -52,7 +52,7 @@ class Highpass():
             func_params.append(
                 self.process_parameter(parameters['Order'], float) if parameters['Order'] else 4)
             func_params.append(
-                self.process_parameter(parameters['Cutoff Freq.'], float) if parameters['Cutoff Freq.'] else 20)
+                self.process_parameter(parameters['Cutoff Freq.'], float) if parameters['Cutoff Freq.'] else 0.5)
             func_params.append('highpass'),
             func_params.append(False),
             func_params.append('ba')
@@ -62,7 +62,7 @@ class Highpass():
                 parameters['Zeroing Thr.'], float) if parameters['Zeroing Thr.'] else 5.0
         else:
             func_params.append(4)
-            func_params.append(20)
+            func_params.append(0.5)
             func_params.append('highpass')
             func_params.append(False)
             func_params.append('ba')
