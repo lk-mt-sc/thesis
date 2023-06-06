@@ -275,7 +275,7 @@ class MetricManager():
         for name, value in zip(gui_parameter_name_vars, gui_parameter_value_vars):
             parameters[name.get()[:-1]] = value.get()
 
-        if selected_calculable_metric.type in (AllMetrics.DELTAS, AllMetrics.FFT) \
+        if selected_calculable_metric.type in (AllMetrics.DELTAS, AllMetrics.FFT, AllMetrics.HIGHPASS, AllMetrics.LOWPASS) \
                 and self.selected_metric is not None:
             calculate_on = self.selected_metric
         else:

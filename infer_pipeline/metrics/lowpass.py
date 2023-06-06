@@ -37,6 +37,9 @@ class Lowpass():
         if self.parameters:
             parameters = self.parameters
 
+        if calculate_on is None:
+            calculate_on = feature
+
         if parameters is not None:
             func_params.append(
                 self.process_parameter(parameters['Order'], float) if parameters['Order'] else 4)
@@ -56,8 +59,11 @@ class Lowpass():
             func_params.append(None)
 
         b, a = butter(*func_params)
-        steps = feature.steps.copy()
-        values = filtfilt(b, a, feature.values_interp.copy())
+        steps = calculate_on.steps.copy()
+        if hasattr(calculate_on, 'values_interp'):
+            values = filtfilt(b, a, calculate_on.values_interp.copy())
+        else:
+            values = filtfilt(b, a, calculate_on.values.copy())
 
         list_name = self.name
 

@@ -48,6 +48,9 @@ class Highpass():
         if self.parameters:
             parameters = self.parameters
 
+        if calculate_on is None:
+            calculate_on = feature
+
         if parameters is not None:
             func_params.append(
                 self.process_parameter(parameters['Order'], float) if parameters['Order'] else 4)
@@ -70,8 +73,12 @@ class Highpass():
             zeroing_threshold = 5.0
 
         b, a = butter(*func_params)
-        steps = feature.steps.copy()
-        values = filtfilt(b, a, feature.values_interp.copy())
+        steps = calculate_on.steps.copy()
+        if hasattr(calculate_on, 'values_interp'):
+            values = filtfilt(b, a, calculate_on.values_interp.copy())
+        else:
+            values = filtfilt(b, a, calculate_on.values.copy())
+
         values_abs = list(abs(values))
 
         values_zeroed = []
@@ -110,14 +117,22 @@ class Highpass():
                 steps_to_interpolate += non_zero_area
 
             steps_ = steps.copy()
-            values_ = feature.values_interp.copy()
+
+            if hasattr(calculate_on, 'values_interp'):
+                values_ = calculate_on.values_interp.copy()
+            else:
+                values_ = calculate_on.values.copy()
 
             steps_ = [i for j, i in enumerate(steps_) if j not in steps_to_interpolate]
             values_ = [i for j, i in enumerate(values_) if j not in steps_to_interpolate]
 
             interpolated_values = np.interp(steps_to_interpolate, steps_, values_)
 
-            values_interp = feature.values_interp.copy()
+            if hasattr(calculate_on, 'values_interp'):
+                values_interp = calculate_on.values_interp.copy()
+            else:
+                values_interp = calculate_on.values.copy()
+
             for i, index in enumerate(steps_to_interpolate):
                 values_interp[index] = interpolated_values[i]
 
