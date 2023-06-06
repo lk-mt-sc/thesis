@@ -19,7 +19,9 @@ class Plottable():
             linewidth=1.5,
             markersize=10,
             markerfacecolor='None',
-            step_plot=False):
+            step_plot=False,
+            log_x_axis=False,
+            log_y_axis=False):
         self.name = name
         self.steps = steps
         self.values = values
@@ -31,3 +33,5 @@ class Plottable():
         self.legend = legend
         self.type = type_
         self.step_plot = step_plot
+        self.log_x_axis = log_x_axis
+        self.log_y_axis = log_y_axis

@@ -64,7 +64,7 @@ class Plot:
             width=8,
             command=self.clear_plot)
 
-        self.figure.subplots_adjust(left=0.02, bottom=0.075, right=0.99, top=0.975, wspace=0.1, hspace=0.25)
+        self.figure.subplots_adjust(left=0.05, bottom=0.07, right=0.95, top=0.95, wspace=0.1, hspace=0.25)
 
         self.trackers = []
 
@@ -214,6 +214,8 @@ class Plot:
         min_s = 0
         max_v = 0
         min_v = 0
+        log_x_axis = False
+        log_y_axis = False
         for plottable in subplot['plottables']:
             values = plottable.values
             steps = plottable.steps
@@ -244,6 +246,12 @@ class Plot:
                           markerfacecolor=plottable.markerfacecolor,
                           label=plottable.legend.upper())
 
+            if plottable.log_x_axis:
+                log_x_axis = True
+
+            if plottable.log_y_axis:
+                log_y_axis = True
+
         view_s = int(max(abs(min_s), abs(max_s)) * 0.01)
         view_v = int(max(abs(min_v), abs(max_v)) * 0.05)
         if min_s < 0:
@@ -255,6 +263,12 @@ class Plot:
             ylim_min = min_v - view_v
         else:
             ylim_min = 0
+
+        if log_x_axis:
+            subplot['plot'].set_xscale('log')
+
+        if log_y_axis:
+            subplot['plot'].set_yscale('log')
 
         subplot['plot'].set_xlim(xlim_min, max_s + view_s)
         subplot['plot'].set_ylim(ylim_min, max_v + view_v)
