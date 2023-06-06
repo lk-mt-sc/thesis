@@ -225,7 +225,7 @@ class MetricManager():
         self._gui_disable_button_calculate()
 
     def metric_selected(self, event=None):
-        self._gui_clear_parameters(disable_entries=False)
+        self._gui_clear_parameters(disable_entries=True)
         selection = self.gui_metric.listbox_metrics.curselection()
         if not selection:
             return
@@ -240,8 +240,8 @@ class MetricManager():
         if parameters is not None:
             self._gui_set_parameter_names(self.selected_metric.parameter_names, self.selected_metric.name)
             self._gui_set_parameter_values(parameters)
-            self._gui_enable_button_calculate()
-            self._gui_set_calculable_metric(self.selected_metric.type)
+            self._gui_disable_button_calculate()
+            self._gui_set_calculable_metric(None)
         else:
             self._gui_clear_parameters()
             self._gui_disable_button_calculate()
