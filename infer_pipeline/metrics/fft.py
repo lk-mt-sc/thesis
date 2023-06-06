@@ -14,11 +14,13 @@ class FFT():
             steps=None,
             values=None,
             feature=None,
+            calculate_on=None,
             list_name=None):
         self.name = name or AllMetrics.FFT.value
         self.steps = steps
         self.values = values
         self.feature = feature
+        self.calculate_on = calculate_on
         self.list_name = list_name
         self.display_name = self.name
         self.display_modes = []
@@ -53,6 +55,7 @@ class FFT():
             steps=steps,
             values=values,
             feature=feature,
+            calculate_on=calculate_on,
             list_name=list_name,
         )
 

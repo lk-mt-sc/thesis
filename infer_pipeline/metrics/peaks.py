@@ -23,6 +23,7 @@ class Peaks():
             values=None,
             count=None,
             feature=None,
+            calculate_on=None,
             list_name=None,
             display_values=None,
             parameters=None,
@@ -32,6 +33,7 @@ class Peaks():
         self.values = values
         self.count = count
         self.feature = feature
+        self.calculate_on = calculate_on
         self.list_name = list_name
         self.display_name = self.name
         self.display_modes = ['sum']
@@ -41,6 +43,12 @@ class Peaks():
         self.type = AllMetrics.PEAKS
 
     def calculate(self, feature, calculate_on=None, parameters=None):
+        if calculate_on is None:
+            calculate_on = feature
+
+        if self.parameters:
+            parameters = self.parameters
+
         func_params = []
         if parameters is not None:
             func_params.append(
@@ -62,12 +70,16 @@ class Peaks():
         else:
             func_params = [None for _ in range(0, len(Peaks.parameter_names))]
 
-        feature_values_positive = feature.values_interp.copy()
-        feature_values_negative = [-v for v in feature_values_positive]
-        steps_positive, positive_stats = find_peaks(feature_values_positive, *func_params)
-        steps_negative, negative_stats = find_peaks(feature_values_negative, *func_params)
+        if hasattr(calculate_on, 'values_interp'):
+            values_positive = calculate_on.values_interp.copy()
+        else:
+            values_positive = calculate_on.copy()
+
+        values_negative = [-v for v in values_positive]
+        steps_positive, positive_stats = find_peaks(values_positive, *func_params)
+        steps_negative, negative_stats = find_peaks(values_negative, *func_params)
         steps = sorted(set(steps_positive.tolist() + steps_negative.tolist()))
-        values = [i for j, i in enumerate(feature_values_positive) if j in steps]
+        values = [i for j, i in enumerate(values_positive) if j in steps]
         count = len(steps)
         list_name = self.name + f' ({count})'
         display_values = [count]
@@ -81,6 +93,7 @@ class Peaks():
             values=values,
             count=count,
             feature=feature,
+            calculate_on=calculate_on,
             list_name=list_name,
             display_values=display_values,
             parameters=parameters,

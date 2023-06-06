@@ -149,6 +149,10 @@ class GUIMetric():
         self.metric_name_entry = tk.Entry(self.frame, textvariable=self.metric_name_var)
         self.metric_name_entry.place(x=1950, y=150, width=291, height=20)
 
+        ttk.Label(self.frame, text='Calculated on:').place(x=1904, y=175)
+        self.metric_calculated_on_name_var = tk.StringVar()
+        ttk.Label(self.frame, textvariable=self.metric_calculated_on_name_var).place(x=1990, y=175)
+
         self.button_calculate = ttk.Button(
             self.frame,
             text='Calculate Metric',

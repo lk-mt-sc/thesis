@@ -17,6 +17,7 @@ class Lowpass():
             steps=None,
             values=None,
             feature=None,
+            calculate_on=None,
             list_name=None,
             parameters=None,
             func_params=None):
@@ -24,6 +25,7 @@ class Lowpass():
         self.steps = steps
         self.values = values
         self.feature = feature
+        self.calculate_on = calculate_on
         self.list_name = list_name
         self.display_name = self.name
         self.display_modes = []
@@ -33,13 +35,13 @@ class Lowpass():
         self.type = AllMetrics.LOWPASS
 
     def calculate(self, feature, calculate_on=None, parameters=None):
-        func_params = []
-        if self.parameters:
-            parameters = self.parameters
-
         if calculate_on is None:
             calculate_on = feature
 
+        if self.parameters:
+            parameters = self.parameters
+
+        func_params = []
         if parameters is not None:
             func_params.append(
                 self.process_parameter(parameters['Order'], float) if parameters['Order'] else 4)
@@ -72,6 +74,7 @@ class Lowpass():
             steps=steps,
             values=values,
             feature=feature,
+            calculate_on=calculate_on,
             list_name=list_name,
             parameters=parameters,
             func_params=func_params

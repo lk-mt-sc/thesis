@@ -213,16 +213,25 @@ class MetricManager():
     def clear_inference_metrics(self):
         self.selected_inference_metrics = {}
         self._gui_clear_inference_metrics(position=-1)
+        self._gui_clear_parameters(disable_entries=True)
+        self._gui_set_calculated_on_name('')
+        self._gui_set_calculable_metric(None)
 
     def clear_data_metrics(self):
         self.selected_data_metrics = {}
         self._gui_set_data_metrics()
+        self._gui_clear_parameters(disable_entries=True)
+        self._gui_set_calculated_on_name('')
+        self._gui_set_calculable_metric(None)
 
     def clear_feature_metrics(self):
         self.selected_metric = None
         self.selected_features_metrics.clear()
         self._gui_set_feature_metrics()
         self._gui_disable_button_calculate()
+        self._gui_clear_parameters(disable_entries=True)
+        self._gui_set_calculated_on_name('')
+        self._gui_set_calculable_metric(None)
 
     def metric_selected(self, event=None):
         self._gui_clear_parameters(disable_entries=True)
@@ -240,12 +249,10 @@ class MetricManager():
         if parameters is not None:
             self._gui_set_parameter_names(self.selected_metric.parameter_names, self.selected_metric.name)
             self._gui_set_parameter_values(parameters)
-            self._gui_disable_button_calculate()
-            self._gui_set_calculable_metric(None)
-        else:
-            self._gui_clear_parameters()
-            self._gui_disable_button_calculate()
-            self._gui_set_calculable_metric(None)
+
+        self._gui_disable_button_calculate()
+        self._gui_set_calculable_metric(None)
+        self._gui_set_calculated_on_name(self.selected_metric.calculate_on.name)
 
     def calculable_metric_selected(self, event=None):
         self._gui_clear_parameters()
@@ -258,6 +265,10 @@ class MetricManager():
             return
 
         self._gui_set_parameter_names(selected_calculable_metric.parameter_names, selected_calculable_metric.name)
+
+        calculate_on = self.selected_metric.name if self.selected_metric is not None else self.selected_feature.name
+        self._gui_set_calculated_on_name(calculate_on)
+
         self._gui_enable_button_calculate()
 
     def calculate_metric(self, event=None):
@@ -430,6 +441,10 @@ class MetricManager():
             if parameter_value is None:
                 parameter_value = ''
             self.gui_metric.parameter_value_vars[i].set(parameter_value)
+
+    def _gui_set_calculated_on_name(self, calculated_on_name):
+        gui_new_metric_calculated_on_name_var = self.gui_metric.metric_calculated_on_name_var
+        gui_new_metric_calculated_on_name_var.set(calculated_on_name)
 
     def _gui_set_calculable_metric(self, calculable_metric):
         if calculable_metric is not None:

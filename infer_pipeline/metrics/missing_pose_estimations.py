@@ -12,6 +12,7 @@ class MissingPoseEstimations():
             values=None,
             count=None,
             feature=None,
+            calculate_on=None,
             list_name=None,
             display_values=None):
         self.name = name or AllMetrics.MISSING_POSE_ESTIMATIONS.value
@@ -19,6 +20,7 @@ class MissingPoseEstimations():
         self.values = values
         self.count = count
         self.feature = feature
+        self.calculate_on = calculate_on
         self.list_name = list_name
         self.display_name = self.name
         self.display_modes = ['single_sum']
@@ -27,6 +29,8 @@ class MissingPoseEstimations():
         self.type = AllMetrics.MISSING_POSE_ESTIMATIONS
 
     def calculate(self, feature, calculate_on=None, parameters=None):
+        assert calculate_on is None and parameters is None
+
         feature_values = feature.values.copy()
         feature_values_interp = feature.values_interp.copy()
         steps = [i for i, v in enumerate(feature_values) if v == -1]
@@ -44,6 +48,7 @@ class MissingPoseEstimations():
             values=values,
             count=count,
             feature=feature,
+            calculate_on=feature,
             list_name=list_name,
             display_values=display_values,
         )

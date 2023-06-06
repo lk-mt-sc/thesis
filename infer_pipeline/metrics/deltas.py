@@ -15,6 +15,7 @@ class Deltas():
             mean=None,
             stdd=None,
             feature=None,
+            calculate_on=None,
             list_name=None,
             display_values=None):
         self.name = name or AllMetrics.DELTAS.value
@@ -23,6 +24,7 @@ class Deltas():
         self.mean = mean
         self.stdd = stdd
         self.feature = feature
+        self.calculate_on = calculate_on
         self.list_name = list_name
         self.display_name = self.name + ' (mean/std. deviation)'
         self.display_modes = ['mean', 'mean']
@@ -33,6 +35,9 @@ class Deltas():
     def calculate(self, feature, calculate_on=None, parameters=None):
         if calculate_on is None:
             calculate_on = feature
+
+        if self.parameters:
+            parameters = self.parameters
 
         steps = calculate_on.steps.copy()
         if hasattr(calculate_on, 'values_interp'):
@@ -52,6 +57,7 @@ class Deltas():
             mean=mean,
             stdd=stdd,
             feature=feature,
+            calculate_on=calculate_on,
             list_name=list_name,
             display_values=display_values,
         )

@@ -24,6 +24,7 @@ class Highpass():
             values_interp=None,
             values_smoothed=None,
             feature=None,
+            calculate_on=None,
             list_name=None,
             parameters=None,
             func_params=None):
@@ -35,6 +36,7 @@ class Highpass():
         self.values_interp = values_interp
         self.values_smoothed = values_smoothed
         self.feature = feature
+        self.calculate_on = calculate_on
         self.list_name = list_name
         self.display_name = self.name
         self.display_modes = []
@@ -44,13 +46,13 @@ class Highpass():
         self.type = AllMetrics.HIGHPASS
 
     def calculate(self, feature, calculate_on=None, parameters=None):
-        func_params = []
-        if self.parameters:
-            parameters = self.parameters
-
         if calculate_on is None:
             calculate_on = feature
 
+        if self.parameters:
+            parameters = self.parameters
+
+        func_params = []
         if parameters is not None:
             func_params.append(
                 self.process_parameter(parameters['Order'], float) if parameters['Order'] else 4)
@@ -153,6 +155,7 @@ class Highpass():
             values_interp=values_interp,
             values_smoothed=values_smoothed,
             feature=feature,
+            calculate_on=calculate_on,
             list_name=list_name,
             parameters=parameters,
             func_params=func_params
