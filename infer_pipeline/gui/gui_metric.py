@@ -155,4 +155,4 @@ class GUIMetric():
             style='Button.TButton',
             width=15,
             command=button_calculate_callback)
-        self.button_calculate.place(x=1720, y=140, height=25)
+        self.button_calculate.place(x=1720, y=155, height=25)

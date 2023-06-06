@@ -12,6 +12,7 @@ from metrics.deltas import Deltas
 from metrics.peaks import Peaks
 from metrics.lowpass import Lowpass
 from metrics.highpass import Highpass
+from metrics.fft import FFT
 
 
 class CalculableMetrics(Enum):
@@ -19,6 +20,7 @@ class CalculableMetrics(Enum):
     PEAKS = AllMetrics.PEAKS.value
     LOWPASS = AllMetrics.LOWPASS.value
     HIGHPASS = AllMetrics.HIGHPASS.value
+    FFT = AllMetrics.FFT.value
 
 
 class InferenceMetrics():
@@ -32,8 +34,9 @@ class InferenceMetrics():
         self.features = [f for f in self.features if not KeypointsNoMetric.has_value(f.name[:-2])]
         highpass_total = []
         for feature in self.features:
-            highpass = Highpass(parameters={'Order': '4', 'Cutoff Freq.': '0.5',
-                                            'Sample Freq.': '', 'Zeroing Thr.': ''}).calculate(feature)
+            highpass = Highpass(parameters={'Order': '4', 'Cutoff Freq.': '10',
+                                            'Sample Freq.': '25', 'Zeroing Thr.': ''}).calculate(feature)
+            # concatenation is valid, since standard deviation is a point-based metric
             highpass_total += highpass.values_abs
         StandardMetrics.highpass_zeroing_threshold = np.std(highpass_total) / 2
 
@@ -45,8 +48,10 @@ class StandardMetrics():
         self.metrics = [
             MissingPoseEstimations(),
             Deltas(),
-            Highpass(parameters={'Order': '4', 'Cutoff Freq.': '0.5',
-                     'Sample Freq.': '', 'Zeroing Thr.': str(StandardMetrics.highpass_zeroing_threshold)})
+            Highpass(parameters={'Order': '4', 'Cutoff Freq.': '10',
+                     'Sample Freq.': '25', 'Zeroing Thr.': str(StandardMetrics.highpass_zeroing_threshold)}),
+            Lowpass(parameters={'Order': '4', 'Cutoff Freq.': '2', 'Sample Freq.': '25'}),
+            FFT()
         ]
 
 
@@ -270,7 +275,8 @@ class MetricManager():
         for name, value in zip(gui_parameter_name_vars, gui_parameter_value_vars):
             parameters[name.get()[:-1]] = value.get()
 
-        if selected_calculable_metric.type == AllMetrics.DELTAS and self.selected_metric is not None:
+        if selected_calculable_metric.type in (AllMetrics.DELTAS, AllMetrics.FFT) \
+                and self.selected_metric is not None:
             calculate_on = self.selected_metric
         else:
             calculate_on = self.selected_feature
@@ -303,6 +309,8 @@ class MetricManager():
                 return Lowpass(name=metric_name)
             case AllMetrics.HIGHPASS.value:
                 return Highpass(name=metric_name)
+            case AllMetrics.FFT.value:
+                return FFT(name=metric_name)
             case other:
                 return None
 

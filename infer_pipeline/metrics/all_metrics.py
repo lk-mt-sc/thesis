@@ -7,3 +7,4 @@ class AllMetrics(Enum):
     PEAKS = 'Peaks'
     LOWPASS = 'Low-Pass (Butterw.)'
     HIGHPASS = 'High-Pass (Butterw.)'
+    FFT = 'FFT'
