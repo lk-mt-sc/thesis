@@ -51,6 +51,7 @@ class DataManager():
         else:
             self.data_show = self.data_all.copy()
             self.selected_data.clear()
+            self.filter()
             self._gui_set_data()
             self.status_manager.remove_status(Status.FETCHING_DATA)
 
@@ -102,9 +103,14 @@ class DataManager():
             self.filter_data_base == 'Deblurred' or \
             self.filter_data_base == 'Interp./Debl.'
         hide_interpolated = self.filter_data_base == 'Standard' or \
-            self.filter_data_base == 'Deblurred'
+            self.filter_data_base == 'Deblurred' or \
+            self.filter_data_base == 'Interp./Debl.'
         hide_deblurred = self.filter_data_base == 'Standard' or \
-            self.filter_data_base == 'Interpolated'
+            self.filter_data_base == 'Interpolated' or \
+            self.filter_data_base == 'Interp./Debl.'
+        hide_interpolated_deblurred = self.filter_data_base == 'Standard' or \
+            self.filter_data_base == 'Interpolated' or \
+            self.filter_data_base == 'Deblurred'
         hide_spotlight = self.filter_data_spotlight == 'Without Spotlight'
         hide_no_spotlight = self.filter_data_spotlight == 'With Spotlight'
         hide_starts_at_rest = self.filter_data_starts == 'Starts in Motion'
@@ -115,10 +121,13 @@ class DataManager():
             if hide_standard and not (data.interpolated or data.deblurred):
                 data_to_hide.append(data)
                 continue
-            if hide_interpolated and data.interpolated:
+            if hide_interpolated and data.interpolated and not data.deblurred:
                 data_to_hide.append(data)
                 continue
-            if hide_deblurred and data.deblurred:
+            if hide_deblurred and data.deblurred and not data.interpolated:
+                data_to_hide.append(data)
+                continue
+            if hide_interpolated_deblurred and data.interpolated and data.deblurred:
                 data_to_hide.append(data)
                 continue
             if hide_spotlight and data.spotlight:
