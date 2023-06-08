@@ -11,9 +11,12 @@ import shutil
 import argparse
 import subprocess
 
+import torch
+import imageio
 import cv2 as cv
 import numpy as np
 from tqdm import tqdm
+from basicsr.models.archs.gshift_deblur1 import GShiftNet
 
 
 def time_to_ms(time):
@@ -29,7 +32,6 @@ def time_to_ms(time):
 
 
 def create_std_dataset():
-
     if os.path.exists(STD_DATASET_DIR):
         shutil.rmtree(STD_DATASET_DIR)
 
@@ -244,15 +246,95 @@ def create_det_dataset():
                         break
 
 
+def create_deb_dataset():
+    if not os.path.exists(STD_DATASET_DIR):
+        print('Standard dataset not found.')
+        create_std_dataset()
+
+    if os.path.exists(DEB_DATASET_DIR):
+        shutil.rmtree(DEB_DATASET_DIR)
+
+    os.mkdir(DEB_DATASET_DIR)
+
+    device = 'cuda:0'
+    checkpoint = os.path.join(SHIFT_NET_DIR, 'ckpt', 'net_gopro_deblur.pth')
+
+    print('Creating deblurred dataset...')
+    runs = sorted(glob.glob(os.path.join(STD_RUNS_IMAGE_DIR, '*')))
+    for run in tqdm(runs, desc='Overall'):
+        out_dir = os.path.join(DEB_DATASET_DIR, run.split('/')[-1] + ' - DEBLURRED')
+        os.mkdir(out_dir)
+
+        frames = sorted(glob.glob(os.path.join(run, '*')))
+        frames.insert(0, frames[0])
+        frames.insert(0, frames[0])
+        frames.append(frames[-1])
+        frames.append(frames[-1])
+
+        inputs = []
+        for i in range(2, len(frames) - 2):
+            input_ = []
+            input_.append(frames[i - 2])
+            input_.append(frames[i - 1])
+            input_.append(frames[i])
+            input_.append(frames[i + 1])
+            input_.append(frames[i + 2])
+            inputs.append(input_)
+
+        net = GShiftNet(future_frames=2, past_frames=2)
+        net.load_state_dict(torch.load(checkpoint)['params'])
+        net.half()
+        net = net.to(device)
+        net.eval()
+
+        with torch.no_grad():
+            for i, input_ in enumerate(tqdm(inputs, desc='Current', leave=False)):
+                images = [imageio.v2.imread(input_[i]) for i in range(0, len(input_))]
+                images = numpy2tensor(images).to(device)
+                outputs = net(images.half())
+                outputs = outputs.float()
+                outputs = tensor2numpy(outputs)
+                cv.imwrite(os.path.join(out_dir, str(i).zfill(3) + '.png'), outputs[..., ::-1])
+
+        del inputs
+        del outputs
+        torch.cuda.empty_cache()
+
+
+def numpy2tensor(input_seq, rgb_range=1.):
+    # taken from https://github.com/dasongli1/Shift-Net/blob/main/inference/test_deblur.py
+    tensor_list = []
+    for img in input_seq:
+        img = np.array(img).astype('float64')
+        np_transpose = np.ascontiguousarray(img.transpose((2, 0, 1)))  # HWC -> CHW
+        tensor = torch.from_numpy(np_transpose).float()  # numpy -> tensor
+        tensor.mul_(rgb_range / 255)  # (0,255) -> (0,1)
+        tensor_list.append(tensor)
+    stacked = torch.stack(tensor_list).unsqueeze(0)
+    return stacked
+
+
+def tensor2numpy(tensor, rgb_range=1.):
+    # taken from https://github.com/dasongli1/Shift-Net/blob/main/inference/test_deblur.py
+    rgb_coefficient = 255 / rgb_range
+    img = tensor.mul(rgb_coefficient).clamp(0, 255).round()
+    img = img[0].data
+    img = np.transpose(img.cpu().numpy(), (1, 2, 0)).astype(np.uint8)
+    return img
+
+
 if __name__ == '__main__':
 
     random_1 = random.Random(0)
     random_2 = random.Random(0)
 
     WORKING_DIR = os.path.dirname(__file__)
+    EXTERNAL_NETS_DIR = os.path.join(WORKING_DIR, 'ext_nets')
+    SHIFT_NET_DIR = os.path.join(EXTERNAL_NETS_DIR, 'shift_net')
     VIDEOS_DIR = os.path.join(WORKING_DIR, 'videos')
     STD_DATASET_DIR = os.path.join(WORKING_DIR, 'std_dataset')
     DET_DATASET_DIR = os.path.join(WORKING_DIR, 'det_dataset')
+    DEB_DATASET_DIR = os.path.join(WORKING_DIR, 'deb_dataset')
     STD_RUNS_VIDEO_DIR = os.path.join(STD_DATASET_DIR, 'runs_video')
     STD_RUNS_IMAGE_DIR = os.path.join(STD_DATASET_DIR, 'runs_image')
     DET_TRAIN_DIR = os.path.join(DET_DATASET_DIR, 'train')
@@ -268,5 +350,7 @@ if __name__ == '__main__':
             create_std_dataset()
         case 'det':
             create_det_dataset()
+        case 'deb':
+            create_deb_dataset()
 
-    # future: itp, deb, i_d, cls
+    # future: itp, i_d
