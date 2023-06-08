@@ -17,6 +17,7 @@ import cv2 as cv
 import numpy as np
 from tqdm import tqdm
 from basicsr.models.archs.gshift_deblur1 import GShiftNet
+from ext_nets.ema_vfi.interpolator import Interpolator
 
 
 def time_to_ms(time):
@@ -259,6 +260,12 @@ def create_deb_dataset():
     device = 'cuda:0'
     checkpoint = os.path.join(SHIFT_NET_DIR, 'ckpt', 'net_gopro_deblur.pth')
 
+    net = GShiftNet(future_frames=2, past_frames=2)
+    net.load_state_dict(torch.load(checkpoint)['params'])
+    net.half()
+    net = net.to(device)
+    net.eval()
+
     print('Creating deblurred dataset...')
     runs = sorted(glob.glob(os.path.join(STD_RUNS_IMAGE_DIR, '*')))
     for run in tqdm(runs, desc='Overall'):
@@ -281,12 +288,6 @@ def create_deb_dataset():
             input_.append(frames[i + 2])
             inputs.append(input_)
 
-        net = GShiftNet(future_frames=2, past_frames=2)
-        net.load_state_dict(torch.load(checkpoint)['params'])
-        net.half()
-        net = net.to(device)
-        net.eval()
-
         with torch.no_grad():
             for i, input_ in enumerate(tqdm(inputs, desc='Current', leave=False)):
                 images = [imageio.v2.imread(input_[i]) for i in range(0, len(input_))]
@@ -296,8 +297,6 @@ def create_deb_dataset():
                 outputs = tensor2numpy(outputs)
                 cv.imwrite(os.path.join(out_dir, str(i).zfill(3) + '.png'), outputs[..., ::-1])
 
-        del inputs
-        del outputs
         torch.cuda.empty_cache()
 
 
@@ -323,6 +322,90 @@ def tensor2numpy(tensor, rgb_range=1.):
     return img
 
 
+def create_itp_dataset():
+    if not os.path.exists(STD_DATASET_DIR):
+        print('Standard dataset not found.')
+        create_std_dataset()
+
+    if os.path.exists(ITP_DATASET_DIR):
+        shutil.rmtree(ITP_DATASET_DIR)
+
+    os.mkdir(ITP_DATASET_DIR)
+
+    n = 5
+
+    print('Creating interpolated dataset...')
+    runs = sorted(glob.glob(os.path.join(STD_RUNS_IMAGE_DIR, '*')))
+    for run in tqdm(runs, desc='Overall'):
+        frames = sorted(glob.glob(os.path.join(run, '*')))
+        n_frames = len(frames)
+
+        old_run_duration_sec = n_frames / 25.0
+        n_frames_interpolated = (n_frames - 1) * n + 1
+        new_fps = int(n_frames_interpolated / old_run_duration_sec)
+
+        out_dir = os.path.join(ITP_DATASET_DIR, run.split('/')[-1].replace('25 FPS', f'{new_fps} FPS'))
+        os.mkdir(out_dir)
+
+        for i in tqdm(range(0, len(frames) - 1), desc='Current', leave=False):
+            img1 = frames[i]
+            img2 = frames[i + 1]
+            imgs_out = []
+            for j in range(0, n):
+                imgs_out.append(os.path.join(out_dir, img1.split(
+                    '/')[-1].replace('.png', f'_{str(j).zfill(2)}.png')))
+
+            interpolator = Interpolator(n=n)
+            interpolator.interpolate(img1, img2, imgs_out)
+
+        shutil.copyfile(frames[-1], os.path.join(out_dir, frames[-1].split('/')
+                        [-1].replace('.png', f'_{str(0).zfill(2)}.png')))
+
+    os.chdir(WORKING_DIR)
+
+
+def create_i_d_dataset():
+    if not os.path.exists(DEB_DATASET_DIR):
+        print('Deblurred dataset not found.')
+        create_deb_dataset()
+
+    if os.path.exists(I_D_DATASET_DIR):
+        shutil.rmtree(I_D_DATASET_DIR)
+
+    os.mkdir(I_D_DATASET_DIR)
+
+    n = 5
+
+    print('Creating deblurred interpolated dataset...')
+    runs = sorted(glob.glob(os.path.join(DEB_DATASET_DIR, '*')))
+    for run in tqdm(runs, desc='Overall'):
+        frames = sorted(glob.glob(os.path.join(run, '*')))
+        n_frames = len(frames)
+
+        old_run_duration_sec = n_frames / 25.0
+        n_frames_interpolated = (n_frames - 1) * n + 1
+        new_fps = int(n_frames_interpolated / old_run_duration_sec)
+
+        out_dir = os.path.join(I_D_DATASET_DIR, run.split('/')[-1].replace('25 FPS', f'{new_fps} FPS'))
+        os.mkdir(out_dir)
+
+        for i in tqdm(range(0, len(frames) - 1), desc='Current', leave=False):
+            img1 = frames[i]
+            img2 = frames[i + 1]
+            imgs_out = []
+            for j in range(0, n):
+                imgs_out.append(os.path.join(out_dir, img1.split(
+                    '/')[-1].replace('.png', f'_{str(j).zfill(2)}.png')))
+
+            interpolator = Interpolator(n=n)
+            interpolator.interpolate(img1, img2, imgs_out)
+
+        shutil.copyfile(frames[-1], os.path.join(out_dir, frames[-1].split('/')
+                        [-1].replace('.png', f'_{str(0).zfill(2)}.png')))
+
+    os.chdir(WORKING_DIR)
+
+
 if __name__ == '__main__':
 
     random_1 = random.Random(0)
@@ -331,15 +414,18 @@ if __name__ == '__main__':
     WORKING_DIR = os.path.dirname(__file__)
     EXTERNAL_NETS_DIR = os.path.join(WORKING_DIR, 'ext_nets')
     SHIFT_NET_DIR = os.path.join(EXTERNAL_NETS_DIR, 'shift_net')
+    EMA_VFI_DIR = os.path.join(EXTERNAL_NETS_DIR, 'ema_vfi')
     VIDEOS_DIR = os.path.join(WORKING_DIR, 'videos')
     STD_DATASET_DIR = os.path.join(WORKING_DIR, 'std_dataset')
-    DET_DATASET_DIR = os.path.join(WORKING_DIR, 'det_dataset')
-    DEB_DATASET_DIR = os.path.join(WORKING_DIR, 'deb_dataset')
     STD_RUNS_VIDEO_DIR = os.path.join(STD_DATASET_DIR, 'runs_video')
     STD_RUNS_IMAGE_DIR = os.path.join(STD_DATASET_DIR, 'runs_image')
+    DET_DATASET_DIR = os.path.join(WORKING_DIR, 'det_dataset')
     DET_TRAIN_DIR = os.path.join(DET_DATASET_DIR, 'train')
     DET_VAL_DIR = os.path.join(DET_DATASET_DIR, 'val')
     DET_TEST_DIR = os.path.join(DET_DATASET_DIR, 'test')
+    DEB_DATASET_DIR = os.path.join(WORKING_DIR, 'deb_dataset')
+    ITP_DATASET_DIR = os.path.join(WORKING_DIR, 'itp_dataset')
+    I_D_DATASET_DIR = os.path.join(WORKING_DIR, 'i_d_dataset')
 
     parser = argparse.ArgumentParser()
     parser.add_argument('dataset', type=str)
@@ -352,5 +438,7 @@ if __name__ == '__main__':
             create_det_dataset()
         case 'deb':
             create_deb_dataset()
-
-    # future: itp, i_d
+        case 'itp':
+            create_itp_dataset()
+        case 'i_d':
+            create_i_d_dataset()
