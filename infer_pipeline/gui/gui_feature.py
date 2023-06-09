@@ -22,7 +22,8 @@ class GUIFeature():
             self.frame,
             height=32,
             listvariable=self.features_var,
-            selectmode=tk.SINGLE
+            selectmode=tk.SINGLE,
+            font=self.root.font_small
         )
         self.listbox_features.configure(exportselection=False)
         self.listbox_features.bind('<<ListboxSelect>>', listbox_feature_select_callback)

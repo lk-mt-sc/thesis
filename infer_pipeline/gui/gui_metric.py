@@ -102,7 +102,8 @@ class GUIMetric():
             self.frame,
             height=10,
             listvariable=self.listbox_metrics_var,
-            selectmode=tk.SINGLE
+            selectmode=tk.SINGLE,
+            font=self.root.font_small
         )
         self.listbox_metrics.configure(exportselection=False)
         self.listbox_metrics.bind('<<ListboxSelect>>', listbox_metrics_select_callback)

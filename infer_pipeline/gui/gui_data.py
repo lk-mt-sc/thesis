@@ -59,7 +59,8 @@ class GUIData():
             self.frame,
             height=7,
             listvariable=self.listbox_data_var,
-            selectmode=tk.EXTENDED
+            selectmode=tk.EXTENDED,
+            font=self.root.font_small
         )
         self.listbox_data.configure(exportselection=False)
         self.listbox_data.bind('<<ListboxSelect>>', listbox_data_select_callback)
