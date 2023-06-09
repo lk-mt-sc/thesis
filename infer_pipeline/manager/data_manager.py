@@ -59,9 +59,10 @@ class DataManager():
         self.gui_data.combobox_data_base['values'] = [
             'No Preset',
             'Standard',
-            'Interpolated',
             'Deblurred',
-            'Interp./Debl.'
+            'Interpolated',
+            'Debl.-Interp.',
+            'Interp.-Debl.'
         ]
 
         self.gui_data.combobox_data_spotlight['values'] = [
@@ -96,54 +97,59 @@ class DataManager():
 
     def filter(self, event=None):
         self.selected_data.clear()
-        self.data_show = self.data_all.copy()
+        self.data_show.clear()
         self._gui_get_filter()
 
-        hide_standard = self.filter_data_base == 'Interpolated' or \
-            self.filter_data_base == 'Deblurred' or \
-            self.filter_data_base == 'Interp./Debl.'
-        hide_interpolated = self.filter_data_base == 'Standard' or \
-            self.filter_data_base == 'Deblurred' or \
-            self.filter_data_base == 'Interp./Debl.'
-        hide_deblurred = self.filter_data_base == 'Standard' or \
-            self.filter_data_base == 'Interpolated' or \
-            self.filter_data_base == 'Interp./Debl.'
-        hide_interpolated_deblurred = self.filter_data_base == 'Standard' or \
-            self.filter_data_base == 'Interpolated' or \
-            self.filter_data_base == 'Deblurred'
+        show_standard = self.filter_data_base in ('Standard', 'No Preset')
+        show_deblurred = self.filter_data_base in ('Deblurred', 'No Preset')
+        show_interpolated = self.filter_data_base in ('Interpolated', 'No Preset')
+        show_deblurred_interpolated = self.filter_data_base in ('Debl.-Interp.', 'No Preset')
+        show_interpolated_deblurred = self.filter_data_base in ('Interp.-Debl.', 'No Preset')
         hide_spotlight = self.filter_data_spotlight == 'Without Spotlight'
         hide_no_spotlight = self.filter_data_spotlight == 'With Spotlight'
         hide_starts_at_rest = self.filter_data_starts == 'Starts in Motion'
         hide_starts_in_motion = self.filter_data_starts == 'Starts at Rest'
 
-        data_to_hide = []
-        for data in self.data_show:
-            if hide_standard and not (data.interpolated or data.deblurred):
-                data_to_hide.append(data)
-                continue
-            if hide_interpolated and data.interpolated and not data.deblurred:
-                data_to_hide.append(data)
-                continue
-            if hide_deblurred and data.deblurred and not data.interpolated:
-                data_to_hide.append(data)
-                continue
-            if hide_interpolated_deblurred and data.interpolated and data.deblurred:
-                data_to_hide.append(data)
-                continue
-            if hide_spotlight and data.spotlight:
-                data_to_hide.append(data)
-                continue
-            if hide_no_spotlight and not data.spotlight:
-                data_to_hide.append(data)
-                continue
-            if hide_starts_at_rest and data.start_at_rest:
-                data_to_hide.append(data)
-                continue
-            if hide_starts_in_motion and not data.start_at_rest:
-                data_to_hide.append(data)
+        for data in self.data_all:
+            if show_standard and not (data.deblurred or data.interpolated or data.deblurred_interpolated or data.interpolated_deblurred):
+                self.data_show.append(data)
                 continue
 
-        for data in data_to_hide:
+            if show_deblurred and data.deblurred:
+                self.data_show.append(data)
+                continue
+
+            if show_interpolated and data.interpolated:
+                self.data_show.append(data)
+                continue
+
+            if show_deblurred_interpolated and data.deblurred_interpolated:
+                self.data_show.append(data)
+                continue
+
+            if show_interpolated_deblurred and data.interpolated_deblurred:
+                self.data_show.append(data)
+                continue
+
+        data_to_remove = []
+        for data in self.data_show:
+            if hide_spotlight and data.spotlight:
+                data_to_remove.append(data)
+                continue
+
+            if hide_no_spotlight and not data.spotlight:
+                data_to_remove.append(data)
+                continue
+
+            if hide_starts_at_rest and data.start_at_rest:
+                data_to_remove.append(data)
+                continue
+
+            if hide_starts_in_motion and not data.start_at_rest:
+                data_to_remove.append(data)
+                continue
+
+        for data in data_to_remove:
             self.data_show.remove(data)
 
         self._gui_set_data()

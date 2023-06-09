@@ -332,7 +332,7 @@ class InferenceManager():
         if not selection:
             return
         selection_str = self.gui_inference.details_listbox_data.get(selection)
-        data_id = int(selection_str[0:2])
+        data_id = int(selection_str[0:3])
         run_id = data_id
 
         run = next(run for run in selected_inference.runs if run.id == run_id)
