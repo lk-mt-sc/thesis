@@ -4,6 +4,7 @@ import tkinter as tk
 from tkinter import ttk
 from tkinter import simpledialog
 
+import numpy as np
 from matplotlib.figure import Figure
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 from matplotlib.backends.backend_tkagg import NavigationToolbar2Tk
@@ -235,6 +236,13 @@ class Plot:
 
             if cur_min_v < min_v:
                 min_v = cur_min_v
+
+        for plottable in subplot['plottables']:
+            values = plottable.values
+            steps = plottable.steps
+
+            if max(steps) < max_s or min(steps) > min_s:
+                steps = np.interp(steps, (min(steps), max(steps)), (min_s, max_s))
 
             plot_function = subplot['plot'].plot if not plottable.step_plot else subplot['plot'].step
             plot_function(steps,
