@@ -6,6 +6,7 @@ b) FFmpeg installed and accessible from the command line
 """
 import os
 import glob
+import math
 import random
 import shutil
 import argparse
@@ -32,7 +33,7 @@ def time_to_ms(time):
     return h_ms + m_ms + s_ms + ms
 
 
-def create_std_dataset():
+def create_std_dataset(id_start):
     if os.path.exists(STD_DATASET_DIR):
         shutil.rmtree(STD_DATASET_DIR)
 
@@ -42,6 +43,7 @@ def create_std_dataset():
 
     markdown_table_entries = []
 
+    id_ = id_start
     print('Creating standard dataset...')
     with open(os.path.join('dataset.CSV'), 'r', encoding='utf8') as metadata:
         runs = metadata.readlines()
@@ -100,8 +102,8 @@ def create_std_dataset():
             video_path = os.path.join(VIDEOS_DIR, video_id + '.mp4')
 
             out_str = []
-            out_str.append(f'{str(climber_id).zfill(2)} CLIMBER ID')
-            out_str.append(f'{str(frames_cut)} IMG')
+            out_str.append(f'{str(id_).zfill(3)} ID')
+            out_str.append(f'{str(frames_cut).zfill(4)} IMG')
             if spotlight == 'yes':
                 out_str.append('SPOTLIGHT')
             elif spotlight == 'no':
@@ -110,7 +112,7 @@ def create_std_dataset():
                 out_str.append('START AT REST')
             elif start_at_rest == 'no':
                 out_str.append('START IN MOTION')
-            out_str.append(f'{video_fps} FPS')
+            out_str.append(f'{str(video_fps).zfill(3)} FPS')
             out_str = ' - '.join(out_str)
             out_path = os.path.join(STD_RUNS_VIDEO_DIR, out_str + '.mp4')
 
@@ -143,8 +145,240 @@ def create_std_dataset():
                 img_id += 1
                 out_id += 1
 
-        for entry in markdown_table_entries:
-            print(entry)
+            id_ += 1
+
+        # for entry in markdown_table_entries:
+        #     print(entry)
+
+
+def create_deb_dataset(id_start):
+    if not os.path.exists(STD_DATASET_DIR):
+        print('Standard dataset not found.')
+        create_std_dataset()
+
+    if os.path.exists(DEB_DATASET_DIR):
+        shutil.rmtree(DEB_DATASET_DIR)
+
+    os.mkdir(DEB_DATASET_DIR)
+
+    device = 'cuda:0'
+    checkpoint = os.path.join(SHIFT_NET_DIR, 'ckpt', 'net_gopro_deblur.pth')
+
+    net = GShiftNet(future_frames=2, past_frames=2)
+    net.load_state_dict(torch.load(checkpoint)['params'])
+    net.half()
+    net = net.to(device)
+    net.eval()
+
+    id_ = id_start
+    print('Creating deblurred dataset...')
+    runs = sorted(glob.glob(os.path.join(STD_RUNS_IMAGE_DIR, '*')))
+    for run in tqdm(runs, desc='Overall'):
+        out_str = run.split('/')[-1]
+        out_str_split = out_str.split(' - ')
+        out_str_split[0] = f'{str(id_).zfill(3)} ID'
+        out_str_split.append('DEBLURRED')
+        out_str = ' - '.join(out_str_split)
+        out_dir = os.path.join(DEB_DATASET_DIR, out_str)
+        os.mkdir(out_dir)
+
+        frames = sorted(glob.glob(os.path.join(run, '*')))
+        frames.insert(0, frames[0])
+        frames.insert(0, frames[0])
+        frames.append(frames[-1])
+        frames.append(frames[-1])
+
+        inputs = []
+        for i in range(2, len(frames) - 2):
+            input_ = []
+            input_.append(frames[i - 2])
+            input_.append(frames[i - 1])
+            input_.append(frames[i])
+            input_.append(frames[i + 1])
+            input_.append(frames[i + 2])
+            inputs.append(input_)
+
+        with torch.no_grad():
+            for i, input_ in enumerate(tqdm(inputs, desc='Current', leave=False)):
+                images = [imageio.v2.imread(input_[i]) for i in range(0, len(input_))]
+                images = numpy2tensor(images).to(device)
+                outputs = net(images.half())
+                outputs = outputs.float()
+                outputs = tensor2numpy(outputs)
+                cv.imwrite(os.path.join(out_dir, str(i).zfill(3) + '.png'), outputs[..., ::-1])
+
+        torch.cuda.empty_cache()
+
+        id_ += 1
+
+
+def create_itp_dataset(id_start):
+    if not os.path.exists(STD_DATASET_DIR):
+        print('Standard dataset not found.')
+        create_std_dataset()
+
+    if os.path.exists(ITP_DATASET_DIR):
+        shutil.rmtree(ITP_DATASET_DIR)
+
+    os.mkdir(ITP_DATASET_DIR)
+
+    n = 5
+    interpolator = Interpolator(n=n)
+
+    id_ = id_start
+    print('Creating interpolated dataset...')
+    runs = sorted(glob.glob(os.path.join(STD_RUNS_IMAGE_DIR, '*')))
+    for run in tqdm(runs, desc='Overall'):
+        frames = sorted(glob.glob(os.path.join(run, '*')))
+        n_frames = len(frames)
+
+        old_run_duration_sec = n_frames / 25.0
+        n_frames_interpolated = (n_frames - 1) * n + 1
+        new_fps = int(math.ceil(n_frames_interpolated / old_run_duration_sec))
+
+        out_str = run.split('/')[-1]
+        out_str_split = out_str.split(' - ')
+        out_str_split[0] = f'{str(id_).zfill(3)} ID'
+        out_str_split[1] = f'{str(n_frames_interpolated).zfill(4)} IMG'
+        out_str_split[4] = f'{str(new_fps).zfill(3)} FPS'
+        out_str_split.append('INTERPOLATED')
+        out_str = ' - '.join(out_str_split)
+        out_dir = os.path.join(ITP_DATASET_DIR, out_str)
+        os.mkdir(out_dir)
+
+        for i in tqdm(range(0, len(frames) - 1), desc='Current', leave=False):
+            img1 = frames[i]
+            img2 = frames[i + 1]
+            imgs_out = []
+            for j in range(0, n):
+                imgs_out.append(os.path.join(out_dir, img1.split(
+                    '/')[-1].replace('.png', f'_{str(j).zfill(2)}.png')))
+
+            interpolator.interpolate(img1, img2, imgs_out)
+
+        shutil.copyfile(frames[-1], os.path.join(out_dir, frames[-1].split('/')
+                        [-1].replace('.png', f'_{str(0).zfill(2)}.png')))
+
+        torch.cuda.empty_cache()
+
+        id_ += 1
+
+    os.chdir(WORKING_DIR)
+
+
+def create_d_i_dataset(id_start):
+    if not os.path.exists(DEB_DATASET_DIR):
+        print('Deblurred dataset not found.')
+        create_deb_dataset()
+
+    if os.path.exists(D_I_DATASET_DIR):
+        shutil.rmtree(D_I_DATASET_DIR)
+
+    os.mkdir(D_I_DATASET_DIR)
+
+    n = 5
+    interpolator = Interpolator(n=n)
+
+    id_ = id_start
+    print('Creating deblurred -> interpolated dataset...')
+    runs = sorted(glob.glob(os.path.join(DEB_DATASET_DIR, '*')))
+    for run in tqdm(runs, desc='Overall'):
+        frames = sorted(glob.glob(os.path.join(run, '*')))
+        n_frames = len(frames)
+
+        old_run_duration_sec = n_frames / 25.0
+        n_frames_interpolated = (n_frames - 1) * n + 1
+        new_fps = int(math.ceil(n_frames_interpolated / old_run_duration_sec))
+
+        out_str = run.split('/')[-1]
+        out_str_split = out_str.split(' - ')
+        out_str_split[0] = f'{str(id_).zfill(3)} ID'
+        out_str_split[1] = f'{str(n_frames_interpolated).zfill(4)} IMG'
+        out_str_split[4] = f'{str(new_fps).zfill(3)} FPS'
+        out_str_split[5] = 'DEBLURRED-INTERPOLATED'
+        out_str = ' - '.join(out_str_split)
+        out_dir = os.path.join(D_I_DATASET_DIR, out_str)
+        os.mkdir(out_dir)
+
+        for i in tqdm(range(0, len(frames) - 1), desc='Current', leave=False):
+            img1 = frames[i]
+            img2 = frames[i + 1]
+            imgs_out = []
+            for j in range(0, n):
+                imgs_out.append(os.path.join(out_dir, img1.split(
+                    '/')[-1].replace('.png', f'_{str(j).zfill(2)}.png')))
+
+            interpolator.interpolate(img1, img2, imgs_out)
+
+        shutil.copyfile(frames[-1], os.path.join(out_dir, frames[-1].split('/')
+                        [-1].replace('.png', f'_{str(0).zfill(2)}.png')))
+
+        torch.cuda.empty_cache()
+
+        id_ += 1
+
+    os.chdir(WORKING_DIR)
+
+
+def create_i_d_dataset(id_start):
+    if not os.path.exists(ITP_DATASET_DIR):
+        print('Interpolated dataset not found.')
+        create_itp_dataset()
+
+    if os.path.exists(I_D_DATASET_DIR):
+        shutil.rmtree(I_D_DATASET_DIR)
+
+    os.mkdir(I_D_DATASET_DIR)
+
+    device = 'cuda:0'
+    checkpoint = os.path.join(SHIFT_NET_DIR, 'ckpt', 'net_gopro_deblur.pth')
+
+    net = GShiftNet(future_frames=2, past_frames=2)
+    net.load_state_dict(torch.load(checkpoint)['params'])
+    net.half()
+    net = net.to(device)
+    net.eval()
+
+    id_ = id_start
+    print('Creating interpolated -> deblurred dataset...')
+    runs = sorted(glob.glob(os.path.join(ITP_DATASET_DIR, '*')))
+    for run in tqdm(runs, desc='Overall'):
+        out_str = run.split('/')[-1]
+        out_str_split = out_str.split(' - ')
+        out_str_split[0] = f'{str(id_).zfill(3)} ID'
+        out_str_split[5] = 'INTERPOLATED-DEBLURRED'
+        out_str = ' - '.join(out_str_split)
+        out_dir = os.path.join(I_D_DATASET_DIR, out_str)
+        os.mkdir(out_dir)
+
+        frames = sorted(glob.glob(os.path.join(run, '*')))
+        frames.insert(0, frames[0])
+        frames.insert(0, frames[0])
+        frames.append(frames[-1])
+        frames.append(frames[-1])
+
+        inputs = []
+        for i in range(2, len(frames) - 2):
+            input_ = []
+            input_.append(frames[i - 2])
+            input_.append(frames[i - 1])
+            input_.append(frames[i])
+            input_.append(frames[i + 1])
+            input_.append(frames[i + 2])
+            inputs.append(input_)
+
+        with torch.no_grad():
+            for i, input_ in enumerate(tqdm(inputs, desc='Current', leave=False)):
+                images = [imageio.v2.imread(input_[i]) for i in range(0, len(input_))]
+                images = numpy2tensor(images).to(device)
+                outputs = net(images.half())
+                outputs = outputs.float()
+                outputs = tensor2numpy(outputs)
+                cv.imwrite(os.path.join(out_dir, input_[2].split('/')[-1]), outputs[..., ::-1])
+
+        torch.cuda.empty_cache()
+
+        id_ += 1
 
 
 def create_det_dataset():
@@ -247,59 +481,6 @@ def create_det_dataset():
                         break
 
 
-def create_deb_dataset():
-    if not os.path.exists(STD_DATASET_DIR):
-        print('Standard dataset not found.')
-        create_std_dataset()
-
-    if os.path.exists(DEB_DATASET_DIR):
-        shutil.rmtree(DEB_DATASET_DIR)
-
-    os.mkdir(DEB_DATASET_DIR)
-
-    device = 'cuda:0'
-    checkpoint = os.path.join(SHIFT_NET_DIR, 'ckpt', 'net_gopro_deblur.pth')
-
-    net = GShiftNet(future_frames=2, past_frames=2)
-    net.load_state_dict(torch.load(checkpoint)['params'])
-    net.half()
-    net = net.to(device)
-    net.eval()
-
-    print('Creating deblurred dataset...')
-    runs = sorted(glob.glob(os.path.join(STD_RUNS_IMAGE_DIR, '*')))
-    for run in tqdm(runs, desc='Overall'):
-        out_dir = os.path.join(DEB_DATASET_DIR, run.split('/')[-1] + ' - DEBLURRED')
-        os.mkdir(out_dir)
-
-        frames = sorted(glob.glob(os.path.join(run, '*')))
-        frames.insert(0, frames[0])
-        frames.insert(0, frames[0])
-        frames.append(frames[-1])
-        frames.append(frames[-1])
-
-        inputs = []
-        for i in range(2, len(frames) - 2):
-            input_ = []
-            input_.append(frames[i - 2])
-            input_.append(frames[i - 1])
-            input_.append(frames[i])
-            input_.append(frames[i + 1])
-            input_.append(frames[i + 2])
-            inputs.append(input_)
-
-        with torch.no_grad():
-            for i, input_ in enumerate(tqdm(inputs, desc='Current', leave=False)):
-                images = [imageio.v2.imread(input_[i]) for i in range(0, len(input_))]
-                images = numpy2tensor(images).to(device)
-                outputs = net(images.half())
-                outputs = outputs.float()
-                outputs = tensor2numpy(outputs)
-                cv.imwrite(os.path.join(out_dir, str(i).zfill(3) + '.png'), outputs[..., ::-1])
-
-        torch.cuda.empty_cache()
-
-
 def numpy2tensor(input_seq, rgb_range=1.):
     # taken from https://github.com/dasongli1/Shift-Net/blob/main/inference/test_deblur.py
     tensor_list = []
@@ -322,90 +503,6 @@ def tensor2numpy(tensor, rgb_range=1.):
     return img
 
 
-def create_itp_dataset():
-    if not os.path.exists(STD_DATASET_DIR):
-        print('Standard dataset not found.')
-        create_std_dataset()
-
-    if os.path.exists(ITP_DATASET_DIR):
-        shutil.rmtree(ITP_DATASET_DIR)
-
-    os.mkdir(ITP_DATASET_DIR)
-
-    n = 5
-
-    print('Creating interpolated dataset...')
-    runs = sorted(glob.glob(os.path.join(STD_RUNS_IMAGE_DIR, '*')))
-    for run in tqdm(runs, desc='Overall'):
-        frames = sorted(glob.glob(os.path.join(run, '*')))
-        n_frames = len(frames)
-
-        old_run_duration_sec = n_frames / 25.0
-        n_frames_interpolated = (n_frames - 1) * n + 1
-        new_fps = int(n_frames_interpolated / old_run_duration_sec)
-
-        out_dir = os.path.join(ITP_DATASET_DIR, run.split('/')[-1].replace('25 FPS', f'{new_fps} FPS'))
-        os.mkdir(out_dir)
-
-        for i in tqdm(range(0, len(frames) - 1), desc='Current', leave=False):
-            img1 = frames[i]
-            img2 = frames[i + 1]
-            imgs_out = []
-            for j in range(0, n):
-                imgs_out.append(os.path.join(out_dir, img1.split(
-                    '/')[-1].replace('.png', f'_{str(j).zfill(2)}.png')))
-
-            interpolator = Interpolator(n=n)
-            interpolator.interpolate(img1, img2, imgs_out)
-
-        shutil.copyfile(frames[-1], os.path.join(out_dir, frames[-1].split('/')
-                        [-1].replace('.png', f'_{str(0).zfill(2)}.png')))
-
-    os.chdir(WORKING_DIR)
-
-
-def create_i_d_dataset():
-    if not os.path.exists(DEB_DATASET_DIR):
-        print('Deblurred dataset not found.')
-        create_deb_dataset()
-
-    if os.path.exists(I_D_DATASET_DIR):
-        shutil.rmtree(I_D_DATASET_DIR)
-
-    os.mkdir(I_D_DATASET_DIR)
-
-    n = 5
-
-    print('Creating deblurred interpolated dataset...')
-    runs = sorted(glob.glob(os.path.join(DEB_DATASET_DIR, '*')))
-    for run in tqdm(runs, desc='Overall'):
-        frames = sorted(glob.glob(os.path.join(run, '*')))
-        n_frames = len(frames)
-
-        old_run_duration_sec = n_frames / 25.0
-        n_frames_interpolated = (n_frames - 1) * n + 1
-        new_fps = int(n_frames_interpolated / old_run_duration_sec)
-
-        out_dir = os.path.join(I_D_DATASET_DIR, run.split('/')[-1].replace('25 FPS', f'{new_fps} FPS'))
-        os.mkdir(out_dir)
-
-        for i in tqdm(range(0, len(frames) - 1), desc='Current', leave=False):
-            img1 = frames[i]
-            img2 = frames[i + 1]
-            imgs_out = []
-            for j in range(0, n):
-                imgs_out.append(os.path.join(out_dir, img1.split(
-                    '/')[-1].replace('.png', f'_{str(j).zfill(2)}.png')))
-
-            interpolator = Interpolator(n=n)
-            interpolator.interpolate(img1, img2, imgs_out)
-
-        shutil.copyfile(frames[-1], os.path.join(out_dir, frames[-1].split('/')
-                        [-1].replace('.png', f'_{str(0).zfill(2)}.png')))
-
-    os.chdir(WORKING_DIR)
-
-
 if __name__ == '__main__':
 
     random_1 = random.Random(0)
@@ -425,6 +522,7 @@ if __name__ == '__main__':
     DET_TEST_DIR = os.path.join(DET_DATASET_DIR, 'test')
     DEB_DATASET_DIR = os.path.join(WORKING_DIR, 'deb_dataset')
     ITP_DATASET_DIR = os.path.join(WORKING_DIR, 'itp_dataset')
+    D_I_DATASET_DIR = os.path.join(WORKING_DIR, 'd_i_dataset')
     I_D_DATASET_DIR = os.path.join(WORKING_DIR, 'i_d_dataset')
 
     parser = argparse.ArgumentParser()
@@ -433,12 +531,14 @@ if __name__ == '__main__':
 
     match args.dataset:
         case 'std':
-            create_std_dataset()
+            create_std_dataset(id_start=1)
+        case 'deb':
+            create_deb_dataset(id_start=65)
+        case 'itp':
+            create_itp_dataset(id_start=129)
+        case 'd_i':
+            create_d_i_dataset(id_start=193)
+        case 'i_d':
+            create_i_d_dataset(id_start=257)
         case 'det':
             create_det_dataset()
-        case 'deb':
-            create_deb_dataset()
-        case 'itp':
-            create_itp_dataset()
-        case 'i_d':
-            create_i_d_dataset()
