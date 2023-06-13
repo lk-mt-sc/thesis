@@ -21,7 +21,7 @@ class Highpass():
             values=None,
             values_abs=None,
             values_zeroed=None,
-            values_interp=None,
+            values_non_zero_interp=None,
             values_smoothed=None,
             feature=None,
             calculate_on=None,
@@ -33,7 +33,7 @@ class Highpass():
         self.values = values
         self.values_abs = values_abs
         self.values_zeroed = values_zeroed
-        self.values_interp = values_interp
+        self.values_non_zero_interp = values_non_zero_interp
         self.values_smoothed = values_smoothed
         self.feature = feature
         self.calculate_on = calculate_on
@@ -131,17 +131,17 @@ class Highpass():
             interpolated_values = np.interp(steps_to_interpolate, steps_, values_)
 
             if hasattr(calculate_on, 'values_interp'):
-                values_interp = calculate_on.values_interp.copy()
+                values_non_zero_interp = calculate_on.values_interp.copy()
             else:
-                values_interp = calculate_on.values.copy()
+                values_non_zero_interp = calculate_on.values.copy()
 
             for i, index in enumerate(steps_to_interpolate):
-                values_interp[index] = interpolated_values[i]
+                values_non_zero_interp[index] = interpolated_values[i]
 
-            values_smoothed = savgol_filter(values_interp, 25, 5).tolist()
+            values_smoothed = savgol_filter(values_non_zero_interp, 25, 5).tolist()
 
         else:
-            values_interp = []
+            values_non_zero_interp = []
             values_smoothed = []
 
         list_name = self.name
@@ -152,7 +152,7 @@ class Highpass():
             values=values,
             values_abs=values_abs,
             values_zeroed=values_zeroed,
-            values_interp=values_interp,
+            values_non_zero_interp=values_non_zero_interp,
             values_smoothed=values_smoothed,
             feature=feature,
             calculate_on=calculate_on,
@@ -208,12 +208,12 @@ class Highpass():
                         type_=PlottableTypes.METRIC
                     )
                 )
-            if self.values_interp:
+            if self.values_non_zero_interp:
                 plottables.append(
                     Plottable(
                         name=name + '_INTERPOLATED',
                         steps=self.steps,
-                        values=self.values_interp,
+                        values=self.values_non_zero_interp,
                         linestyle='solid',
                         marker='None',
                         legend=legend + '_INTERPOLATED',
@@ -239,9 +239,9 @@ class Highpass():
     @classmethod
     def tracker_plot(cls, image, slider_value, metric_x, metric_y):
         if not None in (metric_x, metric_y):
-            if metric_x.values_interp and metric_y.values_interp:
-                x = int(metric_x.values_interp[slider_value])
-                y = int(metric_y.values_interp[slider_value])
+            if metric_x.values_non_zero_interp and metric_y.values_non_zero_interp:
+                x = int(metric_x.values_non_zero_interp[slider_value])
+                y = int(metric_y.values_non_zero_interp[slider_value])
                 color = [255 / 256, 20 / 256, 147 / 256]
                 image = cv.circle(image, center=(x, y), radius=5, thickness=-1, color=color)
 
