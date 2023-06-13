@@ -5,6 +5,6 @@ class AllMetrics(Enum):
     MISSING_POSE_ESTIMATIONS = 'Missing Pose Estimations'
     DELTAS = 'Deltas'
     PEAKS = 'Peaks'
-    LOWPASS = 'Low-Pass (Butterw.)'
-    HIGHPASS = 'High-Pass (Butterw.)'
+    LOWPASS = 'Low-Pass'
+    HIGHPASS = 'High-Pass'
     FFT = 'FFT'
