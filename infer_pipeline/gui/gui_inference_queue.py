@@ -50,7 +50,7 @@ class GUIInferenceQueue():
         self.listbox_inferences.bind('<<ListboxSelect>>', listbox_inferences_queue_callback)
         self.listbox_inferences.place(x=0, y=140, width=440)
         self.listbox_inferences_scrollbar = ttk.Scrollbar(self.frame)
-        self.listbox_inferences_scrollbar.place(x=440, y=140, width=20, height=90)
+        self.listbox_inferences_scrollbar.place(x=440, y=140, width=20, height=93)
         self.listbox_inferences.config(yscrollcommand=self.listbox_inferences_scrollbar.set)
         self.listbox_inferences_scrollbar.config(command=self.listbox_inferences.yview)
 

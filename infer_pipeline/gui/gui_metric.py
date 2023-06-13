@@ -111,7 +111,7 @@ class GUIMetric():
         self.listbox_metrics.bind('<ButtonRelease-1>', listbox_metrics_drop_callback)
         self.listbox_metrics.place(x=1430, y=50, width=250)
         self.listbox_metrics_scrollbar = ttk.Scrollbar(self.frame)
-        self.listbox_metrics_scrollbar.place(x=1680, y=50, width=20, height=142)
+        self.listbox_metrics_scrollbar.place(x=1680, y=50, width=20, height=133)
         self.listbox_metrics.config(yscrollcommand=self.listbox_metrics_scrollbar.set)
         self.listbox_metrics_scrollbar.config(command=self.listbox_metrics.yview)
 

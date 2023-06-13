@@ -67,6 +67,6 @@ class GUIData():
         self.listbox_data.bind('<Double-Button-1>', listbox_data_double_click_callback)
         self.listbox_data.place(x=0, y=30, width=440)
         self.listbox_data_scrollbar = ttk.Scrollbar(self.frame)
-        self.listbox_data_scrollbar.place(x=440, y=30, width=20, height=100)
+        self.listbox_data_scrollbar.place(x=440, y=30, width=20, height=93)
         self.listbox_data.config(yscrollcommand=self.listbox_data_scrollbar.set)
         self.listbox_data_scrollbar.config(command=self.listbox_data.yview)
