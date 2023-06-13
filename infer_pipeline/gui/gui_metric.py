@@ -72,23 +72,23 @@ class GUIMetric():
             self.inference_metrics_values.append(var)
             ttk.Label(self.frame, textvariable=var).place(x=879, y=50 + i * 20)
 
-        ttk.Separator(self.frame, orient='vertical').place(x=1060, y=0, height=198)
+        ttk.Separator(self.frame, orient='vertical').place(x=1050, y=0, height=198)
 
         self.title_data = ttk.Label(self.frame, text='Metrics on Selected Data', font=self.root.font_title)
-        self.title_data.place(x=1070, y=0)
+        self.title_data.place(x=1060, y=0)
 
-        ttk.Label(self.frame, text='Standard Metrics', font=self.root.font_bold).place(x=1070, y=30)
+        ttk.Label(self.frame, text='Standard Metrics', font=self.root.font_bold).place(x=1060, y=30)
         self.data_metrics_names = []
         self.data_metrics_values = []
         for i in range(0, n_metrics):
             var = tk.StringVar()
             var.set('...')
             self.data_metrics_names.append(var)
-            ttk.Label(self.frame, textvariable=var).place(x=1070, y=50 + i * 20)
+            ttk.Label(self.frame, textvariable=var).place(x=1060, y=50 + i * 20)
 
             var = tk.StringVar()
             self.data_metrics_values.append(var)
-            ttk.Label(self.frame, textvariable=var).place(x=1260, y=50 + i * 20)
+            ttk.Label(self.frame, textvariable=var).place(x=1250, y=50 + i * 20)
 
         ttk.Separator(self.frame, orient='vertical').place(x=1420, y=0, height=198)
 
