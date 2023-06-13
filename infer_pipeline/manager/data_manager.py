@@ -158,17 +158,14 @@ class DataManager():
         self._gui_select_all_data()
 
     def get_existing_dataset(self):
+        selected_data_ids = [data.id for data in self.selected_data]
         persistent_datasets_file_path = os.path.join(MMPOSE_DATA_DIR, 'persistent_datasets.json')
         with open(persistent_datasets_file_path, 'r', encoding='utf8') as persistent_datasets_file:
             persistent_datasets = json.load(persistent_datasets_file)
             for persistent_dataset in persistent_datasets:
-                runs = persistent_dataset['runs']
-                if len(runs) != len(self.selected_data):
-                    continue
-                for run in runs:
-                    if run not in self.selected_data:
-                        break
-                return persistent_dataset['path']
+                run_ids = persistent_dataset['runs']
+                if sorted(run_ids) == sorted(selected_data_ids):
+                    return persistent_dataset['path']
         return None
 
     def data_selected(self, event=None):
