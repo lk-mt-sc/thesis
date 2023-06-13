@@ -40,7 +40,7 @@ class Deltas():
             parameters = self.parameters
 
         steps = calculate_on.steps.copy()
-        if hasattr(calculate_on, 'values_interp'):
+        if hasattr(calculate_on, 'values_interp') and calculate_on.values_interp:
             values = np.diff(calculate_on.values_interp.copy()).tolist()
         else:
             values = np.diff(calculate_on.values.copy()).tolist()

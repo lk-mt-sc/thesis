@@ -62,7 +62,7 @@ class Lowpass():
 
         b, a = butter(*func_params)
         steps = calculate_on.steps.copy()
-        if hasattr(calculate_on, 'values_interp'):
+        if hasattr(calculate_on, 'values_interp') and calculate_on.values_interp:
             values = filtfilt(b, a, calculate_on.values_interp.copy())
         else:
             values = filtfilt(b, a, calculate_on.values.copy())

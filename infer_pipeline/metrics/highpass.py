@@ -76,7 +76,7 @@ class Highpass():
 
         b, a = butter(*func_params)
         steps = calculate_on.steps.copy()
-        if hasattr(calculate_on, 'values_interp'):
+        if hasattr(calculate_on, 'values_interp') and calculate_on.values_interp:
             values = filtfilt(b, a, calculate_on.values_interp.copy())
         else:
             values = filtfilt(b, a, calculate_on.values.copy())
@@ -120,7 +120,7 @@ class Highpass():
 
             steps_ = steps.copy()
 
-            if hasattr(calculate_on, 'values_interp'):
+            if hasattr(calculate_on, 'values_interp') and calculate_on.values_interp:
                 values_ = calculate_on.values_interp.copy()
             else:
                 values_ = calculate_on.values.copy()
@@ -130,7 +130,7 @@ class Highpass():
 
             interpolated_values = np.interp(steps_to_interpolate, steps_, values_)
 
-            if hasattr(calculate_on, 'values_interp'):
+            if hasattr(calculate_on, 'values_interp') and calculate_on.values_interp:
                 values_non_zero_interp = calculate_on.values_interp.copy()
             else:
                 values_non_zero_interp = calculate_on.values.copy()

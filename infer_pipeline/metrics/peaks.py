@@ -70,7 +70,7 @@ class Peaks():
         else:
             func_params = [None for _ in range(0, len(Peaks.parameter_names))]
 
-        if hasattr(calculate_on, 'values_interp'):
+        if hasattr(calculate_on, 'values_interp') and calculate_on.values_interp:
             values_positive = calculate_on.values_interp.copy()
         else:
             values_positive = calculate_on.copy()
