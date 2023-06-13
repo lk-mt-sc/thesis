@@ -130,17 +130,6 @@ class MetricManager():
         for metric_name in metrics_to_delete:
             del inference_metrics[metric_name]
 
-        highpass_total = []
-        for run in runs:
-            for _, metrics in run.metrics.items():
-                if metrics[0].type == AllMetrics.HIGHPASS:
-                    for m in metrics:
-                        highpass_total += m.values_abs
-                    break
-
-        mean = np.mean(highpass_total)
-        std = np.std(highpass_total)
-        inference_metrics['abs. High-Pass (mean/std. dev.)'] = [mean, std]
         return inference_metrics
 
     def add_to_compared_inferences(self, inference, position):

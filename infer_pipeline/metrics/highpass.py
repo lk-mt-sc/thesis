@@ -26,6 +26,7 @@ class Highpass():
             feature=None,
             calculate_on=None,
             list_name=None,
+            display_values=None,
             parameters=None,
             func_params=None):
         self.name = name or AllMetrics.HIGHPASS.value
@@ -38,9 +39,9 @@ class Highpass():
         self.feature = feature
         self.calculate_on = calculate_on
         self.list_name = list_name
-        self.display_name = self.name
-        self.display_modes = []
-        self.display_values = []
+        self.display_name = 'abs. ' + self.name + ' (mean/std. dev.)'
+        self.display_modes = ['mean', 'mean']
+        self.display_values = display_values
         self.parameters = parameters
         self.func_params = func_params
         self.type = AllMetrics.HIGHPASS
@@ -82,6 +83,7 @@ class Highpass():
             values = filtfilt(b, a, calculate_on.values.copy())
 
         values_abs = list(abs(values))
+        display_values = [np.mean(values_abs), np.std(values_abs)]
 
         values_zeroed = []
         for value in values_abs:
@@ -157,6 +159,7 @@ class Highpass():
             feature=feature,
             calculate_on=calculate_on,
             list_name=list_name,
+            display_values=display_values,
             parameters=parameters,
             func_params=func_params
         )
