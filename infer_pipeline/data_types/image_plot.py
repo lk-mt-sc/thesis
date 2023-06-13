@@ -59,10 +59,10 @@ class ImagePlot():
         self.slider.configure(state='disabled')
 
         if self.tracker_plot:
-            label_counter.pack()
-            self.slider.pack()
-            self.toolbar.pack()
-            self.canvas.get_tk_widget().pack()
+            label_counter.place(x=10, y=10)
+            self.slider.place(x=65, y=10, width=165)
+            self.toolbar.place(x=10, y=30)
+            self.canvas.get_tk_widget().place(x=0, y=85, width=815, height=1080)
         else:
             self.label_title.place(x=25, y=80)
             self.canvas.get_tk_widget().place(x=0, y=0, width=815, height=1080)

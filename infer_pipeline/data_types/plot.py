@@ -140,7 +140,7 @@ class Plot:
         tracker = Tracker(window=window, plot=self, subplot=subplot)
         center_x = self.root.winfo_screenwidth() / 2 - window.winfo_reqwidth() / 2
         center_y = self.root.winfo_screenheight() / 2 - window.winfo_reqheight() / 2
-        window.geometry(f'960x1080+{int(center_x - 480)}+{int(center_y - 540)}')
+        window.geometry(f'815x1180+{int(center_x - 480)}+{int(center_y - 540)}')
         window.title('Tracker')
         window.protocol("WM_DELETE_WINDOW", lambda arg=window: self.remove_tracker(arg))
         self.trackers.append(tracker)
