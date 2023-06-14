@@ -1,3 +1,7 @@
+import os
+import glob
+import json
+import shutil
 import tkinter as tk
 from tkinter import ttk
 
@@ -8,8 +12,8 @@ from matplotlib.figure import Figure
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 from matplotlib.backends.backend_tkagg import NavigationToolbar2Tk
 
-from common import BACKGROUND_COLOR_HEX
-from manager.dataset_manager import KeyPointsImagePlot
+from common import BACKGROUND_COLOR_HEX, MMPOSE_DATA_EXPORT_DIR
+from manager.dataset_manager import KeyPointsImagePlot, KeyPointsFeatureList, KeypointsDefaultCOCO
 from metrics.all_metrics import AllMetrics
 
 
@@ -62,6 +66,20 @@ class ImagePlot():
             label_counter.place(x=10, y=10)
             self.slider.place(x=65, y=10, width=165)
             self.toolbar.place(x=10, y=30)
+            self.button_export = ttk.Button(
+                self.frame,
+                text='Export to Dataset',
+                style='Button.TButton',
+                width=20,
+                command=self.export_to_dataset)
+            self.button_export.place(x=250, y=7, height=60)
+            self.counter_dataset_images_var = tk.StringVar()
+            self.counter_dataset_images_var.set('Dataset images from this run: 0')
+            ttk.Label(self.frame, textvariable=self.counter_dataset_images_var).place(x=385, y=10)
+            self.current_image_in_dataset_var = tk.StringVar()
+            self.current_image_in_dataset_var.set('The current image is not in the dataset.')
+            ttk.Label(self.frame, textvariable=self.current_image_in_dataset_var).place(x=385, y=30)
+            self._gui_disable_button_export()
             self.canvas.get_tk_widget().place(x=0, y=85, width=815, height=1080)
         else:
             self.label_title.place(x=25, y=80)
@@ -75,10 +93,66 @@ class ImagePlot():
         self.dataset_type = None
         self.image_plot_middle_click_callback = image_plot_middle_click_callback
 
+    def set_dataset_information(self):
+        counter_dataset_images = len(
+            sorted(glob.glob(os.path.join(MMPOSE_DATA_EXPORT_DIR, f'{str(self.run.id).zfill(3)}_*.png'))))
+        self.counter_dataset_images_var.set(f'Dataset images from this run: {counter_dataset_images}')
+
+        current_image_filename = self.image.split('/')[-1]
+        export_image_filename = str(self.run.id).zfill(3) + '_' + current_image_filename
+        export_image_path = os.path.join(MMPOSE_DATA_EXPORT_DIR, export_image_filename)
+        if os.path.exists(export_image_path):
+            self.current_image_in_dataset_var.set('The current image is in the dataset.')
+            self._gui_disable_button_export()
+        else:
+            self.current_image_in_dataset_var.set('The current image is not in the dataset.')
+            self._gui_enable_button_export()
+
+    def export_to_dataset(self):
+        current_image_filename = self.image.split('/')[-1]
+        export_image_filename = str(self.run.id).zfill(3) + '_' + current_image_filename
+        export_image_path = os.path.join(MMPOSE_DATA_EXPORT_DIR, export_image_filename)
+
+        shutil.copyfile(self.image, export_image_path)
+
+        keypoints = [0 for i in range(0, 3 * len(KeypointsDefaultCOCO))]
+        processed_keypoints = []
+        for keypoint_name, keypoint in self.dataset_type.keypoints.items():
+            keypoint_name = keypoint_name[:-2]
+            if KeyPointsFeatureList.has_value(keypoint_name) and not keypoint_name in processed_keypoints:
+                feature_x = next(f for f in self.run.features if f.name == keypoint_name + '_x')
+                feature_y = next(f for f in self.run.features if f.name == keypoint_name + '_y')
+                x = feature_x.values[self.slider_value]
+                y = feature_y.values[self.slider_value]
+                v = 2
+
+                for i, keypoint in enumerate(KeypointsDefaultCOCO):
+                    if keypoint.value == keypoint_name:
+                        keypoints[i * 3], keypoints[i * 3 + 1], keypoints[i * 3 + 2] = x, y, v
+                processed_keypoints.append(keypoint_name)
+
+        bbox = self.run.bboxes[self.slider_value]
+
+        export_json_path = export_image_path.split('.')[0] + '.json'
+        with open(export_json_path, 'w', encoding='utf8') as annotations_file:
+            json.dump(
+                {
+                    'image': export_image_path,
+                    'keypoints': keypoints,
+                    'bbox': bbox
+                },
+                annotations_file)
+
+        self.set_dataset_information()
+
     def plot_image(self, run, title, dataset_type):
         self.run = run
         self.title.set(title)
         self.dataset_type = dataset_type
+
+        if self.tracker_plot:
+            self._gui_enable_button_export()
+
         self._gui_enable_slider()
         self._gui_set_slider_from_to(from_=0, to=len(self.run.data.get_images())-1)
         self._gui_set_slider_value(self.slider_value)
@@ -89,6 +163,12 @@ class ImagePlot():
         self.title.set('No Inference Selected')
         self.dataset_type = None
         self._gui_clear_image()
+
+    def _gui_enable_button_export(self):
+        self.button_export['state'] = 'normal'
+
+    def _gui_disable_button_export(self):
+        self.button_export['state'] = 'disabled'
 
     def _gui_set_slider_value(self, value):
         self.slider.set(value)
@@ -157,6 +237,7 @@ class ImagePlot():
 
         self._gui_set_image(image)
         self._gui_set_image_counter(value=value)
+        self.set_dataset_information()
 
     def _draw_keypoints(self, image):
         drawn_keypoints = []
@@ -212,5 +293,5 @@ class ImagePlot():
                                fontFace=cv.FONT_HERSHEY_SIMPLEX, fontScale=0.65, thickness=1, lineType=cv.LINE_AA)
 
     def on_click(self, event=None):
-        if event.button == 2:
+        if event.button == 2 and self.image_plot_middle_click_callback is not None:
             self.image_plot_middle_click_callback(event=event)

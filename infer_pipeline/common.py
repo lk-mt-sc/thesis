@@ -21,6 +21,7 @@ MMPOSE_RUNS_DIR = os.path.join(MMPOSE_DATA_DIR, 'runs')
 MMPOSE_DATASET_DIR = os.path.join(MMPOSE_DATA_DIR, 'dataset')
 MMPOSE_CHECKPOINTS_DIR = os.path.join(MMPOSE_DIR, 'checkpoints')
 MMPOSE_TEST_SCRIPT = os.path.join(MMPOSE_DIR, 'tools', 'test.py')
+MMPOSE_DATA_EXPORT_DIR = os.path.join(THESIS_DIR, 'dataset', 'pos_dataset', 'raw')
 
 MMDETECTION_DIR = os.environ['MMDETECTION_DIR']
 MMDETECTION_DATA_DIR = os.path.join(MMDETECTION_DIR, 'data', 'sc')
