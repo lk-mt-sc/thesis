@@ -155,8 +155,10 @@ class Plot:
                 self._update_subplot(subplot)
                 break
 
-    def plot_on_tracker_plot(self, x, y, inference, run, dataset_type):
+    def plot_on_tracker_plot(self, toplevel, x, y, inference, run, dataset_type):
         for tracker in self.trackers:
+            if toplevel != str(tracker.window)[1:]:
+                continue
             image_plot = tracker.image_plot
             frame = image_plot.frame
             fx, fy, fw, fh = frame.winfo_rootx(), frame.winfo_rooty(), frame.winfo_width(), frame.winfo_height()
