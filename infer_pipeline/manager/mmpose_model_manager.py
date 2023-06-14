@@ -33,15 +33,27 @@ class MMPoseModelManager():
         self.custom_configs = [
             {
                 'original_config': 'configs/body_2d_keypoint/topdown_heatmap/coco/td-hm_hrnet-w48_udp-8xb32-210e_coco-384x288.py',
-                'custom_config': os.path.join(INFER_PIPELINE_MMDPOSE_CONFIGS_DIR, 'td-hm_hrnet-w48_udp-8xb32-210e_sc-384x288.py')
+                'custom_config': os.path.join(INFER_PIPELINE_MMDPOSE_CONFIGS_DIR, 'td-hm_hrnet-w48_udp-8xb32-210e_sc-384x288.py'),
+                'custom_checkpoint': None,
+                'transfer_learned': False
+            },
+            {
+                'original_config': 'configs/body_2d_keypoint/topdown_heatmap/coco/td-hm_hrnet-w48_udp-8xb32-210e_coco-384x288.py',
+                'custom_config': os.path.join(INFER_PIPELINE_MMDPOSE_CONFIGS_DIR, 'td-hm_hrnet-w48_udp-8xb32-210e_sc-384x288.py'),
+                'custom_checkpoint': 'best_coco_AP_epoch_150.pth',
+                'transfer_learned': True
             },
             {
                 'original_config': 'configs/body_2d_keypoint/dekr/coco/dekr_hrnet-w48_8xb10-140e_coco-640x640.py',
-                'custom_config': os.path.join(INFER_PIPELINE_MMDPOSE_CONFIGS_DIR, 'dekr_hrnet-w48_8xb10-140e_sc-640x640.py')
+                'custom_config': os.path.join(INFER_PIPELINE_MMDPOSE_CONFIGS_DIR, 'dekr_hrnet-w48_8xb10-140e_sc-640x640.py'),
+                'custom_checkpoint': None,
+                'transfer_learned': False
             },
             {
                 'original_config': 'configs/body_2d_keypoint/topdown_heatmap/coco/td-hm_mobilenetv2_8xb64-210e_coco-256x192.py',
-                'custom_config': os.path.join(INFER_PIPELINE_MMDPOSE_CONFIGS_DIR, 'td-hm_mobilenetv2_8xb64-210e_sc-256x192.py')
+                'custom_config': os.path.join(INFER_PIPELINE_MMDPOSE_CONFIGS_DIR, 'td-hm_mobilenetv2_8xb64-210e_sc-256x192.py'),
+                'custom_checkpoint': None,
+                'transfer_learned': False
             },
         ]
 
@@ -77,7 +89,9 @@ class MMPoseModelManager():
                 if model.config == config['original_config']:
                     new_custom_model = copy.deepcopy(model)
                     new_custom_model.config = config['custom_config']
-                    new_custom_model.checkpoint = os.path.join(MMPOSE_CHECKPOINTS_DIR, new_custom_model.checkpoint)
+                    new_custom_model.checkpoint = os.path.join(
+                        MMPOSE_CHECKPOINTS_DIR, config['custom_checkpoint'] or new_custom_model.checkpoint)
+                    new_custom_model.transfer_learned = config['transfer_learned']
                     self.custom_models.append(new_custom_model)
 
     def _gui_set_presets(self):
