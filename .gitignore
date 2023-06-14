@@ -141,5 +141,6 @@ dataset/itp_dataset/
 dataset/d_i_dataset/
 dataset/i_d_dataset/
 dataset/det_dataset/
+dataset/pos_dataset/
 dataset/ext_nets/shift_net/
 dataset/ext_nets/ema_vfi/
