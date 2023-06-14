@@ -7,6 +7,7 @@ b) FFmpeg installed and accessible from the command line
 import os
 import glob
 import math
+import json
 import random
 import shutil
 import argparse
@@ -481,6 +482,113 @@ def create_det_dataset():
                         break
 
 
+def create_pos_dataset():
+    if os.path.exists(POS_DATASET_DIR):
+        shutil.rmtree(POS_TRAIN_DIR)
+        shutil.rmtree(POS_VAL_DIR)
+        shutil.rmtree(POS_TEST_DIR)
+        shutil.rmtree(POS_ANNOTATIONS_DIR)
+    else:
+        print('Raw data for pose estimation dataset not found.')
+        exit(-1)
+
+    os.mkdir(POS_TRAIN_DIR)
+    os.mkdir(POS_VAL_DIR)
+    os.mkdir(POS_TEST_DIR)
+    os.mkdir(POS_ANNOTATIONS_DIR)
+
+    n_train = 18
+    n_val = 2
+    n_test = 0
+
+    raw_data = {}
+    data = sorted(glob.glob(os.path.join(POS_RAW_DATA_DIR, '*.json')))
+    for d in data:
+        filename = d.split('/')[-1]
+        id_ = int(filename[:3])
+        if id_ in raw_data:
+            raw_data[id_].append(d)
+        else:
+            raw_data[id_] = [d]
+
+    train_data = []
+    val_data = []
+    test_data = []
+    for id_, data in raw_data.items():
+        assert len(data) == n_train + n_val + n_test
+        random_1.shuffle(data)
+        train_data += data[:n_train]
+        val_data += data[n_train:n_train + n_val]
+        test_data += data[n_train+n_val:]
+
+    subdata = [
+        (train_data, POS_TRAIN_DIR, 'train'),
+        (val_data, POS_VAL_DIR, 'val'),
+        (test_data, POS_TEST_DIR, 'test')
+    ]
+
+    for sd in subdata:
+        coco = dict()
+        coco['images'] = []
+        coco['type'] = 'instance'
+        coco['annotations'] = []
+        coco['categories'] = [
+            {
+                'id': 1,
+                'name': 'climber',
+                'keypoints': [
+                    'nose', 'left_eye', 'right_eye', 'left_ear', 'right_ear',
+                    'left_shoulder', 'right_shoulder', 'left_elbow', 'right_elbow',
+                    'left_wrist', 'right_wrist', 'left_hip', 'right_hip',
+                    'left_knee', 'right_knee', 'left_ankle', 'right_ankle'
+                ],
+                'skeleton': [
+                    [16, 14], [14, 12], [17, 15], [15, 13], [12, 13], [6, 12], [7, 13], [6, 7],
+                    [6, 8], [7, 9], [8, 10], [9, 11], [2, 3], [1, 2], [1, 3], [2, 4], [3, 5], [4, 6], [5, 7]
+                ]
+            }
+        ]
+
+        image_id = 0
+        annotation_id = 0
+        for d in sd[0]:
+            with open(d, 'r', encoding='utf8') as annotation_file:
+                annotations = json.load(annotation_file)
+                image = annotations['image']
+                filename = image.split('/')[-1]
+                image_path = os.path.join(sd[1], filename)
+                shutil.copyfile(image, image_path)
+
+                image_item = dict()
+                image_item['id'] = image_id
+                image_item['file_name'] = filename
+                image_item['height'] = 1080
+                image_item['width'] = 960
+                coco['images'].append(image_item)
+
+                keypoints = annotations['keypoints']
+                bbox = annotations['bbox']
+                area = bbox[2] * bbox[3]
+
+                annotation_item = dict()
+                annotation_item['segmentation'] = [[]]
+                annotation_item['num_keypoints'] = 12
+                annotation_item['area'] = area
+                annotation_item['iscrowd'] = 0
+                annotation_item['keypoints'] = keypoints
+                annotation_item['image_id'] = image_id
+                annotation_item['bbox'] = bbox
+                annotation_item['category_id'] = 1
+                annotation_item['id'] = annotation_id
+                coco['annotations'].append(annotation_item)
+
+                image_id += 1
+                annotation_id += 1
+
+        with open(os.path.join(POS_ANNOTATIONS_DIR, sd[2] + '.json'), 'w', encoding='utf8') as annotation_file:
+            json.dump(coco, annotation_file)
+
+
 def numpy2tensor(input_seq, rgb_range=1.):
     # taken from https://github.com/dasongli1/Shift-Net/blob/main/inference/test_deblur.py
     tensor_list = []
@@ -520,6 +628,12 @@ if __name__ == '__main__':
     DET_TRAIN_DIR = os.path.join(DET_DATASET_DIR, 'train')
     DET_VAL_DIR = os.path.join(DET_DATASET_DIR, 'val')
     DET_TEST_DIR = os.path.join(DET_DATASET_DIR, 'test')
+    POS_DATASET_DIR = os.path.join(WORKING_DIR, 'pos_dataset')
+    POS_TRAIN_DIR = os.path.join(POS_DATASET_DIR, 'train')
+    POS_VAL_DIR = os.path.join(POS_DATASET_DIR, 'val')
+    POS_TEST_DIR = os.path.join(POS_DATASET_DIR, 'test')
+    POS_ANNOTATIONS_DIR = os.path.join(POS_DATASET_DIR, 'annotations')
+    POS_RAW_DATA_DIR = os.path.join(POS_DATASET_DIR, 'raw')
     DEB_DATASET_DIR = os.path.join(WORKING_DIR, 'deb_dataset')
     ITP_DATASET_DIR = os.path.join(WORKING_DIR, 'itp_dataset')
     D_I_DATASET_DIR = os.path.join(WORKING_DIR, 'd_i_dataset')
@@ -542,3 +656,5 @@ if __name__ == '__main__':
             create_i_d_dataset(id_start=257)
         case 'det':
             create_det_dataset()
+        case 'pos':
+            create_pos_dataset()
