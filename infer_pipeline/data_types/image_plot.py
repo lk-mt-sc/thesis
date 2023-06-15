@@ -231,15 +231,17 @@ class ImagePlot():
                 bbox_bottomup = None
                 iou = None
 
-            self._draw_keypoints(image)
             self._draw_skeleton(image)
+            self._draw_keypoints_and_scores(image)
             self._draw_bounding_box_and_scores(image, bbox, bbox_bottomup, iou, detection_score, pose_estimation_score)
 
         self._gui_set_image(image)
         self._gui_set_image_counter(value=value)
-        self.set_dataset_information()
 
-    def _draw_keypoints(self, image):
+        if self.tracker_plot:
+            self.set_dataset_information()
+
+    def _draw_keypoints_and_scores(self, image):
         drawn_keypoints = []
         for keypoint_name, keypoint in self.dataset_type.keypoints.items():
             keypoint_name = keypoint_name[:-2]
@@ -248,8 +250,19 @@ class ImagePlot():
                 feature_y = next(f for f in self.run.features if f.name == keypoint_name + '_y')
                 x = int(feature_x.values[self.slider_value])
                 y = int(feature_y.values[self.slider_value])
+                assert feature_x.scores[self.slider_value] == feature_y.scores[self.slider_value]
+                score = feature_x.scores[self.slider_value]
                 color = [c / 256 for c in keypoint['color']]
                 image = cv.circle(image, center=(x, y), radius=5, thickness=-1, color=color)
+                if 'left' in keypoint_name:
+                    image = cv.line(image, pt1=(x, y), pt2=(x - 75, y), color=color, thickness=1)
+                    image = cv.putText(image, '{:.4f}'.format(round(score, 4)), org=(x - 75, y - 5), color=color,
+                                       fontFace=cv.FONT_HERSHEY_SIMPLEX, fontScale=0.4, thickness=1, lineType=cv.LINE_AA)
+
+                if 'right' in keypoint_name:
+                    image = cv.line(image, pt1=(x, y), pt2=(x+75, y), color=color, thickness=1)
+                    image = cv.putText(image, '{:.4f}'.format(round(score, 4)), org=(x + 30, y - 5), color=color,
+                                       fontFace=cv.FONT_HERSHEY_SIMPLEX, fontScale=0.4, thickness=1, lineType=cv.LINE_AA)
                 drawn_keypoints.append(keypoint_name)
 
                 if self.tracker_plot:

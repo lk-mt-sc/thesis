@@ -4,15 +4,17 @@ from data_types.plottable import Plottable, PlottableTypes
 
 
 class Feature():
-    def __init__(self, name, steps=None, values=None):
+    def __init__(self, name, steps=None, scores=None, values=None):
         self.name = name
-        self.steps = steps if steps is not None else []
-        self.values = values if values is not None else []
+        self.steps = steps or []
+        self.values = values or []
+        self.scores = scores or []
         self.values_interp = []
 
-    def add(self, step, value):
+    def add(self, step, value, score):
         self.steps.append(step)
         self.values.append(value)
+        self.scores.append(score)
 
     def interpolate_values(self):
         self.values_interp = self.values.copy()

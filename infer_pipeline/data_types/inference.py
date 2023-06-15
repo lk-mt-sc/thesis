@@ -295,7 +295,7 @@ class Inference:
             n_keypoints = len(dataset_keypoints)
             for keypoint in dataset_keypoints:
                 features.append(Feature(keypoint))
-            for s, image in enumerate(images):
+            for step, image in enumerate(images):
                 image_filename = str(data.id) + '_' + image.split('/')[-1]
                 for dataset_image in annotations['images']:
                     if dataset_image['file_name'].split('/')[-1] == image_filename:
@@ -311,9 +311,10 @@ class Inference:
                     keypoints = result['keypoints']
                     x_coord = keypoints[0:: 3]
                     y_coord = keypoints[1:: 3]
-                    for i, (x, y) in enumerate(zip(x_coord, y_coord)):
-                        features[i * 2].add(s, x)
-                        features[i * 2 + 1].add(s, y)
+                    keypoint_scores = keypoints[2::3]
+                    for i, (x, y, s) in enumerate(zip(x_coord, y_coord, keypoint_scores)):
+                        features[i * 2].add(step, x, s)
+                        features[i * 2 + 1].add(step, y, s)
 
                 if data_mode == 'bottomup':
                     x = int(pred_bbox['bbox'][0])
@@ -334,6 +335,7 @@ class Inference:
                         keypoints = pose['keypoints']
                         x_coord = keypoints[0::3]
                         y_coord = keypoints[1::3]
+                        keypoint_scores = keypoints[2::3]
 
                         bbox = [int(min(x_coord)), int(min(y_coord)), int(max(x_coord)), int(max(y_coord))]
                         bbox_tensor = torch.FloatTensor(bbox)
@@ -347,6 +349,7 @@ class Inference:
                                 'bbox': bbox,
                                 'x_coord': x_coord,
                                 'y_coord': y_coord,
+                                'keypoint_scores': keypoint_scores,
                                 'score': score
                             })
 
@@ -358,15 +361,17 @@ class Inference:
                             'bbox': -1,
                             'x_coord': [-1 for i in range(int((n_keypoints - 4) / 2))],
                             'y_coord': [-1 for i in range(int((n_keypoints - 4) / 2))],
+                            'keypoint_scores': [-1 for i in range(int((n_keypoints - 4) / 2))],
                             'score': -1
                         })
 
                     result = preds[0]
                     x_coord = result['x_coord']
                     y_coord = result['y_coord']
-                    for i, (x, y) in enumerate(zip(x_coord, y_coord)):
-                        features[i * 2].add(s, x)
-                        features[i * 2 + 1].add(s, y)
+                    keypoint_scores = result['keypoint_scores']
+                    for i, (x, y, s) in enumerate(zip(x_coord, y_coord, keypoint_scores)):
+                        features[i * 2].add(step, x, s)
+                        features[i * 2 + 1].add(step, y, s)
 
                 bboxes.append(pred_bbox['bbox'])
                 detection_scores.append(pred_bbox['score'])
@@ -456,8 +461,8 @@ class Inference:
             y1 = min(s1_y, s2_y)
             x2 = max(s1_x, s2_x)
             y2 = max(s1_y, s2_y)
-            t_x_f.add(s, x1 + (x2 - x1) / 2)
-            t_y_f.add(s, y1 + (y2 - y1) / 2)
+            t_x_f.add(s, x1 + (x2 - x1) / 2, -1)
+            t_y_f.add(s, y1 + (y2 - y1) / 2, -1)
 
     def store_metadata(self, out_dir):
         metadata_file = open(os.path.join(out_dir, 'metadata.json'), 'w', encoding='utf8')
