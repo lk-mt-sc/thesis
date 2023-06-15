@@ -158,6 +158,7 @@ class ImagePlot():
         self._gui_set_slider_value(self.slider_value)
 
     def clear(self):
+        self.run = None
         self.image = None
         self.slider_value = 0
         self.title.set('No Inference Selected')
