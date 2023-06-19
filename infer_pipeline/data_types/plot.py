@@ -17,6 +17,7 @@ class PlotLayouts(Enum):
     PLOT1X1 = '1x1'
     PLOT2X1 = '2x1'
     PLOT3X1 = '3x1'
+    PLOT4X1 = '4x1'
     PLOT2X2 = '2x2'
     PLOT3X2 = '3x2'
     PLOT3X3 = '3x3'
