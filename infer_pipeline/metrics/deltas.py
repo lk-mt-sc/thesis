@@ -26,8 +26,8 @@ class Deltas():
         self.feature = feature
         self.calculate_on = calculate_on
         self.list_name = list_name
-        self.display_name = self.name + ' (mean/std. deviation)'
-        self.display_modes = ['mean', 'mean']
+        self.display_name = self.name + ' (abs. sum/mean/stdd.)'
+        self.display_modes = ['mean', 'mean', 'mean']
         self.display_values = display_values
         self.parameters = None
         self.type = AllMetrics.DELTAS
@@ -44,11 +44,12 @@ class Deltas():
             values = np.diff(calculate_on.values_interp.copy()).tolist()
         else:
             values = np.diff(calculate_on.values.copy()).tolist()
+        sum_ = np.sum(np.abs(values))
         mean = np.mean(values)
         stdd = np.std(values)
         values.insert(0, 0)
-        list_name = self.name + f' ({round(mean, 3)}/{round(stdd, 3)})'
-        display_values = [mean, stdd]
+        list_name = self.name + f' ({round(sum_, 3)}/{round(mean, 3)}/{round(stdd, 3)})'
+        display_values = [sum_, mean, stdd]
 
         return Deltas(
             name=self.name,
