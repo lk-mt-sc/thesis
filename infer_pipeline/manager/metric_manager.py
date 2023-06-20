@@ -1,9 +1,12 @@
 import tkinter as tk
 from tkinter import messagebox
 from enum import Enum
+from threading import Thread
 
 import numpy as np
+import matplotlib.pyplot as plt
 
+from manager.status_manager import Status
 from gui.gui_metric import GUIMetric
 from manager.dataset_manager import KeypointsNoMetric
 from metrics.all_metrics import AllMetrics
@@ -76,6 +79,7 @@ class MetricManager():
         self.gui_metric = GUIMetric(
             root,
             calculable_metrics=CalculableMetrics,
+            visualize_inference_overall_metrics_callback=self.visualize_inference_overall_metrics,
             listbox_metrics_select_callback=self.metric_selected,
             listbox_metrics_drag_callback=self.on_drag,
             listbox_metrics_drop_callback=self.on_drop,
@@ -93,16 +97,19 @@ class MetricManager():
         self.selected_feature = None
         self.selected_features_metrics = []
         self.session_metrics = []
+        self.visualization_metrics = {}
 
         # initialize parameter inputs
         self.calculable_metric_selected()
         self._gui_disable_button_calculate()
+        self._gui_disable_button_show_inference_overall_metrics()
 
     def set_inference(self, inference):
         self.clear_all_metrics()
         self.selected_inference = inference
         self.selected_inference_metrics = self.calculate_inference_metrics()
         self._gui_set_inference_metrics(position=-1)
+        self._gui_enable_button_show_inference_overall_metrics()
 
     def calculate_inference_metrics(self):
         runs = self.selected_inference.runs
@@ -131,6 +138,95 @@ class MetricManager():
             del inference_metrics[metric_name]
 
         return inference_metrics
+
+    def visualize_inference_overall_metrics(self):
+        if not self.status_manager.has_status(Status.LOADING_VISUALISATION):
+            self.status_manager.add_status(Status.LOADING_VISUALISATION)
+            loading_thread = Thread(target=self._calculate_inference_overall_metrics)
+            loading_thread.start()
+            self.monitor_loading_thread(loading_thread)
+
+    def _calculate_inference_overall_metrics(self):
+        features = [feature for run in self.selected_inference.runs for feature in run.features]
+        features = [feature for feature in features if not KeypointsNoMetric.has_value(feature.name[:-2])]
+        # features = [feature for feature in features if 'wrist' in feature.name[:-2]]
+
+        deltas = []
+        ffts_frequencies = []
+        ffts_values = []
+        total_fft_frequencies = []
+        for feature in features:
+            fft = FFT().calculate(feature)
+            total_fft_frequencies += fft.steps.copy()
+            ffts_frequencies.append(fft.steps.copy())
+            ffts_values.append(fft.values.copy())
+
+            delta = Deltas().calculate(feature)
+            deltas += delta.values
+
+        f_vector = np.arange(-12.5, 12.6, 0.1)
+        cumulative_fft = np.zeros_like(f_vector)
+
+        for (steps, values) in zip(ffts_frequencies, ffts_values):
+            steps = np.array(steps)
+            values = np.array(values)
+            nearest_indices = np.abs(f_vector - steps[:, np.newaxis]).argmin(axis=1)
+            cumulative_fft[nearest_indices] += values
+
+        average_fft = cumulative_fft / len(ffts_frequencies)
+
+        self.visualization_metrics['deltas'] = deltas
+        self.visualization_metrics['total_fft_frequencies'] = total_fft_frequencies
+        self.visualization_metrics['total_fft'] = {
+            'f_vector': f_vector,
+            'average_fft': average_fft
+        }
+
+    def monitor_loading_thread(self, loading_thread):
+        if loading_thread.is_alive():
+            self.gui_metric.root.after(50, lambda: self.monitor_loading_thread(loading_thread))
+        else:
+            figure, axes = plt.subplots(2, 3)
+
+            axes[0, 0].boxplot(self.visualization_metrics['deltas'])
+            axes[0, 0].set_title('Deltas')
+            axes[0, 0].set_ylabel('Delta in Pixel')
+            axes[0, 0].set_xticks([])
+
+            counts, bins = np.histogram(self.visualization_metrics['deltas'], bins=251)
+            axes[1, 0].stairs(counts, bins)
+            axes[1, 0].set_title('Deltas')
+            axes[1, 0].set_xlabel('Delta in Pixel')
+            axes[1, 0].set_ylabel('Prevalence')
+
+            axes[0, 1].boxplot(self.visualization_metrics['total_fft_frequencies'])
+            axes[0, 1].set_title('FFT Frequencies')
+            axes[0, 1].set_ylabel('Frequency in Hz')
+            axes[0, 1].set_xticks([])
+
+            counts, bins = np.histogram(self.visualization_metrics['total_fft_frequencies'], bins=251)
+            axes[1, 1].stairs(counts, bins)
+            axes[1, 1].set_title('FFT Frequencies')
+            axes[1, 1].set_xlabel('Frequency in Hz')
+            axes[1, 1].set_ylabel('Prevalence')
+
+            axes[0, 2].plot(self.visualization_metrics['total_fft']
+                            ['f_vector'], self.visualization_metrics['total_fft']['average_fft'])
+            axes[0, 2].set_title('Fast Fourier Transform')
+            axes[0, 2].set_xlabel('Frequency in Hz')
+            axes[0, 2].set_ylabel('Magnitude')
+
+            axes[1, 2].plot(self.visualization_metrics['total_fft']
+                            ['f_vector'], self.visualization_metrics['total_fft']['average_fft'])
+            axes[1, 2].set_title('Fast Fourier Transform - logarithmic y-axis')
+            axes[1, 2].set_yscale('log')
+            axes[1, 2].set_xlabel('Frequency in Hz')
+            axes[1, 2].set_ylabel('Magnitude')
+
+            figure.canvas.manager.set_window_title(f'Overall Metrics on Inference "{self.selected_inference.name}"')
+            plt.show(block=False)
+
+            self.status_manager.remove_status(Status.LOADING_VISUALISATION)
 
     def add_to_compared_inferences(self, inference, position):
         set_names = all(i is None for i in self.compared_inferences)
@@ -205,6 +301,7 @@ class MetricManager():
         self._gui_clear_parameters(disable_entries=True)
         self._gui_set_calculated_on_name('')
         self._gui_set_calculable_metric(None)
+        self._gui_disable_button_show_inference_overall_metrics()
 
     def clear_data_metrics(self):
         self.selected_data_metrics = {}
@@ -398,6 +495,12 @@ class MetricManager():
 
     def _gui_disable_button_calculate(self):
         self.gui_metric.button_calculate['state'] = 'disabled'
+
+    def _gui_enable_button_show_inference_overall_metrics(self):
+        self.gui_metric.button_show_inference_overall_metrics['state'] = 'normal'
+
+    def _gui_disable_button_show_inference_overall_metrics(self):
+        self.gui_metric.button_show_inference_overall_metrics['state'] = 'disabled'
 
     def _gui_clear_parameters(self, disable_entries=True):
         gui_new_metric_name_var = self.gui_metric.metric_name_var

@@ -7,6 +7,7 @@ class GUIMetric():
         self,
         root,
         calculable_metrics,
+        visualize_inference_overall_metrics_callback,
         listbox_metrics_select_callback,
         listbox_metrics_drag_callback,
         listbox_metrics_drop_callback,
@@ -58,6 +59,14 @@ class GUIMetric():
 
         self.title_inference = ttk.Label(self.frame, text='Metrics on Selected Inference', font=self.root.font_title)
         self.title_inference.place(x=689, y=0)
+
+        self.button_show_inference_overall_metrics = ttk.Button(
+            self.frame,
+            text='Visualize Metrics',
+            style='Button.TButton',
+            width=15,
+            command=visualize_inference_overall_metrics_callback)
+        self.button_show_inference_overall_metrics.place(x=935, y=0, height=20)
 
         ttk.Label(self.frame, text='Standard Metrics', font=self.root.font_bold).place(x=689, y=30)
         self.inference_metrics_names = []

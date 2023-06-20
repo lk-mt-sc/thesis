@@ -11,6 +11,7 @@ class Status(Enum):
     FETCHING_INFERENCES = 'Fetching inferences'
     INFERING = 'Infering'
     LOADING_IMAGE = 'Loading image'
+    LOADING_VISUALISATION = 'Loading visualisation'
 
 
 class StatusManager():
