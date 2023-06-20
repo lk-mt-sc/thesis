@@ -29,15 +29,28 @@ class Feature():
                 self.values_interp[step] = interpolated_values[i]
 
     def plottables(self, name=None, legend=None):
-        return [Plottable(
-            name=name or self.name,
-            steps=self.steps,
-            values=self.values_interp,
-            linestyle='solid',
-            marker='None',
-            legend=legend or self.name,
-            type_=PlottableTypes.FEATURE
-        )]
+        name = name or self.name
+        legend = legend or self.name
+        return [
+            Plottable(
+                name=name,
+                steps=self.steps,
+                values=self.values_interp,
+                linestyle='solid',
+                marker='None',
+                legend=legend,
+                type_=PlottableTypes.FEATURE
+            ),
+            Plottable(
+                name=name + '_CONFIDENCE',
+                steps=self.steps,
+                values=self.scores,
+                linestyle='solid',
+                marker='None',
+                legend=legend + '_CONFIDENCE',
+                type_=PlottableTypes.CONTINUOUS_METRIC
+            )
+        ]
 
     def __str__(self):
         return self.name
