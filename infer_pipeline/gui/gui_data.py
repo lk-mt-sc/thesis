@@ -24,19 +24,13 @@ class GUIData():
         self.combobox_data_base['values'] = ['']
         self.combobox_data_base['state'] = 'readonly'
         self.combobox_data_base.bind('<<ComboboxSelected>>', combobox_data_callback)
-        self.combobox_data_base.place(x=50, y=1)
+        self.combobox_data_base.place(x=150, y=1)
 
         self.combobox_data_spotlight = ttk.Combobox(self.frame, width=12, font=self.root.font_small)
         self.combobox_data_spotlight['values'] = ['']
         self.combobox_data_spotlight['state'] = 'readonly'
         self.combobox_data_spotlight.bind('<<ComboboxSelected>>', combobox_data_callback)
-        self.combobox_data_spotlight.place(x=150, y=1)
-
-        self.combobox_data_start = ttk.Combobox(self.frame, width=12, font=self.root.font_small)
-        self.combobox_data_start['values'] = ['']
-        self.combobox_data_start['state'] = 'readonly'
-        self.combobox_data_start.bind('<<ComboboxSelected>>', combobox_data_callback)
-        self.combobox_data_start.place(x=250, y=1)
+        self.combobox_data_spotlight.place(x=250, y=1)
 
         self.button_select_all = ttk.Button(
             self.frame,

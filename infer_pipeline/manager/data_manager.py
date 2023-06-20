@@ -28,7 +28,6 @@ class DataManager():
         self.selected_data = []
         self.filter_data_base = None
         self.filter_data_spotlight = None
-        self.filter_data_starts = None
         self.fetch_data()
         self._gui_set_presets()
 
@@ -71,15 +70,8 @@ class DataManager():
             'Without Spotlight'
         ]
 
-        self.gui_data.combobox_data_start['values'] = [
-            'All Starts',
-            'Starts at Rest',
-            'Starts in Motion'
-        ]
-
         self.gui_data.combobox_data_base.current(0)
         self.gui_data.combobox_data_spotlight.current(0)
-        self.gui_data.combobox_data_start.current(0)
 
     def _gui_set_data(self):
         self.gui_data.listbox_data.delete(0, tk.END)
@@ -93,7 +85,6 @@ class DataManager():
     def _gui_get_filter(self):
         self.filter_data_base = self.gui_data.combobox_data_base.get()
         self.filter_data_spotlight = self.gui_data.combobox_data_spotlight.get()
-        self.filter_data_starts = self.gui_data.combobox_data_start.get()
 
     def filter(self, event=None):
         self.selected_data.clear()
@@ -107,8 +98,6 @@ class DataManager():
         show_interpolated_deblurred = self.filter_data_base in ('Interp.-Debl.', 'No Preset')
         hide_spotlight = self.filter_data_spotlight == 'Without Spotlight'
         hide_no_spotlight = self.filter_data_spotlight == 'With Spotlight'
-        hide_starts_at_rest = self.filter_data_starts == 'Starts in Motion'
-        hide_starts_in_motion = self.filter_data_starts == 'Starts at Rest'
 
         for data in self.data_all:
             if show_standard and not (data.deblurred or data.interpolated or data.deblurred_interpolated or data.interpolated_deblurred):
@@ -138,14 +127,6 @@ class DataManager():
                 continue
 
             if hide_no_spotlight and not data.spotlight:
-                data_to_remove.append(data)
-                continue
-
-            if hide_starts_at_rest and data.start_at_rest:
-                data_to_remove.append(data)
-                continue
-
-            if hide_starts_in_motion and not data.start_at_rest:
                 data_to_remove.append(data)
                 continue
 

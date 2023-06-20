@@ -10,15 +10,14 @@ class Data:
         self.id = int(data_properties[0][:3])
         self.n_images = int(data_properties[1][:4])
         self.spotlight = data_properties[2] == 'SPOTLIGHT'
-        self.start_at_rest = data_properties[3] == 'START AT REST'
-        self.fps = int(data_properties[4][:3])
+        self.fps = int(data_properties[3][:3])
         self.deblurred = False
         self.interpolated = False
         self.deblurred_interpolated = False
         self.interpolated_deblurred = False
 
-        if len(data_properties) > 5:
-            match data_properties[5]:
+        if len(data_properties) > 4:
+            match data_properties[4]:
                 case 'DEBLURRED':
                     self.deblurred = True
                 case 'INTERPOLATED':

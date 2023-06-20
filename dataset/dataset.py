@@ -34,7 +34,7 @@ def time_to_ms(time):
     return h_ms + m_ms + s_ms + ms
 
 
-def create_std_dataset(id_start):
+def create_std_dataset(id_start, alternative=False):
     if os.path.exists(STD_DATASET_DIR):
         shutil.rmtree(STD_DATASET_DIR)
 
@@ -46,7 +46,7 @@ def create_std_dataset(id_start):
 
     id_ = id_start
     print('Creating standard dataset...')
-    with open(os.path.join('dataset.CSV'), 'r', encoding='utf8') as metadata:
+    with open(os.path.join('dataset.csv'), 'r', encoding='utf8') as metadata:
         runs = metadata.readlines()
         for run in tqdm(runs[1:]):
             run_strip = run.strip()
@@ -73,6 +73,10 @@ def create_std_dataset(id_start):
             gender = run_split[18]
             offset = int(run_split[19])
             start_at_rest = run_split[20]
+
+            if alternative:
+                start_frame = int(run_split[21])
+                frames_cut = int(run_split[22])
 
             markdown_table_entry = '|'
             markdown_table_entry += str(competition_id) + '|'
@@ -109,10 +113,6 @@ def create_std_dataset(id_start):
                 out_str.append('SPOTLIGHT')
             elif spotlight == 'no':
                 out_str.append('NO SPOTLIGHT')
-            if start_at_rest == 'yes':
-                out_str.append('START AT REST')
-            elif start_at_rest == 'no':
-                out_str.append('START IN MOTION')
             out_str.append(f'{str(video_fps).zfill(3)} FPS')
             out_str = ' - '.join(out_str)
             out_path = os.path.join(STD_RUNS_VIDEO_DIR, out_str + '.mp4')
@@ -241,7 +241,7 @@ def create_itp_dataset(id_start):
         out_str_split = out_str.split(' - ')
         out_str_split[0] = f'{str(id_).zfill(3)} ID'
         out_str_split[1] = f'{str(n_frames_interpolated).zfill(4)} IMG'
-        out_str_split[4] = f'{str(new_fps).zfill(3)} FPS'
+        out_str_split[3] = f'{str(new_fps).zfill(3)} FPS'
         out_str_split.append('INTERPOLATED')
         out_str = ' - '.join(out_str_split)
         out_dir = os.path.join(ITP_DATASET_DIR, out_str)
@@ -295,8 +295,8 @@ def create_d_i_dataset(id_start):
         out_str_split = out_str.split(' - ')
         out_str_split[0] = f'{str(id_).zfill(3)} ID'
         out_str_split[1] = f'{str(n_frames_interpolated).zfill(4)} IMG'
-        out_str_split[4] = f'{str(new_fps).zfill(3)} FPS'
-        out_str_split[5] = 'DEBLURRED-INTERPOLATED'
+        out_str_split[3] = f'{str(new_fps).zfill(3)} FPS'
+        out_str_split[4] = 'DEBLURRED-INTERPOLATED'
         out_str = ' - '.join(out_str_split)
         out_dir = os.path.join(D_I_DATASET_DIR, out_str)
         os.mkdir(out_dir)
@@ -347,7 +347,7 @@ def create_i_d_dataset(id_start):
         out_str = run.split('/')[-1]
         out_str_split = out_str.split(' - ')
         out_str_split[0] = f'{str(id_).zfill(3)} ID'
-        out_str_split[5] = 'INTERPOLATED-DEBLURRED'
+        out_str_split[4] = 'INTERPOLATED-DEBLURRED'
         out_str = ' - '.join(out_str_split)
         out_dir = os.path.join(I_D_DATASET_DIR, out_str)
         os.mkdir(out_dir)
@@ -501,6 +501,8 @@ def create_pos_dataset():
     n_val = 2
     n_test = 0
 
+    print('Creating pose estimation dataset...')
+
     raw_data = {}
     data = sorted(glob.glob(os.path.join(POS_RAW_DATA_DIR, '*.json')))
     for d in data:
@@ -646,6 +648,8 @@ if __name__ == '__main__':
     match args.dataset:
         case 'std':
             create_std_dataset(id_start=1)
+        case 'std_alt':
+            create_std_dataset(id_start=1, alternative=True)
         case 'deb':
             create_deb_dataset(id_start=65)
         case 'itp':
