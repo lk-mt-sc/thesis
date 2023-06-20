@@ -3,7 +3,8 @@ from enum import Enum
 
 class PlottableTypes(Enum):
     FEATURE = 0
-    METRIC = 1
+    CONTINUOUS_METRIC = 1
+    DISCRETE_METRIC = 2
 
 
 class Plottable():
@@ -20,6 +21,7 @@ class Plottable():
             markersize=10,
             markerfacecolor='None',
             step_plot=False,
+            box_plot=False,
             log_x_axis=False,
             log_y_axis=False):
         self.name = name
@@ -33,5 +35,6 @@ class Plottable():
         self.legend = legend
         self.type = type_
         self.step_plot = step_plot
+        self.box_plot = box_plot
         self.log_x_axis = log_x_axis
         self.log_y_axis = log_y_axis

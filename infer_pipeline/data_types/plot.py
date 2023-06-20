@@ -11,6 +11,7 @@ from matplotlib.backends.backend_tkagg import NavigationToolbar2Tk
 
 from common import BACKGROUND_COLOR_HEX
 from data_types.image_plot import ImagePlot
+from data_types.plottable import PlottableTypes
 
 
 class PlotLayouts(Enum):
@@ -244,24 +245,42 @@ class Plot:
             values = plottable.values
             steps = plottable.steps
 
-            if max(steps) < max_s or min(steps) > min_s:
+            if (max(steps) < max_s or min(steps) > min_s) and plottable.type != PlottableTypes.DISCRETE_METRIC:
                 steps = np.interp(steps, (min(steps), max(steps)), (min_s, max_s))
-
-            plot_function = subplot['plot'].plot if not plottable.step_plot else subplot['plot'].step
-            plot_function(steps,
-                          values,
-                          linewidth=plottable.linewidth,
-                          linestyle=plottable.linestyle,
-                          marker=plottable.marker,
-                          markersize=plottable.markersize,
-                          markerfacecolor=plottable.markerfacecolor,
-                          label=plottable.legend.upper())
 
             if plottable.log_x_axis:
                 log_x_axis = True
 
             if plottable.log_y_axis:
                 log_y_axis = True
+
+            if plottable.step_plot:
+                subplot['plot'].step(
+                    steps,
+                    values,
+                    linewidth=plottable.linewidth,
+                    linestyle=plottable.linestyle,
+                    marker=plottable.marker,
+                    markersize=plottable.markersize,
+                    markerfacecolor=plottable.markerfacecolor,
+                    label=plottable.legend.upper()
+                )
+                continue
+
+            if plottable.box_plot:
+                subplot['plot'].boxplot(values)
+                continue
+
+            subplot['plot'].plot(
+                steps,
+                values,
+                linewidth=plottable.linewidth,
+                linestyle=plottable.linestyle,
+                marker=plottable.marker,
+                markersize=plottable.markersize,
+                markerfacecolor=plottable.markerfacecolor,
+                label=plottable.legend.upper()
+            )
 
         view_s = int(max(abs(min_s), abs(max_s)) * 0.01)
         view_v = int(max(abs(min_v), abs(max_v)) * 0.05)

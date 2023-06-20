@@ -118,7 +118,7 @@ class Peaks():
                 marker='o',
                 markersize=6,
                 legend=legend or self.name,
-                type_=PlottableTypes.METRIC
+                type_=PlottableTypes.DISCRETE_METRIC
             )]
         else:
             return None

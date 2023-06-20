@@ -62,7 +62,7 @@ class MissingPoseEstimations():
                 linestyle='None',
                 marker='x',
                 legend=legend or self.name,
-                type_=PlottableTypes.METRIC
+                type_=PlottableTypes.DISCRETE_METRIC
             )]
         else:
             return None

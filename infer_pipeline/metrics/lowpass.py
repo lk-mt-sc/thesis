@@ -97,7 +97,7 @@ class Lowpass():
                     linestyle='solid',
                     marker='None',
                     legend=legend or self.name,
-                    type_=PlottableTypes.METRIC
+                    type_=PlottableTypes.CONTINUOUS_METRIC
                     )]
         else:
             return None

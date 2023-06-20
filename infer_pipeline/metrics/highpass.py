@@ -184,7 +184,7 @@ class Highpass():
                     linestyle='solid',
                     marker='None',
                     legend=legend,
-                    type_=PlottableTypes.METRIC
+                    type_=PlottableTypes.CONTINUOUS_METRIC
                 )
             ]
             if self.values_abs:
@@ -196,7 +196,7 @@ class Highpass():
                         linestyle='solid',
                         marker='None',
                         legend=legend + '_ABS',
-                        type_=PlottableTypes.METRIC
+                        type_=PlottableTypes.CONTINUOUS_METRIC
                     )
                 )
             if self.values_zeroed:
@@ -208,7 +208,7 @@ class Highpass():
                         linestyle='solid',
                         marker='None',
                         legend=legend + '_ZEROED',
-                        type_=PlottableTypes.METRIC
+                        type_=PlottableTypes.CONTINUOUS_METRIC
                     )
                 )
             if self.values_non_zero_interp:
@@ -220,7 +220,7 @@ class Highpass():
                         linestyle='solid',
                         marker='None',
                         legend=legend + '_INTERPOLATED',
-                        type_=PlottableTypes.METRIC
+                        type_=PlottableTypes.CONTINUOUS_METRIC
                     )
                 )
             if self.values_smoothed:
@@ -232,7 +232,7 @@ class Highpass():
                         linestyle='solid',
                         marker='None',
                         legend=legend + '_SMOOTHED',
-                        type_=PlottableTypes.METRIC
+                        type_=PlottableTypes.CONTINUOUS_METRIC
                     )
                 )
             return plottables
@@ -241,6 +241,8 @@ class Highpass():
 
     @classmethod
     def tracker_plot(cls, image, slider_value, metric_x, metric_y):
+        return
+
         if not None in (metric_x, metric_y):
             if metric_x.values_non_zero_interp and metric_y.values_non_zero_interp:
                 x = int(metric_x.values_non_zero_interp[slider_value])
