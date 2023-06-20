@@ -454,8 +454,8 @@ class Inference:
         t_y_f = next(f for f in features if f.name == target.value + '_y')
         for s, (s1_x, s1_y, s2_x, s2_y) in enumerate(zip(s1_x_f.values, s1_y_f.values, s2_x_f.values, s2_y_f.values)):
             if -1 in (s1_x, s1_y, s2_x, s2_y):
-                t_x_f.add(s, -1)
-                t_y_f.add(s, -1)
+                t_x_f.add(s, -1, -1)
+                t_y_f.add(s, -1, -1)
                 continue
             x1 = min(s1_x, s2_x)
             y1 = min(s1_y, s2_y)
