@@ -150,15 +150,23 @@ class InferenceManager():
             f'{selected_inference.start_datetime} - {selected_inference.end_datetime}')
         self.gui_inference.details_model_mmpose_var.set(selected_inference.mmpose_model)
         self.gui_inference.details_model_mmdetection_var.set(selected_inference.mmdetection_model)
-        duration = selected_inference.detection_duration
-        self.gui_inference.details_duration_bb_detection_var.set(
-            f'{str(duration[0])} min - {str(duration[1])} sec - {str(duration[2])} sec')
-        duration = selected_inference.pose_estimation_duration
-        self.gui_inference.details_duration_pose_estimation_var.set(
-            f'{str(duration[0])} min - {str(duration[1])} sec - {str(duration[2])} sec')
+
+        durations = selected_inference.detection_duration
+        duration = '{:.4f} min'.format(round(durations[0], 4))
+        duration += ' - {:.4f} sec'.format(round(durations[1], 4))
+        duration += ' - {:.4f} sec'.format(round(durations[2], 4))
+        self.gui_inference.details_duration_bb_detection_var.set(duration)
+
+        durations = selected_inference.pose_estimation_duration
+        duration = '{:.4f} min'.format(round(durations[0], 4))
+        duration += ' - {:.4f} sec'.format(round(durations[1], 4))
+        duration += ' - {:.4f} sec'.format(round(durations[2], 4))
+        self.gui_inference.details_duration_pose_estimation_var.set(duration)
+
         self.gui_inference.details_description_var.set(selected_inference.description)
-        score = '{:.3f} (Detection)'.format(round(selected_inference.score_detection, 3))
-        score += ' - {:.3f} (Pose Estimation)'.format(round(selected_inference.score_pose_estimation, 3))
+
+        score = '{:.4f} (Detection)'.format(round(selected_inference.score_detection, 4))
+        score += ' - {:.4f} (Pose Estimation)'.format(round(selected_inference.score_pose_estimation, 4))
         self.gui_inference.details_score_var.set(score)
 
         self.gui_inference.details_listbox_data.delete(0, tk.END)

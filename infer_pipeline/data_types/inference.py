@@ -175,9 +175,7 @@ class Inference:
 
             end = time.time()
             duration = end - start
-            self.detection_duration = (round(duration / 60, 2),
-                                       round(duration / n_runs, 2),
-                                       round(duration / n_images, 4))
+            self.detection_duration = (duration / 60, duration / n_runs, duration / n_images)
             results_pickle_file_path = mmdetection_result_dump_file
             results_json_file_path = mmdetection_outfile_prefix + '.bbox.json'
 
@@ -268,9 +266,7 @@ class Inference:
 
             end = time.time()
             duration = end - start
-            self.pose_estimation_duration = (round(duration / 60, 2),
-                                             round(duration / n_runs, 2),
-                                             round(duration / n_images, 4))
+            self.pose_estimation_duration = (duration / 60, duration / n_runs, duration / n_images)
             results_json_file_path = mmpose_outfile_prefix + '.keypoints.json'
         else:
             mmpose_args = [
@@ -315,9 +311,7 @@ class Inference:
 
             end = time.time()
             duration = end - start
-            self.pose_estimation_duration = (round(duration / 60, 2),
-                                             round(duration / n_runs, 2),
-                                             round(duration / n_images, 4))
+            self.pose_estimation_duration = (duration / 60, duration / n_runs, duration / n_images)
             results_json_file_path = mmpose_outfile_prefix + '.keypoints.json'
 
         with open(ann_file, 'r') as annotations_file:
@@ -364,6 +358,11 @@ class Inference:
                     x_coord = keypoints[0:: 3]
                     y_coord = keypoints[1:: 3]
                     keypoint_scores = keypoints[2::3]
+
+                    keypoint_scores_for_image_mean = keypoints[17::3]
+                    score = mean(keypoint_scores_for_image_mean)
+                    result['score'] = score
+
                     for i, (x, y, s) in enumerate(zip(x_coord, y_coord, keypoint_scores)):
                         features[i * 2].add(step, x, s)
                         features[i * 2 + 1].add(step, y, s)
@@ -389,12 +388,14 @@ class Inference:
                         y_coord = keypoints[1::3]
                         keypoint_scores = keypoints[2::3]
 
+                        keypoint_scores_for_image_mean = keypoints[17::3]
+                        score = mean(keypoint_scores_for_image_mean)
+
                         bbox = [int(min(x_coord)), int(min(y_coord)), int(max(x_coord)), int(max(y_coord))]
                         bbox_tensor = torch.FloatTensor(bbox)
                         bbox_tensor = bbox_tensor.unsqueeze(0)
 
                         iou = box_iou(pred_bbox_tensor, bbox_tensor)
-                        score = pose['score']
                         if iou > 0.3:
                             preds.append({
                                 'iou': iou.item(),
@@ -433,11 +434,11 @@ class Inference:
                     bboxes_bottomup.append(result['bbox'])
                     ious.append(result['iou'])
 
-            detection_scores_for_mean = [score for score in detection_scores if score != -1]
-            self.score_detection = mean(detection_scores_for_mean)
+            detection_scores_for_inference_mean = [score for score in detection_scores if score != -1]
+            self.score_detection = mean(detection_scores_for_inference_mean)
 
-            pose_estimation_scores_for_mean = [score for score in pose_estimation_scores if score != -1]
-            self.score_pose_estimation = mean(pose_estimation_scores_for_mean)
+            pose_estimation_scores_for_inference_mean = [score for score in pose_estimation_scores if score != -1]
+            self.score_pose_estimation = mean(pose_estimation_scores_for_inference_mean)
 
             self.interpolate_keypoint(features,
                                       KeypointsInterpolation.NECK,
