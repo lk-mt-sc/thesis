@@ -11,7 +11,7 @@ from threading import Thread
 import torch
 
 from utils import id_generator
-from common import INFERENCES_DIR, WSL_PREFIX
+from common import INFERENCES_DIR, WSL_PREFIX, MMPOSE_DATASET_DIR
 from gui.gui_inference_queue import GUIInferenceQueue
 from gui.gui_inference import GUIInference
 from manager.status_manager import Status
@@ -355,6 +355,10 @@ class InferenceManager():
     def delete_inferences(self):
         for inference in self.selected_inferences:
             shutil.rmtree(os.path.join(INFERENCES_DIR, inference.id))
+
+            dataset_dir = MMPOSE_DATASET_DIR + f'_{inference.id}'
+            if os.path.exists(dataset_dir):
+                shutil.rmtree(dataset_dir)
 
         self.fetch_inferences()
         self._gui_clear_details()
