@@ -16,6 +16,7 @@ from metrics.peaks import Peaks
 from metrics.lowpass import Lowpass
 from metrics.highpass import Highpass
 from metrics.fft import FFT
+from metrics.instantaneous_frequency import InstantaneousFrequency
 
 
 class CalculableMetrics(Enum):
@@ -24,6 +25,7 @@ class CalculableMetrics(Enum):
     LOWPASS = AllMetrics.LOWPASS.value
     HIGHPASS = AllMetrics.HIGHPASS.value
     FFT = AllMetrics.FFT.value
+    INSTANTANEOUS_FREQUENCY = AllMetrics.INSTANTANEOUS_FREQUENCY.value
 
 
 class InferenceMetrics():
@@ -408,6 +410,8 @@ class MetricManager():
                 return Highpass(name=metric_name)
             case AllMetrics.FFT.value:
                 return FFT(name=metric_name)
+            case AllMetrics.INSTANTANEOUS_FREQUENCY.value:
+                return InstantaneousFrequency(name=metric_name)
             case other:
                 return None
 
