@@ -227,7 +227,7 @@ class ImagePlot():
 
             if self.run.bboxes_bottomup:
                 bbox_bottomup = self.run.bboxes_bottomup[self.slider_value]
-                iou = self.ious[self.slider_value]
+                iou = self.run.ious[self.slider_value]
             else:
                 bbox_bottomup = None
                 iou = None
