@@ -4,8 +4,9 @@ from data_types.plottable import Plottable, PlottableTypes
 
 
 class Feature():
-    def __init__(self, name, steps=None, scores=None, values=None):
+    def __init__(self, name, fps=25, steps=None, scores=None, values=None):
         self.name = name
+        self.fps = fps
         self.steps = steps or []
         self.values = values or []
         self.scores = scores or []

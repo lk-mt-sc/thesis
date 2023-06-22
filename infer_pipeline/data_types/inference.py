@@ -340,7 +340,7 @@ class Inference:
             dataset_keypoints = dataset_type.keypoints
             n_keypoints = len(dataset_keypoints)
             for keypoint in dataset_keypoints:
-                features.append(Feature(keypoint))
+                features.append(Feature(name=keypoint, fps=data.fps))
             for step, image in enumerate(images):
                 image_filename = str(data.id) + '_' + image.split('/')[-1]
                 for dataset_image in annotations['images']:

@@ -36,7 +36,7 @@ class FFT():
             parameters = self.parameters
 
         n = len(calculate_on.steps.copy())
-        d = 1 / 25
+        d = 1 / feature.fps
         steps = fftfreq(n, d)
         if hasattr(calculate_on, 'values_interp') and calculate_on.values_interp:
             values = fft(calculate_on.values_interp.copy())
