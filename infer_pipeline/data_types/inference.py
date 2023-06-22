@@ -17,6 +17,7 @@ from utils import collect_image_infos, cvt_to_coco_json
 from manager.dataset_manager import KeypointsInterpolation
 from manager.metric_manager import InferenceMetrics, RunMetrics
 from common import MMPOSE_DIR, MMPOSE_TEST_SCRIPT, MMPOSE_DATASET_DIR
+from common import MMPOSE029_DIR, MMPOSE029_VENV_DIR, MMPOSE029_INFERENCE_SCRIPT
 from common import MMDETECTION_DIR, MMDETECTION_TEST_SCRIPT
 from common import INFERENCES_DIR
 
@@ -74,11 +75,16 @@ class Inference:
 
         mmpose_config = self.mmpose_model.config
         mmpose_checkpoint = self.mmpose_model.checkpoint
-        config_name = mmpose_config.split('/')[-1].split('.')[0]
-        config = imp.load_source(config_name, mmpose_config)
+        multi_frame_mmpose029 = self.mmpose_model.multi_frame_mmpose029
 
-        data_mode = config.data_mode
-        assert data_mode == 'topdown' or data_mode == 'bottomup'
+        if multi_frame_mmpose029:
+            data_mode = 'topdown'
+        else:
+            config_name = mmpose_config.split('/')[-1].split('.')[0]
+            config = imp.load_source(config_name, mmpose_config)
+
+            data_mode = config.data_mode
+            assert data_mode == 'topdown' or data_mode == 'bottomup'
 
         if existing_dataset is None:
             dataset_dir = MMPOSE_DATASET_DIR + f'_{self.id}'
@@ -221,52 +227,98 @@ class Inference:
 
         inference_progress.value = 'POSE EST. STARTUP'
 
-        mmpose_args = [
-            'python',
-            MMPOSE_TEST_SCRIPT,
-            mmpose_config,
-            mmpose_checkpoint,
-            '--work-dir',
-            mmpose_work_dir,
-            '--cfg-options',
-            f'test_dataloader.dataset.ann_file={ann_file}',
-            f'test_evaluator.ann_file={ann_file}',
-            f'test_evaluator.outfile_prefix={mmpose_outfile_prefix}'
-        ]
+        if multi_frame_mmpose029:
+            mmpose_args = [
+                os.path.join(MMPOSE029_VENV_DIR, 'bin', 'python'),
+                MMPOSE029_INFERENCE_SCRIPT,
+                '--config',
+                mmpose_config,
+                '--checkpoint',
+                mmpose_checkpoint,
+                '--dataset-dir',
+                dataset_dir,
+                '--bbox-file',
+                results_json_file_path,
+                '--ann-file',
+                ann_file,
+                '--pose-estimations-file',
+                mmpose_outfile_prefix + '.keypoints.json'
+            ]
 
-        bbox_file_path = os.path.join(mmpose_work_dir, 'bbox_file.json')
-        shutil.copyfile(results_json_file_path, bbox_file_path)
+            bbox_file_path = os.path.join(mmpose_work_dir, 'bbox_file.json')
+            shutil.copyfile(results_json_file_path, bbox_file_path)
+            shutil.copyfile(mmpose_config, os.path.join(mmpose_work_dir, os.path.basename(mmpose_config)))
 
-        if data_mode == 'topdown':
-            mmpose_args.append(f'test_dataloader.dataset.bbox_file={bbox_file_path}')
+            start = time.time()
 
-        start = time.time()
+            pose_estimation = subprocess.Popen(
+                mmpose_args,
+                cwd=MMPOSE029_DIR,
+                stdout=subprocess.PIPE,
+                bufsize=1,
+                universal_newlines=True
+            )
 
-        pose_estimation = subprocess.Popen(
-            mmpose_args,
-            cwd=MMPOSE_DIR,
-            stdout=subprocess.PIPE,
-            bufsize=1,
-            universal_newlines=True
-        )
+            inference_progress.value = 'POSE EST. v029'
+            while True:
+                line = pose_estimation.stdout.readline()
+                if not line:
+                    print()
+                    break
 
-        while True:
-            line = pose_estimation.stdout.readline()
-            if not line:
-                print()
-                break
-            line = line.rstrip()
-            if 'mmengine - INFO - Epoch(test)' in line:
-                tracker = line[line.find('[') + 1: line.find(']')].split('/')
-                progress_percentage = int(int(tracker[0])/int(tracker[1]) * 100)
-                inference_progress.value = 'POSE EST. ' + f'{progress_percentage}%'
+            end = time.time()
+            duration = end - start
+            self.pose_estimation_duration = (round(duration / 60, 2),
+                                             round(duration / n_runs, 2),
+                                             round(duration / n_images, 4))
+            results_json_file_path = mmpose_outfile_prefix + '.keypoints.json'
+        else:
+            mmpose_args = [
+                'python',
+                MMPOSE_TEST_SCRIPT,
+                mmpose_config,
+                mmpose_checkpoint,
+                '--work-dir',
+                mmpose_work_dir,
+                '--cfg-options',
+                f'test_dataloader.dataset.ann_file={ann_file}',
+                f'test_evaluator.ann_file={ann_file}',
+                f'test_evaluator.outfile_prefix={mmpose_outfile_prefix}'
+            ]
 
-        end = time.time()
-        duration = end - start
-        self.pose_estimation_duration = (round(duration / 60, 2),
-                                         round(duration / n_runs, 2),
-                                         round(duration / n_images, 4))
-        results_json_file_path = mmpose_outfile_prefix + '.keypoints.json'
+            bbox_file_path = os.path.join(mmpose_work_dir, 'bbox_file.json')
+            shutil.copyfile(results_json_file_path, bbox_file_path)
+
+            if data_mode == 'topdown':
+                mmpose_args.append(f'test_dataloader.dataset.bbox_file={bbox_file_path}')
+
+            start = time.time()
+
+            pose_estimation = subprocess.Popen(
+                mmpose_args,
+                cwd=MMPOSE_DIR,
+                stdout=subprocess.PIPE,
+                bufsize=1,
+                universal_newlines=True
+            )
+
+            while True:
+                line = pose_estimation.stdout.readline()
+                if not line:
+                    print()
+                    break
+                line = line.rstrip()
+                if 'mmengine - INFO - Epoch(test)' in line:
+                    tracker = line[line.find('[') + 1: line.find(']')].split('/')
+                    progress_percentage = int(int(tracker[0])/int(tracker[1]) * 100)
+                    inference_progress.value = 'POSE EST. ' + f'{progress_percentage}%'
+
+            end = time.time()
+            duration = end - start
+            self.pose_estimation_duration = (round(duration / 60, 2),
+                                             round(duration / n_runs, 2),
+                                             round(duration / n_images, 4))
+            results_json_file_path = mmpose_outfile_prefix + '.keypoints.json'
 
         with open(ann_file, 'r') as annotations_file:
             annotations = json.load(annotations_file)

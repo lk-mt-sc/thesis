@@ -9,6 +9,7 @@ from manager.status_manager import Status
 from data_types.mmpose_model import MMPoseModel
 from model_zoo import ModelZoo
 from common import INFER_PIPELINE_MMDPOSE_CONFIGS_DIR
+from common import MMPOSE029_CHECKPOINTS_DIR, MMPOSE029_CONFIGS_DIR
 from common import MMPOSE_CHECKPOINTS_DIR
 
 
@@ -23,7 +24,28 @@ class MMPoseModelManager():
         self.status_manager = status_manager
         self.model_zoo = ModelZoo(redownload_model_zoo=False)
         self.zoo_models = []
-        self.custom_models = []
+        self.custom_models_init = [
+            MMPoseModel(
+                section='Posewarper + Hrnet + Posetrack18',
+                arch='pose_hrnet_w48',
+                dataset='posetrack18',
+                input_size='384x288',
+                key_metric='85.0 (total)',
+                checkpoint=os.path.join(MMPOSE029_CHECKPOINTS_DIR,
+                                        'hrnet_w48_posetrack18_384x288_posewarper_stage2-4abf88db_20211130.pth'),
+                config=os.path.join(
+                    MMPOSE029_CONFIGS_DIR,
+                    'body',
+                    '2d_kpt_sview_rgb_vid',
+                    'posewarper',
+                    'posetrack18',
+                    'hrnet_w48_posetrack18_384x288_posewarper_stage2.py'
+                ),
+                transfer_learned=False,
+                multi_frame_mmpose029=True
+            )
+        ]
+        self.custom_models = self.custom_models_init.copy()
         self.models_show = []
         self.selected_model = None
         self.filter_models = None
@@ -76,7 +98,7 @@ class MMPoseModelManager():
         if thread.is_alive():
             self.gui_mmpose_model.root.after(50, lambda: self.monitor_fetch_thread(thread))
         else:
-            self.custom_models.clear()
+            self.custom_models = self.custom_models_init.copy()
             self.fetch_custom_models()
             self.selected_model = None
             self.filter()

@@ -1,5 +1,16 @@
 class MMPoseModel():
-    def __init__(self, section, arch, dataset, input_size, key_metric, checkpoint, config, transfer_learned=False):
+    def __init__(
+            self,
+            section,
+            arch,
+            dataset,
+            input_size,
+            key_metric,
+            checkpoint,
+            config,
+            transfer_learned=False,
+            multi_frame_mmpose029=False
+    ):
         self.section = section
         self.arch = arch
         self.dataset = dataset
@@ -8,6 +19,7 @@ class MMPoseModel():
         self.checkpoint = checkpoint
         self.config = config
         self.transfer_learned = transfer_learned
+        self.multi_frame_mmpose029 = multi_frame_mmpose029
 
     @classmethod
     def get_from_selection_string(cls, selection_str):
