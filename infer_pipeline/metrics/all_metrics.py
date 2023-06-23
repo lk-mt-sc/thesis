@@ -8,4 +8,4 @@ class AllMetrics(Enum):
     LOWPASS = 'Low-Pass'
     HIGHPASS = 'High-Pass'
     FFT = 'FFT'
-    INSTANTANEOUS_FREQUENCY = 'Instantaneous Frequency'
+    INSTANTANEOUS_FREQUENCY = 'Instantaneous Freq.'
