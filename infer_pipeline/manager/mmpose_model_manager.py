@@ -1,5 +1,5 @@
 import os
-import copy
+import imp
 
 import tkinter as tk
 from threading import Thread
@@ -10,14 +10,13 @@ from data_types.mmpose_model import MMPoseModel
 from model_zoo import ModelZoo
 from common import INFER_PIPELINE_MMDPOSE_CONFIGS_DIR
 from common import MMPOSE029_CHECKPOINTS_DIR, MMPOSE029_CONFIGS_DIR
-from common import MMPOSE_CHECKPOINTS_DIR
+from common import MMPOSE_DIR, MMPOSE_CHECKPOINTS_DIR
 
 
 class MMPoseModelManager():
     def __init__(self, root, status_manager):
         self.gui_mmpose_model = GUIMMPoseModel(
             root,
-            combobox_model_preset_callback=self.filter,
             button_refresh_callback=self.fetch_models,
             listbox_models_callback=self.model_selected
         )
@@ -30,7 +29,8 @@ class MMPoseModelManager():
                 arch='pose_hrnet_w48',
                 dataset='posetrack18',
                 input_size='384x288',
-                key_metric='85.0 (total)',
+                key_metric_value=85.0,
+                key_metric_name='Total',
                 checkpoint=os.path.join(MMPOSE029_CHECKPOINTS_DIR,
                                         'hrnet_w48_posetrack18_384x288_posewarper_stage2-4abf88db_20211130.pth'),
                 config=os.path.join(
@@ -43,41 +43,13 @@ class MMPoseModelManager():
                 ),
                 transfer_learned=False,
                 multi_frame_mmpose029=True
-            )
+            ),
+            # add self-trained model (best model according to COCO or to our metrics)
         ]
         self.custom_models = self.custom_models_init.copy()
         self.models_show = []
         self.selected_model = None
-        self.filter_models = None
         self.fetch_models()
-        self._gui_set_presets()
-
-        self.custom_configs = [
-            {
-                'original_config': 'configs/body_2d_keypoint/topdown_heatmap/coco/td-hm_hrnet-w48_udp-8xb32-210e_coco-384x288.py',
-                'custom_config': os.path.join(INFER_PIPELINE_MMDPOSE_CONFIGS_DIR, 'td-hm_hrnet-w48_udp-8xb32-210e_sc-384x288.py'),
-                'custom_checkpoint': None,
-                'transfer_learned': False
-            },
-            {
-                'original_config': 'configs/body_2d_keypoint/topdown_heatmap/coco/td-hm_hrnet-w48_udp-8xb32-210e_coco-384x288.py',
-                'custom_config': os.path.join(INFER_PIPELINE_MMDPOSE_CONFIGS_DIR, 'td-hm_hrnet-w48_udp-8xb32-210e_sc-384x288.py'),
-                'custom_checkpoint': 'best_coco_AP_epoch_150.pth',
-                'transfer_learned': True
-            },
-            {
-                'original_config': 'configs/body_2d_keypoint/dekr/coco/dekr_hrnet-w48_8xb10-140e_coco-640x640.py',
-                'custom_config': os.path.join(INFER_PIPELINE_MMDPOSE_CONFIGS_DIR, 'dekr_hrnet-w48_8xb10-140e_sc-640x640.py'),
-                'custom_checkpoint': None,
-                'transfer_learned': False
-            },
-            {
-                'original_config': 'configs/body_2d_keypoint/topdown_heatmap/coco/td-hm_mobilenetv2_8xb64-210e_coco-256x192.py',
-                'custom_config': os.path.join(INFER_PIPELINE_MMDPOSE_CONFIGS_DIR, 'td-hm_mobilenetv2_8xb64-210e_sc-256x192.py'),
-                'custom_checkpoint': None,
-                'transfer_learned': False
-            },
-        ]
 
     def fetch_models(self):
         if not self.status_manager.has_status(Status.FETCHING_MMPOSE_MODELS):
@@ -89,9 +61,10 @@ class MMPoseModelManager():
             self.monitor_fetch_thread(fetch_thread)
 
     def _fetch_models(self):
+        redownload_model_zoo = self.gui_mmpose_model.checkbutton_redownload_model_zoo.instate(['selected'])
         self.zoo_models = self.model_zoo.get_models(
             dataset='coco',
-            redownload_model_zoo=self.gui_mmpose_model.checkbutton_redownload_model_zoo.instate(['selected'])
+            redownload_model_zoo=redownload_model_zoo
         )
 
     def monitor_fetch_thread(self, thread):
@@ -101,31 +74,81 @@ class MMPoseModelManager():
             self.custom_models = self.custom_models_init.copy()
             self.fetch_custom_models()
             self.selected_model = None
-            self.filter()
+            self.models_show = self.custom_models.copy()
+            self._gui_set_models()
             self._gui_enable_button_refresh()
             self.status_manager.remove_status(Status.FETCHING_MMPOSE_MODELS)
 
     def fetch_custom_models(self):
-        for config in self.custom_configs:
-            for model in self.zoo_models:
-                if model.config == config['original_config']:
-                    new_custom_model = copy.deepcopy(model)
-                    new_custom_model.config = config['custom_config']
-                    new_custom_model.checkpoint = os.path.join(
-                        MMPOSE_CHECKPOINTS_DIR, config['custom_checkpoint'] or new_custom_model.checkpoint)
-                    new_custom_model.transfer_learned = config['transfer_learned']
-                    self.custom_models.append(new_custom_model)
+        unavailable_checkpoints = ['td-hm_hrnet-w32_8xb64-210e_coco-aic-256x192-merge-b05435b9_20221025.pth']
 
-    def _gui_set_presets(self):
-        self.gui_mmpose_model.combobox_model_preset['values'] = [
-            'Model Zoo',
-            'Custom',
-        ]
+        sections = set()
+        for model in self.zoo_models:
+            sections.add(model.section)
 
-        self.gui_mmpose_model.combobox_model_preset.current(1)
+        models_per_section = {}
+        for section in sections:
+            models_per_section[section] = []
 
-    def _gui_get_filter(self):
-        self.filter_models = self.gui_mmpose_model.combobox_model_preset.get()
+        for model in self.zoo_models:
+            models_per_section[model.section].append(model)
+
+        best_models = []
+        for _, models in models_per_section.items():
+            models.sort(key=lambda x: x.key_metric_value, reverse=True)
+            best_models.append(models[0])
+
+        best_models.sort(key=lambda x: x.key_metric_value, reverse=True)
+        bottom_up_models = []
+        top_down_models = []
+        for model in best_models:
+            config_name = os.path.basename(model.config)
+            config = imp.load_source(config_name, os.path.join(MMPOSE_DIR, model.config))
+            if hasattr(config, 'data_mode'):
+                data_mode = config.data_mode
+                if data_mode == 'topdown':
+                    top_down_models.append(model)
+                if data_mode == 'bottomup':
+                    bottom_up_models.append(model)
+
+        top_down_models = [model for model in top_down_models if model.checkpoint not in unavailable_checkpoints]
+        top_down_models = top_down_models[:10]
+
+        bottom_up_models = [model for model in bottom_up_models if model.checkpoint not in unavailable_checkpoints]
+        bottom_up_models = bottom_up_models[:10]
+
+        for model in top_down_models:
+            model.config = self.create_custom_config(model, data_mode='topdown')
+            model.checkpoint = os.path.join(MMPOSE_CHECKPOINTS_DIR, model.checkpoint)
+            self.custom_models.append(model)
+
+        for model in bottom_up_models:
+            model.config = self.create_custom_config(model, data_mode='bottomup')
+            model.checkpoint = os.path.join(MMPOSE_CHECKPOINTS_DIR, model.checkpoint)
+            self.custom_models.append(model)
+
+    def create_custom_config(self, model, data_mode):
+        config_name = os.path.basename(model.config)
+        config = imp.load_source(config_name, os.path.join(MMPOSE_DIR, model.config))
+        if hasattr(config, 'test_dataloader'):
+            batch_size = config.test_dataloader['batch_size']
+            if batch_size != 1:
+                batch_size = 64
+        else:
+            batch_size = 64
+
+        custom_config = os.path.join(INFER_PIPELINE_MMDPOSE_CONFIGS_DIR,
+                                     os.path.basename(model.config).replace('coco', 'sc'))
+
+        with open(custom_config, 'w', encoding='utf8') as config_file:
+            config_file.write(f"_base_ = ['{os.path.join(MMPOSE_DIR, model.config)}']\n")
+            config_file.write(
+                f"test_dataloader = dict(batch_size={batch_size}, dataset=dict(data_root='', ann_file='', bbox_file=None, data_prefix=dict(img='')))\n")
+            config_file.write("test_evaluator = dict(format_only=True)\n")
+            config_file.write(f"data_mode='{data_mode}'")
+
+        config_file.close()
+        return custom_config
 
     def _gui_clear_listbox_models(self):
         self.gui_mmpose_model.listbox_models.delete(0, tk.END)
@@ -146,7 +169,8 @@ class MMPoseModelManager():
         self.gui_mmpose_model.details_arch_var.set(self.selected_model.arch)
         self.gui_mmpose_model.details_dataset_var.set(self.selected_model.dataset)
         self.gui_mmpose_model.details_input_size_var.set(self.selected_model.input_size)
-        self.gui_mmpose_model.details_key_metric_var.set(self.selected_model.key_metric)
+        self.gui_mmpose_model.details_key_metric_var.set(str(self.selected_model.key_metric_value)
+                                                         + ' ' + self.selected_model.key_metric_name)
         self.gui_mmpose_model.details_checkpoint_var.set(self.selected_model.checkpoint)
         self.gui_mmpose_model.details_config_var.set(self.selected_model.config)
 
@@ -158,20 +182,6 @@ class MMPoseModelManager():
         self.gui_mmpose_model.details_key_metric_var.set('')
         self.gui_mmpose_model.details_checkpoint_var.set('')
         self.gui_mmpose_model.details_config_var.set('')
-
-    def filter(self, event=None):
-        self.selected_model = None
-        self.models_show.clear()
-        self._gui_clear_details()
-        self._gui_get_filter()
-
-        if self.filter_models == 'Model Zoo':
-            self.models_show = self.zoo_models.copy()
-
-        if self.filter_models == 'Custom':
-            self.models_show = self.custom_models.copy()
-
-        self._gui_set_models()
 
     def model_selected(self, event=None):
         current_selection = self.gui_mmpose_model.listbox_models.curselection()

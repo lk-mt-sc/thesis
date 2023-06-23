@@ -8,7 +8,6 @@ class GUIMMPoseModel():
     def __init__(
             self,
             root,
-            combobox_model_preset_callback,
             button_refresh_callback,
             listbox_models_callback):
         self.root = root
@@ -18,13 +17,6 @@ class GUIMMPoseModel():
 
         self.title = ttk.Label(self.frame, text='MMPose Models', font=self.root.font_title)
         self.title.place(x=0, y=0)
-
-        self.combobox_model_preset = ttk.Combobox(self.frame, width=10, font=self.root.font_small)
-        self.combobox_model_preset['values'] = ['No preset']
-        self.combobox_model_preset['state'] = 'readonly'
-        self.combobox_model_preset.current(0)
-        self.combobox_model_preset.bind('<<ComboboxSelected>>', combobox_model_preset_callback)
-        self.combobox_model_preset.place(x=180, y=1)
 
         self.button_refresh = ttk.Button(
             self.frame,

@@ -80,6 +80,8 @@ class ModelZoo:
                     else:
                         arch = config_link.text
                         input_size = td[1].text
+                    if arch == 'ViTPose-H*':
+                        continue
                     config = self.get_config_rtmpose_fix(config_link, 'coco')
                     checkpoint = td[-2].find('a')['href']
 
@@ -94,7 +96,8 @@ class ModelZoo:
                         AP = td[3].text
                     else:
                         AP = td[2].text
-                    key_metric = f'AP ({AP})'
+                    key_metric_value = float(AP)
+                    key_metric_name = 'AP'
                     section_ = section.find('h3').text[:-1]
                     section_ = section_.replace('on Coco', '')
                     models.append(
@@ -102,7 +105,8 @@ class ModelZoo:
                                     arch=arch,
                                     dataset='coco',
                                     input_size=input_size,
-                                    key_metric=key_metric,
+                                    key_metric_value=key_metric_value,
+                                    key_metric_name=key_metric_name,
                                     checkpoint=checkpoint,
                                     config=config))
 
@@ -120,6 +124,8 @@ class ModelZoo:
                     td = config.find_all('td')
                     config_link = td[0].find('a')
                     arch = config_link.text
+                    if arch == 'ViTPose-H*':
+                        continue
                     input_size = td[1].text
                     config = self.get_config_rtmpose_fix(config_link, 'crowdpose')
                     checkpoint = td[-2].find('a')['href']
@@ -131,7 +137,8 @@ class ModelZoo:
                         checkpoint = checkpoint.split('/')[-1]
 
                     AP = td[2].text
-                    key_metric = f'AP ({AP})'
+                    key_metric_value = float(AP)
+                    key_metric_name = 'AP'
                     section_ = section.find('h3').text[:-1]
                     section_ = section_.replace('on Crowdpose', '')
                     models.append(
@@ -139,7 +146,8 @@ class ModelZoo:
                                     arch=arch,
                                     dataset='crowdpose',
                                     input_size=input_size,
-                                    key_metric=key_metric,
+                                    key_metric_value=key_metric_value,
+                                    key_metric_name=key_metric_name,
                                     checkpoint=checkpoint,
                                     config=config))
 
@@ -157,6 +165,8 @@ class ModelZoo:
                     td = config.find_all('td')
                     config_link = td[0].find('a')
                     arch = config_link.text
+                    if arch == 'ViTPose-H*':
+                        continue
                     input_size = td[1].text
                     config = self.get_config_rtmpose_fix(config_link, 'mpii')
                     checkpoint = td[-2].find('a')['href']
@@ -168,7 +178,8 @@ class ModelZoo:
                         checkpoint = checkpoint.split('/')[-1]
 
                     mean = td[2].text
-                    key_metric = f'Mean ({mean})'
+                    key_metric_value = float(mean)
+                    key_metric_name = 'Mean'
                     section_ = section.find('h3').text[:-1]
                     section_ = section_.replace('on MPII', '')
                     models.append(
@@ -176,7 +187,8 @@ class ModelZoo:
                                     arch=arch,
                                     dataset='mpii',
                                     input_size=input_size,
-                                    key_metric=key_metric,
+                                    key_metric_value=key_metric_value,
+                                    key_metric_name=key_metric_name,
                                     checkpoint=checkpoint,
                                     config=config))
 
@@ -194,6 +206,8 @@ class ModelZoo:
                     td = config.find_all('td')
                     config_link = td[0].find('a')
                     arch = config_link.text
+                    if arch == 'ViTPose-H*':
+                        continue
                     input_size = td[1].text
                     config = self.get_config_rtmpose_fix(config_link, 'aic')
                     checkpoint = td[-2].find('a')['href']
@@ -205,7 +219,8 @@ class ModelZoo:
                         checkpoint = checkpoint.split('/')[-1]
 
                     AP = td[2].text
-                    key_metric = f'AP ({AP})'
+                    key_metric_value = float(AP)
+                    key_metric_name = 'AP'
                     section_ = section.find('h3').text[:-1]
                     section_ = section_.replace('on AIC', '')
                     models.append(
@@ -213,7 +228,8 @@ class ModelZoo:
                                     arch=arch,
                                     dataset='aic',
                                     input_size=input_size,
-                                    key_metric=key_metric,
+                                    key_metric_value=key_metric_value,
+                                    key_metric_name=key_metric_name,
                                     checkpoint=checkpoint,
                                     config=config))
 
