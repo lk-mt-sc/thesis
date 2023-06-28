@@ -246,7 +246,7 @@ auto_scale_lr = dict(enable=False, base_batch_size=16)
 default_scope = 'mmdet'
 default_hooks = dict(
     timer=dict(type='IterTimerHook'),
-    logger=dict(type='LoggerHook', interval=32),
+    logger=dict(type='LoggerHook', interval=1),
     param_scheduler=dict(type='ParamSchedulerHook'),
     checkpoint=dict(
         type='CheckpointHook',

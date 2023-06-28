@@ -145,7 +145,8 @@ class MMPoseModelManager():
             config_file.write(
                 f"test_dataloader = dict(batch_size={batch_size}, dataset=dict(data_root='', ann_file='', bbox_file=None, data_prefix=dict(img='')))\n")
             config_file.write("test_evaluator = dict(format_only=True)\n")
-            config_file.write(f"data_mode='{data_mode}'")
+            config_file.write("default_hooks = dict(logger=dict(interval=1))\n")
+            config_file.write(f"data_mode = '{data_mode}'")
 
         config_file.close()
         return custom_config
