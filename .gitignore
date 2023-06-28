@@ -136,11 +136,17 @@ train_pipeline/mmdet/trainings/
 train_pipeline/mmdet/mlruns/
 dataset/videos/
 dataset/std_dataset/
+dataset/std_alt_dataset/
 dataset/deb_dataset/
+dataset/deb_alt_dataset/
 dataset/itp_dataset/
+dataset/itp_alt_dataset/
 dataset/d_i_dataset/
+dataset/d_i_alt_dataset/
 dataset/i_d_dataset/
+dataset/i_d_alt_dataset/
 dataset/det_dataset/
 dataset/pos_dataset/
 dataset/ext_nets/shift_net/
 dataset/ext_nets/ema_vfi/
+dataset/templates/
