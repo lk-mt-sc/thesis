@@ -35,12 +35,16 @@ def time_to_ms(time):
 
 
 def create_std_dataset(id_start, alternative=False):
-    if os.path.exists(STD_DATASET_DIR):
-        shutil.rmtree(STD_DATASET_DIR)
+    std_dataset_dir = STD_ALT_DATASET_DIR if alternative else STD_DATASET_DIR
+    std_runs_image_dir = STD_ALT_RUNS_IMAGE_DIR if alternative else STD_RUNS_IMAGE_DIR
+    std_runs_video_dir = STD_ALT_RUNS_VIDEO_DIR if alternative else STD_RUNS_VIDEO_DIR
 
-    os.mkdir(STD_DATASET_DIR)
-    os.mkdir(STD_RUNS_VIDEO_DIR)
-    os.mkdir(STD_RUNS_IMAGE_DIR)
+    if os.path.exists(std_dataset_dir):
+        shutil.rmtree(std_dataset_dir)
+
+    os.mkdir(std_dataset_dir)
+    os.mkdir(std_runs_image_dir)
+    os.mkdir(std_runs_video_dir)
 
     markdown_table_entries = []
 
@@ -115,13 +119,13 @@ def create_std_dataset(id_start, alternative=False):
                 out_str.append('NO SPOTLIGHT')
             out_str.append(f'{str(video_fps).zfill(3)} FPS')
             out_str = ' - '.join(out_str)
-            out_path = os.path.join(STD_RUNS_VIDEO_DIR, out_str + '.mp4')
+            out_path = os.path.join(std_runs_video_dir, out_str + '.mp4')
 
             subprocess_args = ['ffmpeg', '-ss', f'{start_time_ms}ms',
                                '-to', f'{end_time_ms}ms', '-i', video_path, out_path]
             subprocess.check_call(subprocess_args, stdout=subprocess.DEVNULL, stderr=subprocess.STDOUT)
 
-            out_folder = os.path.join(STD_RUNS_IMAGE_DIR, out_str)
+            out_folder = os.path.join(std_runs_image_dir, out_str)
             os.mkdir(out_folder)
             run_video = cv.VideoCapture(out_path)
 
@@ -152,15 +156,19 @@ def create_std_dataset(id_start, alternative=False):
         #     print(entry)
 
 
-def create_deb_dataset(id_start):
-    if not os.path.exists(STD_DATASET_DIR):
+def create_deb_dataset(id_start, alternative=False):
+    std_dataset_dir = STD_ALT_DATASET_DIR if alternative else STD_DATASET_DIR
+    std_runs_image_dir = STD_ALT_RUNS_IMAGE_DIR if alternative else STD_RUNS_IMAGE_DIR
+
+    if not os.path.exists(std_dataset_dir):
         print('Standard dataset not found.')
-        create_std_dataset()
+        create_std_dataset(id_start=STD_ID_START, alternative=alternative)
 
-    if os.path.exists(DEB_DATASET_DIR):
-        shutil.rmtree(DEB_DATASET_DIR)
+    deb_dataset_dir = DEB_ALT_DATASET_DIR if alternative else DEB_DATASET_DIR
+    if os.path.exists(deb_dataset_dir):
+        shutil.rmtree(deb_dataset_dir)
 
-    os.mkdir(DEB_DATASET_DIR)
+    os.mkdir(deb_dataset_dir)
 
     device = 'cuda:0'
     checkpoint = os.path.join(SHIFT_NET_DIR, 'ckpt', 'net_gopro_deblur.pth')
@@ -173,14 +181,14 @@ def create_deb_dataset(id_start):
 
     id_ = id_start
     print('Creating deblurred dataset...')
-    runs = sorted(glob.glob(os.path.join(STD_RUNS_IMAGE_DIR, '*')))
+    runs = sorted(glob.glob(os.path.join(std_runs_image_dir, '*')))
     for run in tqdm(runs, desc='Overall'):
         out_str = run.split('/')[-1]
         out_str_split = out_str.split(' - ')
         out_str_split[0] = f'{str(id_).zfill(3)} ID'
         out_str_split.append('DEBLURRED')
         out_str = ' - '.join(out_str_split)
-        out_dir = os.path.join(DEB_DATASET_DIR, out_str)
+        out_dir = os.path.join(deb_dataset_dir, out_str)
         os.mkdir(out_dir)
 
         frames = sorted(glob.glob(os.path.join(run, '*')))
@@ -213,22 +221,26 @@ def create_deb_dataset(id_start):
         id_ += 1
 
 
-def create_itp_dataset(id_start):
-    if not os.path.exists(STD_DATASET_DIR):
+def create_itp_dataset(id_start, alternative=False):
+    std_dataset_dir = STD_ALT_DATASET_DIR if alternative else STD_DATASET_DIR
+    std_runs_image_dir = STD_ALT_RUNS_IMAGE_DIR if alternative else STD_RUNS_IMAGE_DIR
+
+    if not os.path.exists(std_dataset_dir):
         print('Standard dataset not found.')
-        create_std_dataset()
+        create_std_dataset(id_start=STD_ID_START, alternative=alternative)
 
-    if os.path.exists(ITP_DATASET_DIR):
-        shutil.rmtree(ITP_DATASET_DIR)
+    itp_dataset_dir = ITP_ALT_DATASET_DIR if alternative else ITP_DATASET_DIR
+    if os.path.exists(itp_dataset_dir):
+        shutil.rmtree(itp_dataset_dir)
 
-    os.mkdir(ITP_DATASET_DIR)
+    os.mkdir(itp_dataset_dir)
 
     n = 5
     interpolator = Interpolator(n=n)
 
     id_ = id_start
     print('Creating interpolated dataset...')
-    runs = sorted(glob.glob(os.path.join(STD_RUNS_IMAGE_DIR, '*')))
+    runs = sorted(glob.glob(os.path.join(std_runs_image_dir, '*')))
     for run in tqdm(runs, desc='Overall'):
         frames = sorted(glob.glob(os.path.join(run, '*')))
         n_frames = len(frames)
@@ -244,7 +256,7 @@ def create_itp_dataset(id_start):
         out_str_split[3] = f'{str(new_fps).zfill(3)} FPS'
         out_str_split.append('INTERPOLATED')
         out_str = ' - '.join(out_str_split)
-        out_dir = os.path.join(ITP_DATASET_DIR, out_str)
+        out_dir = os.path.join(itp_dataset_dir, out_str)
         os.mkdir(out_dir)
 
         for i in tqdm(range(0, len(frames) - 1), desc='Current', leave=False):
@@ -267,22 +279,24 @@ def create_itp_dataset(id_start):
     os.chdir(WORKING_DIR)
 
 
-def create_d_i_dataset(id_start):
-    if not os.path.exists(DEB_DATASET_DIR):
+def create_d_i_dataset(id_start, alternative=False):
+    deb_dataset_dir = DEB_ALT_DATASET_DIR if alternative else DEB_DATASET_DIR
+    if not os.path.exists(deb_dataset_dir):
         print('Deblurred dataset not found.')
-        create_deb_dataset()
+        create_deb_dataset(id_start=DEB_ID_START, alternative=alternative)
 
-    if os.path.exists(D_I_DATASET_DIR):
-        shutil.rmtree(D_I_DATASET_DIR)
+    d_i_dataset_dir = D_I_ALT_DATASET_DIR if alternative else D_I_DATASET_DIR
+    if os.path.exists(d_i_dataset_dir):
+        shutil.rmtree(d_i_dataset_dir)
 
-    os.mkdir(D_I_DATASET_DIR)
+    os.mkdir(d_i_dataset_dir)
 
     n = 5
     interpolator = Interpolator(n=n)
 
     id_ = id_start
     print('Creating deblurred -> interpolated dataset...')
-    runs = sorted(glob.glob(os.path.join(DEB_DATASET_DIR, '*')))
+    runs = sorted(glob.glob(os.path.join(deb_dataset_dir, '*')))
     for run in tqdm(runs, desc='Overall'):
         frames = sorted(glob.glob(os.path.join(run, '*')))
         n_frames = len(frames)
@@ -298,7 +312,7 @@ def create_d_i_dataset(id_start):
         out_str_split[3] = f'{str(new_fps).zfill(3)} FPS'
         out_str_split[4] = 'DEBLURRED-INTERPOLATED'
         out_str = ' - '.join(out_str_split)
-        out_dir = os.path.join(D_I_DATASET_DIR, out_str)
+        out_dir = os.path.join(d_i_dataset_dir, out_str)
         os.mkdir(out_dir)
 
         for i in tqdm(range(0, len(frames) - 1), desc='Current', leave=False):
@@ -321,15 +335,17 @@ def create_d_i_dataset(id_start):
     os.chdir(WORKING_DIR)
 
 
-def create_i_d_dataset(id_start):
-    if not os.path.exists(ITP_DATASET_DIR):
+def create_i_d_dataset(id_start, alternative=False):
+    itp_dataset_dir = ITP_ALT_DATASET_DIR if alternative else ITP_DATASET_DIR
+    if not os.path.exists(itp_dataset_dir):
         print('Interpolated dataset not found.')
-        create_itp_dataset()
+        create_itp_dataset(id_start=ITP_ID_START, alternative=alternative)
 
-    if os.path.exists(I_D_DATASET_DIR):
-        shutil.rmtree(I_D_DATASET_DIR)
+    i_d_dataset_dir = I_D_ALT_DATASET_DIR if alternative else I_D_DATASET_DIR
+    if os.path.exists(i_d_dataset_dir):
+        shutil.rmtree(i_d_dataset_dir)
 
-    os.mkdir(I_D_DATASET_DIR)
+    os.mkdir(i_d_dataset_dir)
 
     device = 'cuda:0'
     checkpoint = os.path.join(SHIFT_NET_DIR, 'ckpt', 'net_gopro_deblur.pth')
@@ -342,14 +358,14 @@ def create_i_d_dataset(id_start):
 
     id_ = id_start
     print('Creating interpolated -> deblurred dataset...')
-    runs = sorted(glob.glob(os.path.join(ITP_DATASET_DIR, '*')))
+    runs = sorted(glob.glob(os.path.join(itp_dataset_dir, '*')))
     for run in tqdm(runs, desc='Overall'):
         out_str = run.split('/')[-1]
         out_str_split = out_str.split(' - ')
         out_str_split[0] = f'{str(id_).zfill(3)} ID'
         out_str_split[4] = 'INTERPOLATED-DEBLURRED'
         out_str = ' - '.join(out_str_split)
-        out_dir = os.path.join(I_D_DATASET_DIR, out_str)
+        out_dir = os.path.join(i_d_dataset_dir, out_str)
         os.mkdir(out_dir)
 
         frames = sorted(glob.glob(os.path.join(run, '*')))
@@ -626,6 +642,17 @@ if __name__ == '__main__':
     STD_DATASET_DIR = os.path.join(WORKING_DIR, 'std_dataset')
     STD_RUNS_VIDEO_DIR = os.path.join(STD_DATASET_DIR, 'runs_video')
     STD_RUNS_IMAGE_DIR = os.path.join(STD_DATASET_DIR, 'runs_image')
+    STD_ALT_DATASET_DIR = os.path.join(WORKING_DIR, 'std_alt_dataset')
+    STD_ALT_RUNS_VIDEO_DIR = os.path.join(STD_ALT_DATASET_DIR, 'runs_video')
+    STD_ALT_RUNS_IMAGE_DIR = os.path.join(STD_ALT_DATASET_DIR, 'runs_image')
+    DEB_DATASET_DIR = os.path.join(WORKING_DIR, 'deb_dataset')
+    DEB_ALT_DATASET_DIR = os.path.join(WORKING_DIR, 'deb_alt_dataset')
+    ITP_DATASET_DIR = os.path.join(WORKING_DIR, 'itp_dataset')
+    ITP_ALT_DATASET_DIR = os.path.join(WORKING_DIR, 'itp_alt_dataset')
+    D_I_DATASET_DIR = os.path.join(WORKING_DIR, 'd_i_dataset')
+    D_I_ALT_DATASET_DIR = os.path.join(WORKING_DIR, 'd_i_alt_dataset')
+    I_D_DATASET_DIR = os.path.join(WORKING_DIR, 'i_d_dataset')
+    I_D_ALT_DATASET_DIR = os.path.join(WORKING_DIR, 'i_d_alt_dataset')
     DET_DATASET_DIR = os.path.join(WORKING_DIR, 'det_dataset')
     DET_TRAIN_DIR = os.path.join(DET_DATASET_DIR, 'train')
     DET_VAL_DIR = os.path.join(DET_DATASET_DIR, 'val')
@@ -636,28 +663,29 @@ if __name__ == '__main__':
     POS_TEST_DIR = os.path.join(POS_DATASET_DIR, 'test')
     POS_ANNOTATIONS_DIR = os.path.join(POS_DATASET_DIR, 'annotations')
     POS_RAW_DATA_DIR = os.path.join(POS_DATASET_DIR, 'raw')
-    DEB_DATASET_DIR = os.path.join(WORKING_DIR, 'deb_dataset')
-    ITP_DATASET_DIR = os.path.join(WORKING_DIR, 'itp_dataset')
-    D_I_DATASET_DIR = os.path.join(WORKING_DIR, 'd_i_dataset')
-    I_D_DATASET_DIR = os.path.join(WORKING_DIR, 'i_d_dataset')
+
+    STD_ID_START = 1
+    DEB_ID_START = 65
+    ITP_ID_START = 129
+    D_I_ID_START = 193
+    I_D_ID_START = 257
 
     parser = argparse.ArgumentParser()
     parser.add_argument('dataset', type=str)
+    parser.add_argument('--alternative', action=argparse.BooleanOptionalAction)
     args = parser.parse_args()
 
     match args.dataset:
         case 'std':
-            create_std_dataset(id_start=1)
-        case 'std_alt':
-            create_std_dataset(id_start=1, alternative=True)
+            create_std_dataset(id_start=STD_ID_START, alternative=args.alternative)
         case 'deb':
-            create_deb_dataset(id_start=65)
+            create_deb_dataset(id_start=DEB_ID_START, alternative=args.alternative)
         case 'itp':
-            create_itp_dataset(id_start=129)
+            create_itp_dataset(id_start=ITP_ID_START, alternative=args.alternative)
         case 'd_i':
-            create_d_i_dataset(id_start=193)
+            create_d_i_dataset(id_start=D_I_ID_START, alternative=args.alternative)
         case 'i_d':
-            create_i_d_dataset(id_start=257)
+            create_i_d_dataset(id_start=I_D_ID_START, alternative=args.alternative)
         case 'det':
             create_det_dataset()
         case 'pos':
