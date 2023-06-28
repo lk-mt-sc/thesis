@@ -128,15 +128,6 @@ train_pipeline = [
     dict(type='RandomFlip', prob=0.5),
     dict(type='PackDetInputs')
 ]
-val_pipeline = [
-    dict(type='LoadImageFromFile', backend_args=backend_args),
-    dict(type='Resize', scale=(1333, 800), keep_ratio=True),
-    dict(type='LoadAnnotations', with_bbox=True),
-    dict(
-        type='PackDetInputs',
-        meta_keys=('img_id', 'img_path', 'ori_shape', 'img_shape',
-                   'scale_factor'))
-]
 test_pipeline = [
     dict(type='LoadImageFromFile', backend_args=backend_args),
     dict(type='Resize', scale=(1333, 800), keep_ratio=True),
@@ -151,7 +142,7 @@ test_pipeline = [
 metainfo = dict(classes=('climber', ), palette=[(220, 20, 60)])
 train_dataloader = dict(
     batch_size=2,
-    num_workers=4,
+    num_workers=2,
     persistent_workers=True,
     sampler=dict(type='DefaultSampler', shuffle=True),
     batch_sampler=dict(type='AspectRatioBatchSampler'),
@@ -166,7 +157,7 @@ train_dataloader = dict(
         metainfo=metainfo))
 val_dataloader = dict(
     batch_size=1,
-    num_workers=4,
+    num_workers=2,
     persistent_workers=True,
     drop_last=False,
     sampler=dict(type='DefaultSampler', shuffle=False),
@@ -176,7 +167,7 @@ val_dataloader = dict(
         ann_file='annotations/val.json',
         data_prefix=dict(img='val/'),
         test_mode=True,
-        pipeline=val_pipeline,
+        pipeline=test_pipeline,
         backend_args=backend_args,
         metainfo=metainfo))
 test_dataloader = dict(
@@ -221,9 +212,9 @@ param_scheduler = [
     dict(
         type='MultiStepLR',
         begin=0,
-        end=24,
+        end=12,
         by_epoch=True,
-        milestones=[16, 22],
+        milestones=[8, 11],
         gamma=0.1)
 ]
 

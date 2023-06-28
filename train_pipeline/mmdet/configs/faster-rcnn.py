@@ -142,7 +142,7 @@ test_pipeline = [
 metainfo = dict(classes=('climber', ), palette=[(220, 20, 60)])
 train_dataloader = dict(
     batch_size=2,
-    num_workers=4,
+    num_workers=2,
     persistent_workers=True,
     sampler=dict(type='DefaultSampler', shuffle=True),
     batch_sampler=dict(type='AspectRatioBatchSampler'),
@@ -157,7 +157,7 @@ train_dataloader = dict(
         metainfo=metainfo))
 val_dataloader = dict(
     batch_size=1,
-    num_workers=4,
+    num_workers=2,
     persistent_workers=True,
     drop_last=False,
     sampler=dict(type='DefaultSampler', shuffle=False),
@@ -172,7 +172,7 @@ val_dataloader = dict(
         metainfo=metainfo))
 test_dataloader = dict(
     batch_size=1,
-    num_workers=4,
+    num_workers=2,
     persistent_workers=True,
     drop_last=False,
     sampler=dict(type='DefaultSampler', shuffle=False),
@@ -212,9 +212,9 @@ param_scheduler = [
     dict(
         type='MultiStepLR',
         begin=0,
-        end=24,
+        end=12,
         by_epoch=True,
-        milestones=[16, 22],
+        milestones=[8, 11],
         gamma=0.1)
 ]
 

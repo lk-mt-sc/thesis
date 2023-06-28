@@ -7,43 +7,52 @@ tta_pipeline = [
     dict(type='LoadImageFromFile', backend_args=backend_args),
     dict(
         type='TestTimeAug',
-        transforms=[[{
-            'type': 'Resize',
-            'scale': (640, 640),
-            'keep_ratio': True
-        }, {
-            'type': 'Resize',
-            'scale': (320, 320),
-            'keep_ratio': True
-        }, {
-            'type': 'Resize',
-            'scale': (960, 960),
-            'keep_ratio': True
-        }],
-            [{
-                'type': 'RandomFlip',
-                        'prob': 1.0
-            }, {
-                'type': 'RandomFlip',
-                        'prob': 0.0
-            }],
-            [{
-                'type': 'Pad',
-                        'pad_to_square': True,
-                        'pad_val': {
-                            'img': (114.0, 114.0, 114.0)
-                        }
-            }], [{
-                'type': 'LoadAnnotations',
-                'with_bbox': True
-            }],
-            [{
-                'type':
-                'PackDetInputs',
-                'meta_keys':
-                ('img_id', 'img_path', 'ori_shape', 'img_shape',
-                 'scale_factor', 'flip', 'flip_direction')
-            }]])
+        transforms=[
+            [
+                dict(type='Resize', scale=(
+                    640,
+                    640,
+                ), keep_ratio=True),
+                dict(type='Resize', scale=(
+                    320,
+                    320,
+                ), keep_ratio=True),
+                dict(type='Resize', scale=(
+                    960,
+                    960,
+                ), keep_ratio=True),
+            ],
+            [
+                dict(type='RandomFlip', prob=1.0),
+                dict(type='RandomFlip', prob=0.0),
+            ],
+            [
+                dict(
+                    type='Pad',
+                    pad_to_square=True,
+                    pad_val=dict(img=(
+                        114.0,
+                        114.0,
+                        114.0,
+                    ))),
+            ],
+            [
+                dict(type='LoadAnnotations', with_bbox=True),
+            ],
+            [
+                dict(
+                    type='PackDetInputs',
+                    meta_keys=(
+                        'img_id',
+                        'img_path',
+                        'ori_shape',
+                        'img_shape',
+                        'scale_factor',
+                        'flip',
+                        'flip_direction',
+                    )),
+            ],
+        ]),
 ]
 
 # model
@@ -132,19 +141,6 @@ train_pipeline = [
     dict(type='FilterAnnotations', min_gt_bbox_wh=(1, 1), keep_empty=False),
     dict(type='PackDetInputs')
 ]
-val_pipeline = [
-    dict(type='LoadImageFromFile', backend_args=backend_args),
-    dict(type='Resize', scale=(640, 640), keep_ratio=True),
-    dict(
-        type='Pad',
-        pad_to_square=True,
-        pad_val=dict(img=(114.0, 114.0, 114.0))),
-    dict(type='LoadAnnotations', with_bbox=True),
-    dict(
-        type='PackDetInputs',
-        meta_keys=('img_id', 'img_path', 'ori_shape', 'img_shape',
-                   'scale_factor'))
-]
 test_pipeline = [
     dict(type='LoadImageFromFile', backend_args=backend_args),
     dict(type='Resize', scale=(640, 640), keep_ratio=True),
@@ -169,7 +165,7 @@ train_dataset = dict(
         ann_file='annotations/train.json',
         data_prefix=dict(img='train/'),
         pipeline=[
-            dict(type='LoadImageFromFile', backend_args=None),
+            dict(type='LoadImageFromFile', backend_args=backend_args),
             dict(type='LoadAnnotations', with_bbox=True)
         ],
         filter_cfg=dict(filter_empty_gt=False, min_size=32),
@@ -178,13 +174,13 @@ train_dataset = dict(
     pipeline=train_pipeline)
 train_dataloader = dict(
     batch_size=2,
-    num_workers=4,
+    num_workers=2,
     persistent_workers=True,
     sampler=dict(type='DefaultSampler', shuffle=True),
     dataset=train_dataset)
 val_dataloader = dict(
     batch_size=1,
-    num_workers=4,
+    num_workers=2,
     persistent_workers=True,
     drop_last=False,
     sampler=dict(type='DefaultSampler', shuffle=False),
@@ -194,7 +190,7 @@ val_dataloader = dict(
         ann_file='annotations/val.json',
         data_prefix=dict(img='val/'),
         test_mode=True,
-        pipeline=val_pipeline,
+        pipeline=test_pipeline,
         backend_args=backend_args,
         metainfo=metainfo))
 test_dataloader = dict(
@@ -228,7 +224,7 @@ test_evaluator = dict(
     backend_args=backend_args)
 
 # loop configs
-train_cfg = dict(type='EpochBasedTrainLoop', max_epochs=300, val_interval=1)
+train_cfg = dict(type='EpochBasedTrainLoop', max_epochs=1000, val_interval=1)
 val_cfg = dict(type='ValLoop')
 test_cfg = dict(type='TestLoop')
 

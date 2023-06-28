@@ -7,40 +7,55 @@ tta_pipeline = [
     dict(type='LoadImageFromFile', backend_args=backend_args),
     dict(
         type='TestTimeAug',
-        transforms=[[{
-            'type': 'Resize',
-            'scale': (640, 640),
-            'keep_ratio': True
-        }, {
-            'type': 'Resize',
-            'scale': (320, 320),
-            'keep_ratio': True
-        }, {
-            'type': 'Resize',
-            'scale': (960, 960),
-            'keep_ratio': True
-        }],
-            [{
-                'type': 'RandomFlip',
-                        'prob': 1.0
-            }, {
-                'type': 'RandomFlip',
-                        'prob': 0.0
-            }],
-            [{
-                'type': 'Pad',
-                        'size': (960, 960),
-                        'pad_val': {
-                            'img': (114, 114, 114)
-                        }
-            }],
-            [{
-                'type':
-                'PackDetInputs',
-                'meta_keys':
-                ('img_id', 'img_path', 'ori_shape', 'img_shape',
-                 'scale_factor', 'flip', 'flip_direction')
-            }]])
+        transforms=[
+            [
+                dict(type='Resize', scale=(
+                    640,
+                    640,
+                ), keep_ratio=True),
+                dict(type='Resize', scale=(
+                    320,
+                    320,
+                ), keep_ratio=True),
+                dict(type='Resize', scale=(
+                    960,
+                    960,
+                ), keep_ratio=True),
+            ],
+            [
+                dict(type='RandomFlip', prob=1.0),
+                dict(type='RandomFlip', prob=0.0),
+            ],
+            [
+                dict(
+                    type='Pad',
+                    size=(
+                        960,
+                        960,
+                    ),
+                    pad_val=dict(img=(
+                        114,
+                        114,
+                        114,
+                    ))),
+            ],
+            [
+                dict(type='LoadAnnotations', with_bbox=True),
+            ],
+            [
+                dict(
+                    type='PackDetInputs',
+                    meta_keys=(
+                        'img_id',
+                        'img_path',
+                        'ori_shape',
+                        'img_shape',
+                        'scale_factor',
+                        'flip',
+                        'flip_direction',
+                    )),
+            ],
+        ]),
 ]
 
 # model
@@ -146,6 +161,7 @@ test_pipeline = [
     dict(type='LoadImageFromFile', backend_args=backend_args),
     dict(type='Resize', scale=(640, 640), keep_ratio=True),
     dict(type='Pad', size=(640, 640), pad_val=dict(img=(114, 114, 114))),
+    # dict(type='LoadAnnotations', with_bbox=True),
     dict(
         type='PackDetInputs',
         meta_keys=('img_id', 'img_path', 'ori_shape', 'img_shape',
@@ -156,7 +172,7 @@ test_pipeline = [
 metainfo = dict(classes=('climber', ), palette=[(220, 20, 60)])
 train_dataloader = dict(
     batch_size=2,
-    num_workers=4,
+    num_workers=2,
     persistent_workers=True,
     sampler=dict(type='DefaultSampler', shuffle=True),
     batch_sampler=None,
@@ -172,7 +188,7 @@ train_dataloader = dict(
     pin_memory=True)
 val_dataloader = dict(
     batch_size=1,
-    num_workers=4,
+    num_workers=2,
     persistent_workers=True,
     drop_last=False,
     sampler=dict(type='DefaultSampler', shuffle=False),
