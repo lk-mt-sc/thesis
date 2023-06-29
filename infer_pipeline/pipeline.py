@@ -18,7 +18,7 @@ from manager.metric_manager import MetricManager
 class Pipeline():
     def __init__(self):
         self.root = tk.Tk()
-        self.root.title('Pipeline')
+        self.root.title('Inference Pipeline')
         self.root.attributes('-zoomed', True)
         self.root.bind('<KeyPress>', self.on_key_press)
 
