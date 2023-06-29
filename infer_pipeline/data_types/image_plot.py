@@ -49,7 +49,7 @@ class ImagePlot():
         self.toolbar.update()
 
         self.counter_var = tk.StringVar()
-        self.counter_var.set('000/000')
+        self.counter_var.set('0000/0000')
         label_counter = ttk.Label(self.frame, textvariable=self.counter_var)
 
         self.slider = ttk.Scale(
@@ -64,7 +64,7 @@ class ImagePlot():
 
         if self.tracker_plot:
             label_counter.place(x=10, y=10)
-            self.slider.place(x=65, y=10, width=165)
+            self.slider.place(x=80, y=10, width=150)
             self.toolbar.place(x=10, y=30)
             self.button_export = ttk.Button(
                 self.frame,
@@ -86,7 +86,7 @@ class ImagePlot():
             self.canvas.get_tk_widget().place(x=0, y=0, width=815, height=1080)
             self.toolbar.place(x=25, y=1000)
             label_counter.place(x=30, y=985)
-            self.slider.place(x=85, y=985, width=165)
+            self.slider.place(x=100, y=985, width=150)
 
         self.run = None
         self.slider_value = 0
@@ -200,7 +200,7 @@ class ImagePlot():
         else:
             a = value
             b = len(self.run.data.get_images()) - 1
-        self.counter_var.set(f'{str(a).zfill(3)}/{str(b).zfill(3)}')
+        self.counter_var.set(f'{str(a).zfill(4)}/{str(b).zfill(4)}')
 
     def slider_changed(self, value):
         if self.run is None:
