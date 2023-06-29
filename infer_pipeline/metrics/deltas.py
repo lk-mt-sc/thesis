@@ -1,6 +1,6 @@
 import numpy as np
 
-from manager.metric_manager import AllMetrics
+from metrics.all_metrics import AllMetrics
 from data_types.plottable import Plottable, PlottableTypes
 
 
