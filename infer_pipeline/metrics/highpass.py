@@ -247,7 +247,7 @@ class Highpass():
             if metric_x.values_non_zero_interp and metric_y.values_non_zero_interp:
                 x = int(metric_x.values_non_zero_interp[slider_value])
                 y = int(metric_y.values_non_zero_interp[slider_value])
-                color = [255 / 256, 20 / 256, 147 / 256]
+                color = [255 / 255, 20 / 255, 147 / 255]
                 image = cv.circle(image, center=(x, y), radius=5, thickness=-1, color=color)
 
     def __str__(self):

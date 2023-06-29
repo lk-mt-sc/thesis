@@ -253,7 +253,7 @@ class ImagePlot():
                 y = int(feature_y.values[self.slider_value])
                 assert feature_x.scores[self.slider_value] == feature_y.scores[self.slider_value]
                 score = feature_x.scores[self.slider_value]
-                color = [c / 256 for c in keypoint['color']]
+                color = [c / 255 for c in keypoint['color']]
                 image = cv.circle(image, center=(x, y), radius=5, thickness=-1, color=color)
                 if 'left' in keypoint_name:
                     image = cv.line(image, pt1=(x, y), pt2=(x - 75, y), color=color, thickness=1)
@@ -287,7 +287,7 @@ class ImagePlot():
             y1 = int(next(f for f in self.run.features if f.name == keypoint_1_name + '_y').values[self.slider_value])
             x2 = int(next(f for f in self.run.features if f.name == keypoint_2_name + '_x').values[self.slider_value])
             y2 = int(next(f for f in self.run.features if f.name == keypoint_2_name + '_y').values[self.slider_value])
-            color = [c / 256 for c in limb['color']]
+            color = [c / 255 for c in limb['color']]
             image = cv.line(image, pt1=(x1, y1), pt2=(x2, y2), color=color, thickness=2)
 
     def _draw_bounding_box_and_scores(self, image, bbox, bbox_bottomup, iou, detection_score, pose_estimation_score):
