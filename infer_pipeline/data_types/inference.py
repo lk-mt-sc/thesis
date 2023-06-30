@@ -453,7 +453,7 @@ class Inference:
                 feature.interpolate_values()
 
             run_id = data.id
-            run_path = os.path.join(self.path, f'run_{run_id}.pkl')
+            run_path = os.path.join(self.path, f'run_{str(run_id).zfill(3)}.pkl')
             runs.append({
                 'id': run_id,
                 'path': run_path,
