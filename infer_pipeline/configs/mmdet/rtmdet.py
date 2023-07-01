@@ -256,7 +256,7 @@ optim_wrapper = dict(
     optimizer=dict(type='AdamW', lr=0.004, weight_decay=0.05),
     paramwise_cfg=dict(
         norm_decay_mult=0, bias_decay_mult=0, bypass_duplicate=True))
-auto_scale_lr = dict(enable=False, base_batch_size=16)
+auto_scale_lr = dict(enable=True, base_batch_size=256)
 
 # hooks
 default_scope = 'mmdet'
@@ -284,7 +284,7 @@ custom_hooks = [
         type='PipelineSwitchHook',
         switch_epoch=280,
         switch_pipeline=[
-            dict(type='LoadImageFromFile', backend_args=None),
+            dict(type='LoadImageFromFile', backend_args=backend_args),
             dict(type='LoadAnnotations', with_bbox=True),
             dict(
                 type='RandomResize',

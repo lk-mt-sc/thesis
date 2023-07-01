@@ -172,7 +172,7 @@ optim_wrapper = dict(
     optimizer=dict(type='SGD', lr=0.01, momentum=0.9, weight_decay=0.0001),
     paramwise_cfg=dict(bias_lr_mult=2.0, bias_decay_mult=0.0),
     clip_grad=None)
-auto_scale_lr = dict(enable=False, base_batch_size=16)
+auto_scale_lr = dict(enable=True, base_batch_size=16)
 
 # hooks
 default_scope = 'mmdet'
