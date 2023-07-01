@@ -401,7 +401,11 @@ def create_i_d_dataset(id_start, alternative=False):
 def create_det_dataset():
     if not os.path.exists(STD_DATASET_DIR):
         print('Standard dataset not found.')
-        create_std_dataset()
+        create_std_dataset(id_start=STD_ID_START)
+
+    if not os.path.exists(DEB_DATASET_DIR):
+        print('Deblurred dataset not found.')
+        create_deb_dataset(id_start=DEB_ID_START)
 
     if os.path.exists(DET_DATASET_DIR):
         shutil.rmtree(DET_DATASET_DIR)
@@ -410,6 +414,7 @@ def create_det_dataset():
     os.mkdir(DET_TRAIN_DIR)
     os.mkdir(DET_VAL_DIR)
     os.mkdir(DET_TEST_DIR)
+    os.mkdir(DET_ANNOTATIONS_DIR)
 
     n_train = 16
     n_val = 4
@@ -428,9 +433,9 @@ def create_det_dataset():
     for i, run in enumerate(runs):
         images = sorted(glob.glob(os.path.join(run, '*')))
 
-        train_files = []
-        val_files = []
-        test_files = []
+        train_images = []
+        val_images = []
+        test_images = []
 
         train_chunks = np.array_split(images, n_train)
         val_chunks = np.array_split(images, n_val)
@@ -452,12 +457,12 @@ def create_det_dataset():
                         random_image = train_chunk[random_index]
                         image_filename = f"{i + 1}_{random_image.split('/')[-1]}"
                         if image_filename not in forbidden \
-                                and image_filename not in val_files \
-                                and image_filename not in test_files:
+                                and image_filename not in val_images \
+                                and image_filename not in test_images:
                             break
                 out_image = os.path.join(DET_TRAIN_DIR, image_filename)
                 shutil.copyfile(random_image, out_image)
-                train_files.append(image_filename)
+                train_images.append(image_filename)
 
             """
             if j < len(train_chunks):
@@ -467,9 +472,9 @@ def create_det_dataset():
                     random_image = train_chunk[random_index]
                     image_filename = f"{i + 1}_{random_image.split('/')[-1]}"
                     out_image = os.path.join(DET_TRAIN_DIR, image_filename)
-                    if (image_filename not in val_files and image_filename not in test_files):
+                    if (image_filename not in val_images and image_filename not in test_images):
                         shutil.copyfile(random_image, out_image)
-                        train_files.append(image_filename)
+                        train_images.append(image_filename)
                         break
             """
 
@@ -480,9 +485,9 @@ def create_det_dataset():
                     random_image = val_chunk[random_index]
                     image_filename = f"{i + 1}_{random_image.split('/')[-1]}"
                     out_image = os.path.join(DET_VAL_DIR, image_filename)
-                    if (image_filename not in train_files and image_filename not in test_files):
+                    if (image_filename not in train_images and image_filename not in test_images):
                         shutil.copyfile(random_image, out_image)
-                        val_files.append(image_filename)
+                        val_images.append(image_filename)
                         break
 
             if j < len(test_chunks):
@@ -492,10 +497,61 @@ def create_det_dataset():
                     random_image = test_chunk[random_index]
                     image_filename = f"{i + 1}_{random_image.split('/')[-1]}"
                     out_image = os.path.join(DET_TEST_DIR, image_filename)
-                    if (image_filename not in train_files and image_filename not in val_files):
+                    if (image_filename not in train_images and image_filename not in val_images):
                         shutil.copyfile(random_image, out_image)
-                        test_files.append(image_filename)
+                        test_images.append(image_filename)
                         break
+
+    deblurred_runs = sorted(glob.glob(os.path.join(DEB_DATASET_DIR, '*')))
+    all_images = [
+        (DET_TRAIN_DIR, os.path.join(TEMPLATES_DIR, 'det', 'train.json'),
+         os.path.join(DET_ANNOTATIONS_DIR, 'train.json')),
+        (DET_VAL_DIR, os.path.join(TEMPLATES_DIR, 'det', 'val.json'),
+         os.path.join(DET_ANNOTATIONS_DIR, 'val.json')),
+        (DET_TEST_DIR, os.path.join(TEMPLATES_DIR, 'det', 'test.json'),
+         os.path.join(DET_ANNOTATIONS_DIR, 'test.json'))
+    ]
+
+    for images in all_images:
+        with open(images[1], 'r', encoding='utf8') as annotations_file:
+            annotations_data = json.load(annotations_file)
+            annotations_file.close()
+
+        annotations_images = annotations_data['images']
+        annotations = annotations_data['annotations']
+        assert len(annotations_images) == len(annotations)
+        id_ = len(annotations_images)
+
+        new_annotations_images = []
+        new_annotations = []
+        for image in annotations_images:
+            filename = image['file_name']
+            run_id = int(filename.split('_')[0])
+            nr = int(filename.split('_')[1].split('.')[0])
+            deblurred_image = os.path.join(deblurred_runs[run_id - 1], f'{str(nr).zfill(3)}.png')
+            out_image = os.path.join(images[0], str(run_id) + '_' +
+                                     os.path.basename(deblurred_image).replace('.png', '_deb.png'))
+            shutil.copyfile(deblurred_image, out_image)
+
+            image_copy = image.copy()
+            image_copy['id'] = id_
+            image_copy['file_name'] = os.path.basename(out_image)
+            new_annotations_images.append(image_copy)
+
+            annotation = next(ann for ann in annotations if ann['image_id'] == image['id'])
+            annotation_copy = annotation.copy()
+            annotation_copy['id'] = id_
+            annotation_copy['image_id'] = id_
+            new_annotations.append(annotation_copy)
+
+            id_ += 1
+
+        annotations_images += new_annotations_images
+        annotations += new_annotations
+
+        with open(images[2], 'w', encoding='utf8') as annotations_file:
+            json.dump(annotations_data, annotations_file)
+            annotations_file.close()
 
 
 def create_pos_dataset():
@@ -657,12 +713,14 @@ if __name__ == '__main__':
     DET_TRAIN_DIR = os.path.join(DET_DATASET_DIR, 'train')
     DET_VAL_DIR = os.path.join(DET_DATASET_DIR, 'val')
     DET_TEST_DIR = os.path.join(DET_DATASET_DIR, 'test')
+    DET_ANNOTATIONS_DIR = os.path.join(DET_DATASET_DIR, 'annotations')
     POS_DATASET_DIR = os.path.join(WORKING_DIR, 'pos_dataset')
     POS_TRAIN_DIR = os.path.join(POS_DATASET_DIR, 'train')
     POS_VAL_DIR = os.path.join(POS_DATASET_DIR, 'val')
     POS_TEST_DIR = os.path.join(POS_DATASET_DIR, 'test')
     POS_ANNOTATIONS_DIR = os.path.join(POS_DATASET_DIR, 'annotations')
     POS_RAW_DATA_DIR = os.path.join(POS_DATASET_DIR, 'raw')
+    TEMPLATES_DIR = os.path.join(WORKING_DIR, 'templates')
 
     STD_ID_START = 1
     DEB_ID_START = 65
