@@ -142,7 +142,7 @@ test_pipeline = [
 metainfo = dict(classes=('climber', ), palette=[(220, 20, 60)])
 train_dataloader = dict(
     batch_size=2,
-    num_workers=4,
+    num_workers=2,
     persistent_workers=True,
     sampler=dict(type='DefaultSampler', shuffle=True),
     batch_sampler=dict(type='AspectRatioBatchSampler'),
@@ -157,7 +157,7 @@ train_dataloader = dict(
         metainfo=metainfo))
 val_dataloader = dict(
     batch_size=1,
-    num_workers=4,
+    num_workers=2,
     persistent_workers=True,
     drop_last=False,
     sampler=dict(type='DefaultSampler', shuffle=False),
@@ -172,7 +172,7 @@ val_dataloader = dict(
         metainfo=metainfo))
 test_dataloader = dict(
     batch_size=1,
-    num_workers=4,
+    num_workers=2,
     persistent_workers=True,
     drop_last=False,
     sampler=dict(type='DefaultSampler', shuffle=False),
@@ -212,9 +212,9 @@ param_scheduler = [
     dict(
         type='MultiStepLR',
         begin=0,
-        end=24,
+        end=12,
         by_epoch=True,
-        milestones=[16, 22],
+        milestones=[8, 11],
         gamma=0.1)
 ]
 
@@ -222,7 +222,7 @@ param_scheduler = [
 optim_wrapper = dict(
     type='OptimWrapper',
     optimizer=dict(type='SGD', lr=0.02, momentum=0.9, weight_decay=0.0001))
-auto_scale_lr = dict(enable=False, base_batch_size=16)
+auto_scale_lr = dict(enable=True, base_batch_size=16)
 
 # hooks
 default_scope = 'mmdet'
@@ -256,5 +256,5 @@ visualizer = dict(
     name='visualizer')
 log_processor = dict(type='LogProcessor', window_size=50, by_epoch=True)
 log_level = 'INFO'
-load_from = '../thesis/train_pipeline/mmdet/trainings/faster-rcnn/faster-rcnn/train/best_coco_bbox_mAP_epoch_21.pth'
+load_from = '../thesis/train_pipeline/mmdet/trainings/faster_rcnn/faster-rcnn/train/best_coco_bbox_mAP_epoch_14.pth'
 randomness = dict(seed=0)

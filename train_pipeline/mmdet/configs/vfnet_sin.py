@@ -1,6 +1,6 @@
 # model
 model = dict(
-    type='TOOD',
+    type='VFNet',
     data_preprocessor=dict(
         type='DetDataPreprocessor',
         mean=[123.675, 116.28, 103.53],
@@ -8,7 +8,7 @@ model = dict(
         bgr_to_rgb=True,
         pad_size_divisor=32),
     backbone=dict(
-        type='ResNet',
+        type='ResNeXt',
         depth=101,
         num_stages=4,
         out_indices=(0, 1, 2, 3),
@@ -16,54 +16,42 @@ model = dict(
         norm_cfg=dict(type='BN', requires_grad=True),
         norm_eval=True,
         style='pytorch',
-        init_cfg=dict(type='Pretrained', checkpoint='torchvision://resnet101'),
-        dcn=dict(type='DCNv2', deformable_groups=1, fallback_on_stride=False),
-        stage_with_dcn=(False, True, True, True)),
+        init_cfg=dict(
+            type='Pretrained', checkpoint='open-mmlab://resnext101_32x4d'),
+        dcn=dict(type='DCNv2', deform_groups=1, fallback_on_stride=False),
+        stage_with_dcn=(False, True, True, True),
+        groups=32,
+        base_width=4),
     neck=dict(
         type='FPN',
         in_channels=[256, 512, 1024, 2048],
         out_channels=256,
         start_level=1,
         add_extra_convs='on_output',
-        num_outs=5),
+        num_outs=5,
+        relu_before_extra_convs=True),
     bbox_head=dict(
-        type='TOODHead',
+        type='VFNetHead',
         num_classes=1,
         in_channels=256,
-        stacked_convs=6,
+        stacked_convs=3,
         feat_channels=256,
-        anchor_type='anchor_free',
-        anchor_generator=dict(
-            type='AnchorGenerator',
-            ratios=[1.0],
-            octave_base_scale=8,
-            scales_per_octave=1,
-            strides=[8, 16, 32, 64, 128]),
-        bbox_coder=dict(
-            type='DeltaXYWHBBoxCoder',
-            target_means=[0.0, 0.0, 0.0, 0.0],
-            target_stds=[0.1, 0.1, 0.2, 0.2]),
-        initial_loss_cls=dict(
-            type='FocalLoss',
-            use_sigmoid=True,
-            activated=True,
-            gamma=2.0,
-            alpha=0.25,
-            loss_weight=1.0),
+        strides=[8, 16, 32, 64, 128],
+        center_sampling=False,
+        dcn_on_last_conv=True,
+        use_atss=True,
+        use_vfl=True,
         loss_cls=dict(
-            type='QualityFocalLoss',
+            type='VarifocalLoss',
             use_sigmoid=True,
-            activated=True,
-            beta=2.0,
+            alpha=0.75,
+            gamma=2.0,
+            iou_weighted=True,
             loss_weight=1.0),
-        loss_bbox=dict(type='GIoULoss', loss_weight=2.0),
-        num_dcn=2),
+        loss_bbox=dict(type='GIoULoss', loss_weight=1.5),
+        loss_bbox_refine=dict(type='GIoULoss', loss_weight=2.0)),
     train_cfg=dict(
-        initial_epoch=4,
-        initial_assigner=dict(type='ATSSAssigner', topk=9),
-        assigner=dict(type='TaskAlignedAssigner', topk=13),
-        alpha=1,
-        beta=6,
+        assigner=dict(type='ATSSAssigner', topk=9),
         allowed_border=-1,
         pos_weight=-1,
         debug=False),
@@ -84,7 +72,7 @@ train_pipeline = [
     dict(type='LoadImageFromFile', backend_args=backend_args),
     dict(type='LoadAnnotations', with_bbox=True),
     dict(
-        type='RandomResize', scale=[(1333, 480), (1333, 800)],
+        type='RandomResize', scale=[(1333, 480), (1333, 960)],
         keep_ratio=True),
     dict(type='RandomFlip', prob=0.5),
     dict(type='PackDetInputs')
@@ -168,8 +156,7 @@ test_cfg = dict(type='TestLoop')
 
 # learning rate scheduler
 param_scheduler = [
-    dict(
-        type='LinearLR', start_factor=0.001, by_epoch=False, begin=0, end=500),
+    dict(type='LinearLR', start_factor=0.1, by_epoch=False, begin=0, end=500),
     dict(
         type='MultiStepLR',
         begin=0,
@@ -182,7 +169,9 @@ param_scheduler = [
 # optimizer
 optim_wrapper = dict(
     type='OptimWrapper',
-    optimizer=dict(type='SGD', lr=0.01, momentum=0.9, weight_decay=0.0001))
+    optimizer=dict(type='SGD', lr=0.01, momentum=0.9, weight_decay=0.0001),
+    paramwise_cfg=dict(bias_lr_mult=2.0, bias_decay_mult=0.0),
+    clip_grad=None)
 auto_scale_lr = dict(enable=True, base_batch_size=16)
 
 # hooks
@@ -208,7 +197,7 @@ env_cfg = dict(
     dist_cfg=dict(backend='nccl'))
 vis_backends = [dict(type='LocalVisBackend'),
                 dict(type='MLflowVisBackend',
-                     exp_name='MMDET_SIN_TOOD',
+                     exp_name='MMDET_SIN_VFNET',
                      run_name='RUN_01',
                      save_dir='../thesis/train_pipeline/mmdet/mlruns')]
 visualizer = dict(
@@ -217,5 +206,5 @@ visualizer = dict(
     name='visualizer')
 log_processor = dict(type='LogProcessor', window_size=50, by_epoch=True)
 log_level = 'INFO'
-load_from = '../thesis/train_pipeline/mmdet/trainings/tood/tood/train/best_coco_bbox_mAP_epoch_22.pth'
+load_from = '../thesis/train_pipeline/mmdet/trainings/vfnet/vfnet/train/best_coco_bbox_mAP_epoch_20.pth'
 randomness = dict(seed=0)
