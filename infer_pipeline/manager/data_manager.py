@@ -61,7 +61,8 @@ class DataManager():
             'Deblurred',
             'Interpolated',
             'Debl.-Interp.',
-            'Interp.-Debl.'
+            'Interp.-Debl.',
+            'Still'
         ]
 
         self.gui_data.combobox_data_spotlight['values'] = [
@@ -96,11 +97,12 @@ class DataManager():
         show_interpolated = self.filter_data_base in ('Interpolated', 'No Preset')
         show_deblurred_interpolated = self.filter_data_base in ('Debl.-Interp.', 'No Preset')
         show_interpolated_deblurred = self.filter_data_base in ('Interp.-Debl.', 'No Preset')
+        show_still = self.filter_data_base in ('Still', 'No Preset')
         hide_spotlight = self.filter_data_spotlight == 'Without Spotlight'
         hide_no_spotlight = self.filter_data_spotlight == 'With Spotlight'
 
         for data in self.data_all:
-            if show_standard and not (data.deblurred or data.interpolated or data.deblurred_interpolated or data.interpolated_deblurred):
+            if show_standard and not (data.deblurred or data.interpolated or data.deblurred_interpolated or data.interpolated_deblurred or data.still):
                 self.data_show.append(data)
                 continue
 
@@ -117,6 +119,10 @@ class DataManager():
                 continue
 
             if show_interpolated_deblurred and data.interpolated_deblurred:
+                self.data_show.append(data)
+                continue
+
+            if show_still and data.still:
                 self.data_show.append(data)
                 continue
 

@@ -15,6 +15,7 @@ class Data:
         self.interpolated = False
         self.deblurred_interpolated = False
         self.interpolated_deblurred = False
+        self.still = False
 
         if len(data_properties) > 4:
             match data_properties[4]:
@@ -26,6 +27,8 @@ class Data:
                     self.deblurred_interpolated = True
                 case 'INTERPOLATED-DEBLURRED':
                     self.interpolated_deblurred = True
+                case 'STILL':
+                    self.still = True
 
     def __str__(self):
         return self.folder_name
