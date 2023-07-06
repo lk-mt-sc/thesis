@@ -85,6 +85,7 @@ class Highpass():
         values_abs = list(abs(values))
         display_values = [np.mean(values_abs), np.std(values_abs)]
 
+        """
         values_zeroed = []
         for value in values_abs:
             if value >= zeroing_threshold:
@@ -145,6 +146,11 @@ class Highpass():
         else:
             values_non_zero_interp = []
             values_smoothed = []
+        """
+
+        values_zeroed = []
+        values_non_zero_interp = []
+        values_smoothed = []
 
         list_name = self.name
 
@@ -199,42 +205,42 @@ class Highpass():
                         type_=PlottableTypes.CONTINUOUS_METRIC
                     )
                 )
-            if self.values_zeroed:
-                plottables.append(
-                    Plottable(
-                        name=name + '_ZEROED',
-                        steps=self.steps,
-                        values=self.values_zeroed,
-                        linestyle='solid',
-                        marker='None',
-                        legend=legend + '_ZEROED',
-                        type_=PlottableTypes.CONTINUOUS_METRIC
-                    )
-                )
-            if self.values_non_zero_interp:
-                plottables.append(
-                    Plottable(
-                        name=name + '_INTERPOLATED',
-                        steps=self.steps,
-                        values=self.values_non_zero_interp,
-                        linestyle='solid',
-                        marker='None',
-                        legend=legend + '_INTERPOLATED',
-                        type_=PlottableTypes.CONTINUOUS_METRIC
-                    )
-                )
-            if self.values_smoothed:
-                plottables.append(
-                    Plottable(
-                        name=name + '_SMOOTHED',
-                        steps=self.steps,
-                        values=self.values_smoothed,
-                        linestyle='solid',
-                        marker='None',
-                        legend=legend + '_SMOOTHED',
-                        type_=PlottableTypes.CONTINUOUS_METRIC
-                    )
-                )
+            # if self.values_zeroed:
+            #     plottables.append(
+            #         Plottable(
+            #             name=name + '_ZEROED',
+            #             steps=self.steps,
+            #             values=self.values_zeroed,
+            #             linestyle='solid',
+            #             marker='None',
+            #             legend=legend + '_ZEROED',
+            #             type_=PlottableTypes.CONTINUOUS_METRIC
+            #         )
+            #     )
+            # if self.values_non_zero_interp:
+            #     plottables.append(
+            #         Plottable(
+            #             name=name + '_INTERPOLATED',
+            #             steps=self.steps,
+            #             values=self.values_non_zero_interp,
+            #             linestyle='solid',
+            #             marker='None',
+            #             legend=legend + '_INTERPOLATED',
+            #             type_=PlottableTypes.CONTINUOUS_METRIC
+            #         )
+            #     )
+            # if self.values_smoothed:
+            #     plottables.append(
+            #         Plottable(
+            #             name=name + '_SMOOTHED',
+            #             steps=self.steps,
+            #             values=self.values_smoothed,
+            #             linestyle='solid',
+            #             marker='None',
+            #             legend=legend + '_SMOOTHED',
+            #             type_=PlottableTypes.CONTINUOUS_METRIC
+            #         )
+            #     )
             return plottables
         else:
             return None
