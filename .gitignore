@@ -132,6 +132,8 @@ dmypy.json
 infer_pipeline/model_zoo.html
 infer_pipeline/inferences/
 infer_pipeline/sin/
+label_pipeline/data/
+label_pipeline/out/
 train_pipeline/mmdet/trainings/
 train_pipeline/mmdet/mlruns/
 dataset/videos/
@@ -147,6 +149,8 @@ dataset/i_d_dataset/
 dataset/i_d_alt_dataset/
 dataset/det_dataset/
 dataset/pos_dataset/
+dataset/still_dataset/
 dataset/ext_nets/shift_net/
 dataset/ext_nets/ema_vfi/
 dataset/templates/
+dataset/4_frames_interp/
