@@ -6,7 +6,7 @@ class LabeledData():
         assert len(feature_x) == n_labels
         assert len(feature_y) == n_labels
         self.n_labels = n_labels
-        self.labels = [(-1, 0, False, False)] * self.n_labels
+        self.labels = [(-1, False, False, False, False)] * self.n_labels
         self.feature_x = feature_x
         self.feature_y = feature_y
         self.scores = scores

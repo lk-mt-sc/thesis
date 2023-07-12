@@ -213,10 +213,9 @@ class Pipeline():
             self.gui.labels.label_0_radiobutton.configure(state=tk.NORMAL)
             self.gui.labels.label_1_radiobutton.configure(state=tk.NORMAL)
             self.gui.labels.label_2_radiobutton.configure(state=tk.NORMAL)
-            self.gui.labels.label_3_radiobutton.configure(state=tk.NORMAL)
-            self.gui.labels.label_4_radiobutton.configure(state=tk.NORMAL)
-            self.gui.labels.label_5_radiobutton.configure(state=tk.NORMAL)
             self.gui.labels.bounding_box_cuts_climber.configure(state=tk.NORMAL)
+            self.gui.labels.bounding_box_cuts_climber_tv.configure(state=tk.NORMAL)
+            self.gui.labels.bounding_box_cuts_climber_dark.configure(state=tk.NORMAL)
             self.gui.labels.side_swap.configure(state=tk.NORMAL)
 
             selection = self.gui.data_list.data_listbox.get(selected_index[0])
@@ -237,10 +236,11 @@ class Pipeline():
 
     def set_labels_selection(self):
         labels = self.selected_data['labeled_data'].labels[self.image_counter]
-        self.gui.labels.overall_var.set(labels[0])
-        self.gui.labels.feature_var.set(labels[1])
-        self.gui.labels.bounding_box_cuts_climber_var.set(labels[2])
-        self.gui.labels.side_swap_var.set(labels[3])
+        self.gui.labels.label_var.set(labels[0])
+        self.gui.labels.bounding_box_cuts_climber_var.set(labels[1])
+        self.gui.labels.bounding_box_cuts_climber_tv_var.set(labels[2])
+        self.gui.labels.bounding_box_cuts_climber_dark_var.set(labels[3])
+        self.gui.labels.side_swap_var.set(labels[4])
 
         if labels[0] == -1:
             self.gui.labels.submit_button.configure(state=tk.DISABLED)
@@ -252,18 +252,20 @@ class Pipeline():
         self.selected_data['labeled_data'].save(filename)
 
     def submit_labels(self, event=None):
-        overall = self.gui.labels.overall_var.get()
-        feature = self.gui.labels.feature_var.get()
+        label = self.gui.labels.label_var.get()
         bounding_box_cuts_climber = self.gui.labels.bounding_box_cuts_climber_var.get()
+        bounding_box_cuts_climber_tv = self.gui.labels.bounding_box_cuts_climber_tv_var.get()
+        bounding_box_cuts_climber_dark = self.gui.labels.bounding_box_cuts_climber_dark_var.get()
         side_swap = self.gui.labels.side_swap_var.get()
 
         labeled_data = self.selected_data['labeled_data']
         labeled_data.add_labels(
             self.image_counter,
             (
-                overall,
-                feature,
+                label,
                 bounding_box_cuts_climber,
+                bounding_box_cuts_climber_tv,
+                bounding_box_cuts_climber_dark,
                 side_swap
             )
         )

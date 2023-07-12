@@ -171,17 +171,28 @@ class FeaturePlots():
         self.tracker_x = self.axes[0].axvline(x=0, color='black')
         self.tracker_y = self.axes[1].axvline(x=0, color='black')
 
-        self.labels_x = Line2D([0], [0], color='green', linewidth=1.5, label='Labels')
-        self.labels_y = Line2D([0], [0], color='green', linewidth=1.5, label='Labels')
-
-        self.axes[0].add_line(self.labels_x)
-        self.axes[1].add_line(self.labels_y)
+        self.labels_x = [Line2D([0], [0], linestyle='', marker='h', color='blue')
+                         for _ in range(0, len(feature_x.steps))]
+        self.labels_y = [Line2D([0], [0], linestyle='', marker='h', color='blue')
+                         for _ in range(0, len(feature_y.steps))]
+        for label in self.labels_x:
+            label.set_visible(False)
+            label.set_markerfacecolor('none')
+            self.axes[0].add_line(label)
+        for label in self.labels_y:
+            label.set_visible(False)
+            label.set_markerfacecolor('none')
+            self.axes[1].add_line(label)
 
         handles, labels = [], []
         for axis in [self.axes[0], self.twin_x]:
             h, l = axis.get_legend_handles_labels()
             handles.extend(h)
             labels.extend(l)
+        handles.extend([Line2D([0], [0], marker='o', markeredgecolor='green', label='Correct', markerfacecolor='none'),
+                        Line2D([0], [0], marker='x', markeredgecolor='red', label='Incorrect'),
+                        Line2D([0], [0], marker='x', markeredgecolor='darkorange', label='Incorrect\n(Hidden)')])
+        labels.extend(['Correct', 'Incorrect', 'Incorrect\n(Hidden)'])
         self.axes[0].legend(handles, labels, loc='upper left')
 
         handles, labels = [], []
@@ -189,6 +200,11 @@ class FeaturePlots():
             h, l = axis.get_legend_handles_labels()
             handles.extend(h)
             labels.extend(l)
+        handles.extend([Line2D([0], [0], marker='o', markeredgecolor='green', label='Correct', markerfacecolor='none'),
+                        Line2D([0], [0], marker='x', markeredgecolor='red', label='Incorrect'),
+                        Line2D([0], [0], marker='x', markeredgecolor='darkorange', label='Incorrect\n(Hidden)')])
+        labels.extend(['Correct', 'Incorrect', 'Incorrect\n(Hidden)'])
+
         self.axes[1].legend(handles, labels, loc='upper left')
 
         self.canvas.draw()
@@ -199,42 +215,42 @@ class FeaturePlots():
         self.canvas.draw()
 
     def set_labels(self, labeled_data):
-        xdatax = self.labels_x.get_xdata()
-        ydatax = self.labels_x.get_ydata()
-        xdatay = self.labels_y.get_xdata()
-        ydatay = self.labels_y.get_ydata()
-        assert len(xdatax) == len(xdatay)
+        feature_x = labeled_data.feature_x
+        feature_y = labeled_data.feature_y
 
         for i, labels in enumerate(labeled_data.labels):
-            overall = labels[0]
+            label = labels[0]
 
-            if overall == -1:
+            if label == -1:
                 continue
 
-            if overall in (0,  1):
-                if i > len(xdatax) - 1:
-                    xdatax.append(i)
-                    ydatax.append(50)
-                    xdatay.append(i)
-                    ydatay.append(50)
-                else:
-                    ydatax[i] = 50
-                    ydatay[i] = 50
+            self.labels_x[i].set_xdata([i])
+            self.labels_x[i].set_ydata(feature_x[i])
+            self.labels_x[i].set_visible(True)
 
-            if overall in (2, 3, 4):
-                if i > len(xdatax) - 1:
-                    xdatax.append(i)
-                    ydatax.append(100)
-                    xdatay.append(i)
-                    ydatay.append(100)
-                else:
-                    ydatax[i] = 100
-                    ydatay[i] = 100
+            self.labels_y[i].set_xdata([i])
+            self.labels_y[i].set_ydata(feature_y[i])
+            self.labels_y[i].set_visible(True)
 
-        self.labels_x.set_xdata(xdatax)
-        self.labels_x.set_ydata(ydatax)
-        self.labels_y.set_xdata(xdatay)
-        self.labels_y.set_ydata(ydatay)
+            if label == 0:
+                self.labels_x[i].set_color('green')
+                self.labels_x[i].set_marker('o')
+
+                self.labels_y[i].set_color('green')
+                self.labels_y[i].set_marker('o')
+
+            if label == 1:
+                self.labels_x[i].set_color('red')
+                self.labels_x[i].set_marker('x')
+
+                self.labels_y[i].set_color('red')
+                self.labels_y[i].set_marker('x')
+            if label == 2:
+                self.labels_x[i].set_color('darkorange')
+                self.labels_x[i].set_marker('x')
+
+                self.labels_y[i].set_color('darkorange')
+                self.labels_y[i].set_marker('x')
 
         self.canvas.draw()
 
@@ -365,13 +381,13 @@ class Labels():
         self.submit_button.place(x=417, y=364, width=50, height=20)
         self.submit_button.configure(state=tk.DISABLED)
 
-        ttk.Label(self.frame, text='Overall', font=self.root.font_bold).place(x=10, y=40)
-        self.overall_var = tk.IntVar()
-        self.overall_var.set(-1)
+        ttk.Label(self.frame, text='Label', font=self.root.font_bold).place(x=10, y=40)
+        self.label_var = tk.IntVar()
+        self.label_var.set(-1)
         self.label_0_radiobutton = ttk.Radiobutton(
             self.frame,
-            text='Not Hidden, Correct',
-            variable=self.overall_var,
+            text='Correct (Keypoint Not Hidden)',
+            variable=self.label_var,
             value=0,
             command=self.enable_submit_button
         )
@@ -380,53 +396,25 @@ class Labels():
 
         self.label_1_radiobutton = ttk.Radiobutton(
             self.frame,
-            text='Hidden, Presumably Correct',
-            variable=self.overall_var,
+            text='Incorrect (Keypoint Not Hidden)',
+            variable=self.label_var,
             value=1,
             command=self.enable_submit_button
         )
-        self.label_1_radiobutton.place(x=150, y=60)
+        self.label_1_radiobutton.place(x=10, y=80)
         self.label_1_radiobutton.configure(state=tk.DISABLED)
 
         self.label_2_radiobutton = ttk.Radiobutton(
             self.frame,
-            text='Not Hidden, Incorrect',
-            variable=self.overall_var,
+            text='Incorrect (Keypoint Hidden)',
+            variable=self.label_var,
             value=2,
             command=self.enable_submit_button
         )
-        self.label_2_radiobutton.place(x=10, y=80)
+        self.label_2_radiobutton.place(x=10, y=100)
         self.label_2_radiobutton.configure(state=tk.DISABLED)
 
-        self.label_3_radiobutton = ttk.Radiobutton(
-            self.frame,
-            text='Hidden, Incorrect',
-            variable=self.overall_var,
-            value=3,
-            command=self.enable_submit_button
-        )
-        self.label_3_radiobutton.place(x=150, y=80)
-        self.label_3_radiobutton.configure(state=tk.DISABLED)
-
-        self.label_4_radiobutton = ttk.Radiobutton(
-            self.frame,
-            text='Hidden, Presumably Incorrect',
-            variable=self.overall_var,
-            value=4,
-            command=self.enable_submit_button
-        )
-        self.label_4_radiobutton.place(x=270, y=80)
-        self.label_4_radiobutton.configure(state=tk.DISABLED)
-
-        ttk.Label(self.frame, text='Feature Event', font=self.root.font_bold).place(x=10, y=110)
-        self.feature_var = tk.IntVar()
-        self.feature_var.set(0)
-        self.label_5_radiobutton = ttk.Radiobutton(self.frame, text='Nothing',
-                                                   variable=self.feature_var, value=0, command=None)
-        self.label_5_radiobutton.place(x=10, y=130)
-        self.label_5_radiobutton.configure(state=tk.DISABLED)
-
-        ttk.Label(self.frame, text='Other', font=self.root.font_bold).place(x=10, y=160)
+        ttk.Label(self.frame, text='Other', font=self.root.font_bold).place(x=10, y=130)
         self.bounding_box_cuts_climber_var = tk.BooleanVar()
         self.bounding_box_cuts_climber_var.set(False)
         self.bounding_box_cuts_climber = ttk.Checkbutton(
@@ -436,22 +424,46 @@ class Labels():
             onvalue=True,
             offvalue=False,
         )
-        self.bounding_box_cuts_climber.place(x=10, y=180, height=20)
+        self.bounding_box_cuts_climber.place(x=10, y=150, height=20)
         self.bounding_box_cuts_climber.configure(state=tk.DISABLED)
+
+        self.bounding_box_cuts_climber_tv_var = tk.BooleanVar()
+        self.bounding_box_cuts_climber_tv_var.set(False)
+        self.bounding_box_cuts_climber_tv = ttk.Checkbutton(
+            self.frame,
+            text='Bounding Box Cuts Climber (due to TV overlay)',
+            variable=self.bounding_box_cuts_climber_tv_var,
+            onvalue=True,
+            offvalue=False,
+        )
+        self.bounding_box_cuts_climber_tv.place(x=10, y=170, height=20)
+        self.bounding_box_cuts_climber_tv.configure(state=tk.DISABLED)
+
+        self.bounding_box_cuts_climber_dark_var = tk.BooleanVar()
+        self.bounding_box_cuts_climber_dark_var.set(False)
+        self.bounding_box_cuts_climber_dark = ttk.Checkbutton(
+            self.frame,
+            text='Bounding Box Cuts Climber (due to unilluminated area)',
+            variable=self.bounding_box_cuts_climber_dark_var,
+            onvalue=True,
+            offvalue=False,
+        )
+        self.bounding_box_cuts_climber_dark.place(x=10, y=190, height=20)
+        self.bounding_box_cuts_climber_dark.configure(state=tk.DISABLED)
 
         self.side_swap_var = tk.BooleanVar()
         self.side_swap_var.set(False)
         self.side_swap = ttk.Checkbutton(
             self.frame,
-            text='Side Swap (Each Counted Individually)',
+            text='Side Swap (Each Swap Counted Individually)',
             variable=self.side_swap_var,
             onvalue=True,
             offvalue=False,
         )
-        self.side_swap.place(x=10, y=200, height=20)
+        self.side_swap.place(x=10, y=210, height=20)
         self.side_swap.configure(state=tk.DISABLED)
 
-        ttk.Label(self.frame, text="* hidden because: \n- behind climber's body \n- behind TV overlay \n- in unilluminated area").place(x=10, y=330)
+        ttk.Label(self.frame, text="* hidden Keypoints due to: \n- behind climber's body \n- behind TV overlay \n- in unilluminated area").place(x=10, y=330)
 
     def enable_submit_button(self):
         self.submit_button.configure(state=tk.NORMAL)
