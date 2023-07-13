@@ -20,6 +20,7 @@ class GUI():
             prev_button_callback,
             next_button_callback,
             submit_button_callback,
+            reset_button_callback,
             feature_plot_clicked_callback,
             calculate_high_pass_button_callback,
             toggle_high_pass_plot_button_callback):
@@ -57,7 +58,7 @@ class GUI():
 
         self.control = Control(self.root, prev_button_callback, next_button_callback)
         self.statistics = Statistics(self.root)
-        self.labels = Labels(self.root, submit_button_callback)
+        self.labels = Labels(self.root, submit_button_callback, reset_button_callback)
         self.metrics = Metrics(self.root, calculate_high_pass_button_callback, toggle_high_pass_plot_button_callback)
 
 
@@ -116,17 +117,27 @@ class FeaturePlots():
 
         self.tracker_x = None
         self.tracker_y = None
-        self.labels_x = None
-        self.labels_y = None
+        self.labels_x = []
+        self.labels_y = []
+        self.candidates_x = []
+        self.candidates_y = []
         self.twin_x = self.axes[0].twinx()
         self.twin_y = self.axes[1].twinx()
 
         self.canvas.draw()
 
-    def set_features(self, feature_x, feature_y):
-        self.twin_x.plot(feature_x.steps, np.clip(feature_x.scores, 0.0, 1.0), color='red',
+    def set_features(self, labeled_data):
+        steps_x = labeled_data.feature_x.steps
+        steps_y = labeled_data.feature_y.steps
+
+        values_x = labeled_data.feature_x.values
+        values_y = labeled_data.feature_y.values
+
+        scores = labeled_data.scores
+
+        self.twin_x.plot(steps_x, scores, color='red',
                          linestyle='dashed', linewidth=1.0, label='Confidence')
-        self.twin_y.plot(feature_y.steps, np.clip(feature_y.scores, 0.0, 1.0), color='red',
+        self.twin_y.plot(steps_y, scores, color='red',
                          linestyle='dashed', linewidth=1.0, label='Confidence')
 
         self.twin_x.set_ylim(0, 1.1)
@@ -141,17 +152,17 @@ class FeaturePlots():
         self.twin_x.yaxis.set_label_position("right")
         self.twin_y.yaxis.set_label_position("right")
 
-        self.axes[0].plot(feature_x.steps, feature_x.values, linewidth=1.5, label='Feature')
-        self.axes[1].plot(feature_y.steps, feature_y.values, linewidth=1.5, label='Feature')
+        self.axes[0].plot(steps_x, values_x, linewidth=1.5, label='Feature')
+        self.axes[1].plot(steps_y, values_y, linewidth=1.5, label='Feature')
 
-        self.axes[0].set_xlim(-15, ((max(feature_x.steps) // 10) + 1) * 10)
-        self.axes[1].set_xlim(-15, ((max(feature_y.steps) // 10) + 1) * 10)
+        self.axes[0].set_xlim(-25, ((max(steps_x) // 10) + 1) * 10)
+        self.axes[1].set_xlim(-25, ((max(steps_y) // 10) + 1) * 10)
 
         self.axes[0].set_ylim(0, 1100)
         self.axes[1].set_ylim(0, 1100)
 
-        self.axes[0].set_xticks(range(-10, ((max(feature_x.steps) // 10) + 1) * 10 + 1, 10))
-        self.axes[1].set_xticks(range(-10, ((max(feature_y.steps) // 10) + 1) * 10 + 1, 10))
+        self.axes[0].set_xticks(range(-10, ((max(steps_x) // 10) + 1) * 10 + 1, 10))
+        self.axes[1].set_xticks(range(-10, ((max(steps_y) // 10) + 1) * 10 + 1, 10))
 
         self.axes[0].set_yticks(range(0, 1101, 100))
         self.axes[1].set_yticks(range(0, 1101, 100))
@@ -162,8 +173,8 @@ class FeaturePlots():
         self.axes[0].set_ylabel('Pixel')
         self.axes[1].set_ylabel('Pixel')
 
-        self.axes[0].set_title(' '.join(word.capitalize() for word in feature_x.name.split('_')))
-        self.axes[1].set_title(' '.join(word.capitalize() for word in feature_y.name.split('_')))
+        self.axes[0].set_title(labeled_data.title)
+        self.axes[1].set_title(labeled_data.title)
 
         self.axes[0].grid(True)
         self.axes[1].grid(True)
@@ -171,10 +182,33 @@ class FeaturePlots():
         self.tracker_x = self.axes[0].axvline(x=0, color='black')
         self.tracker_y = self.axes[1].axvline(x=0, color='black')
 
-        self.labels_x = [Line2D([0], [0], linestyle='', marker='h', color='blue')
-                         for _ in range(0, len(feature_x.steps))]
-        self.labels_y = [Line2D([0], [0], linestyle='', marker='h', color='blue')
-                         for _ in range(0, len(feature_y.steps))]
+        self.labels_x = [Line2D([0], [0], linestyle='', marker='o', color='blue') for _ in range(0, len(steps_x))]
+        self.labels_y = [Line2D([0], [0], linestyle='', marker='o', color='blue') for _ in range(0, len(steps_y))]
+        for label in self.labels_x:
+            label.set_visible(False)
+            label.set_markerfacecolor('none')
+            self.axes[0].add_line(label)
+        for label in self.labels_y:
+            label.set_visible(False)
+            label.set_markerfacecolor('none')
+            self.axes[1].add_line(label)
+
+        for candidate in labeled_data.candidates_x:
+            self.candidates_x.append(Line2D([candidate], [values_x[candidate]],
+                                     marker='o', color='black', markersize=2))
+
+        for candidate in labeled_data.candidates_y:
+            self.candidates_y.append(Line2D([candidate], [values_y[candidate]],
+                                     marker='o', color='black', markersize=2))
+
+        for candidate in self.candidates_x:
+            self.axes[0].add_line(candidate)
+
+        for candidate in self.candidates_y:
+            self.axes[1].add_line(candidate)
+
+        self.labels_x = [Line2D([0], [0], linestyle='', marker='o', color='blue')for _ in range(0, len(steps_x))]
+        self.labels_y = [Line2D([0], [0], linestyle='', marker='o', color='blue')for _ in range(0, len(steps_y))]
         for label in self.labels_x:
             label.set_visible(False)
             label.set_markerfacecolor('none')
@@ -189,10 +223,11 @@ class FeaturePlots():
             h, l = axis.get_legend_handles_labels()
             handles.extend(h)
             labels.extend(l)
-        handles.extend([Line2D([0], [0], marker='o', markeredgecolor='green', label='Correct', markerfacecolor='none'),
-                        Line2D([0], [0], marker='x', markeredgecolor='red', label='Incorrect'),
-                        Line2D([0], [0], marker='x', markeredgecolor='darkorange', label='Incorrect\n(Hidden)')])
-        labels.extend(['Correct', 'Incorrect', 'Incorrect\n(Hidden)'])
+        handles.extend([Line2D([0], [0], marker='o', markeredgecolor='black', label='Candidate', markerfacecolor='black'),
+                        Line2D([0], [0], marker='o', markeredgecolor='green', label='Correct', markerfacecolor='none'),
+                        Line2D([0], [0], marker='o', markeredgecolor='red', label='Incorrect', markerfacecolor='none'),
+                        Line2D([0], [0], marker='o', markeredgecolor='darkorange', label='Incorrect\n(Hidden)', markerfacecolor='none')])
+        labels.extend(['Candidate', 'Correct', 'Incorrect', 'Incorrect\n(Hidden)'])
         self.axes[0].legend(handles, labels, loc='upper left')
 
         handles, labels = [], []
@@ -200,10 +235,11 @@ class FeaturePlots():
             h, l = axis.get_legend_handles_labels()
             handles.extend(h)
             labels.extend(l)
-        handles.extend([Line2D([0], [0], marker='o', markeredgecolor='green', label='Correct', markerfacecolor='none'),
-                        Line2D([0], [0], marker='x', markeredgecolor='red', label='Incorrect'),
-                        Line2D([0], [0], marker='x', markeredgecolor='darkorange', label='Incorrect\n(Hidden)')])
-        labels.extend(['Correct', 'Incorrect', 'Incorrect\n(Hidden)'])
+        handles.extend([Line2D([0], [0], marker='o', markeredgecolor='black', label='Candidate', markerfacecolor='black'),
+                        Line2D([0], [0], marker='o', markeredgecolor='green', label='Correct', markerfacecolor='none'),
+                        Line2D([0], [0], marker='o', markeredgecolor='red', label='Incorrect', markerfacecolor='none'),
+                        Line2D([0], [0], marker='o', markeredgecolor='darkorange', label='Incorrect\n(Hidden)', markerfacecolor='none')])
+        labels.extend(['Candidate', 'Correct', 'Incorrect', 'Incorrect\n(Hidden)'])
 
         self.axes[1].legend(handles, labels, loc='upper left')
 
@@ -215,8 +251,8 @@ class FeaturePlots():
         self.canvas.draw()
 
     def set_labels(self, labeled_data):
-        feature_x = labeled_data.feature_x
-        feature_y = labeled_data.feature_y
+        feature_x_values = labeled_data.feature_x.values
+        feature_y_values = labeled_data.feature_y.values
 
         for i, labels in enumerate(labeled_data.labels):
             label = labels[0]
@@ -225,32 +261,22 @@ class FeaturePlots():
                 continue
 
             self.labels_x[i].set_xdata([i])
-            self.labels_x[i].set_ydata(feature_x[i])
+            self.labels_x[i].set_ydata(feature_x_values[i])
             self.labels_x[i].set_visible(True)
 
             self.labels_y[i].set_xdata([i])
-            self.labels_y[i].set_ydata(feature_y[i])
+            self.labels_y[i].set_ydata(feature_y_values[i])
             self.labels_y[i].set_visible(True)
 
             if label == 0:
                 self.labels_x[i].set_color('green')
-                self.labels_x[i].set_marker('o')
-
                 self.labels_y[i].set_color('green')
-                self.labels_y[i].set_marker('o')
-
             if label == 1:
                 self.labels_x[i].set_color('red')
-                self.labels_x[i].set_marker('x')
-
                 self.labels_y[i].set_color('red')
-                self.labels_y[i].set_marker('x')
             if label == 2:
                 self.labels_x[i].set_color('darkorange')
-                self.labels_x[i].set_marker('x')
-
                 self.labels_y[i].set_color('darkorange')
-                self.labels_y[i].set_marker('x')
 
         self.canvas.draw()
 
@@ -264,6 +290,10 @@ class FeaturePlots():
         self.twin_y.cla()
         self.axes[0].cla()
         self.axes[1].cla()
+        self.labels_x.clear()
+        self.labels_y.clear()
+        self.candidates_x.clear()
+        self.candidates_y.clear()
         self.canvas.draw()
 
 
@@ -354,7 +384,7 @@ class Statistics():
 
 
 class Labels():
-    def __init__(self, root, submit_button_callback):
+    def __init__(self, root, submit_button_callback, reset_button_callback):
         self.root = root
         self.frame = ttk.Frame(self.root)
         self.frame.place(x=985, y=560, width=478, height=395)
@@ -374,12 +404,17 @@ class Labels():
             onvalue=True,
             offvalue=False,
         )
-        self.auto_submit_checkbutton.place(x=220, y=365, height=20)
+        self.auto_submit_checkbutton.place(x=163, y=365, height=20)
 
         self.submit_button = ttk.Button(self.frame, text='Submit',
                                         command=submit_button_callback, style='Button.TButton')
         self.submit_button.place(x=417, y=364, width=50, height=20)
         self.submit_button.configure(state=tk.DISABLED)
+
+        self.reset_button = ttk.Button(self.frame, text='Reset',
+                                       command=reset_button_callback, style='Button.TButton')
+        self.reset_button.place(x=360, y=364, width=50, height=20)
+        self.reset_button.configure(state=tk.DISABLED)
 
         ttk.Label(self.frame, text='Label', font=self.root.font_bold).place(x=10, y=40)
         self.label_var = tk.IntVar()
@@ -413,6 +448,30 @@ class Labels():
         )
         self.label_2_radiobutton.place(x=10, y=100)
         self.label_2_radiobutton.configure(state=tk.DISABLED)
+
+        self.mark_x_var = tk.BooleanVar()
+        self.mark_x_var.set(False)
+        self.mark_x = ttk.Checkbutton(
+            self.frame,
+            text='Mark X for Metrics',
+            variable=self.mark_x_var,
+            onvalue=True,
+            offvalue=False,
+        )
+        self.mark_x.place(x=220, y=60, height=20)
+        self.mark_x.configure(state=tk.DISABLED)
+
+        self.mark_y_var = tk.BooleanVar()
+        self.mark_y_var.set(False)
+        self.mark_y = ttk.Checkbutton(
+            self.frame,
+            text='Mark Y for Metrics',
+            variable=self.mark_y_var,
+            onvalue=True,
+            offvalue=False,
+        )
+        self.mark_y.place(x=220, y=80, height=20)
+        self.mark_y.configure(state=tk.DISABLED)
 
         ttk.Label(self.frame, text='Other', font=self.root.font_bold).place(x=10, y=130)
         self.bounding_box_cuts_climber_var = tk.BooleanVar()

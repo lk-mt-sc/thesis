@@ -27,6 +27,7 @@ class Pipeline():
             prev_button_callback=self.prev_image,
             next_button_callback=self.next_image,
             submit_button_callback=self.submit_labels,
+            reset_button_callback=self.reset_labels,
             feature_plot_clicked_callback=self.set_image,
             calculate_high_pass_button_callback=self.calculate_high_pass_properties,
             toggle_high_pass_plot_button_callback=None
@@ -162,6 +163,23 @@ class Pipeline():
             feature_y = run_data.features[feature * 2 + 1]
             assert len(feature_x.steps) == len(feature_y.steps)
 
+            values_x = feature_x.values
+            values_y = feature_y.values
+
+            diff_x = np.diff(values_x)
+            diff_y = np.diff(values_y)
+
+            diff_x = np.insert(diff_x, 0, 0)
+            diff_y = np.insert(diff_y, 0, 0)
+
+            lower_quantile = np.percentile(diff_x, 15)
+            upper_quantile = np.percentile(diff_x, 85)
+            candidates_x = [i for i, d in enumerate(diff_x) if d <= lower_quantile or d >= upper_quantile]
+
+            lower_quantile = np.percentile(diff_y, 15)
+            upper_quantile = np.percentile(diff_y, 85)
+            candidates_y = [i for i, d in enumerate(diff_y) if d <= lower_quantile or d >= upper_quantile]
+
             keypoint_name = ' '.join(feature_x.name.split('_')[:2]).upper()
             name = f'{str(id_).zfill(3)} ID - KEYPOINT: {keypoint_name}'
 
@@ -170,10 +188,10 @@ class Pipeline():
                 labeled_data = LabeledData.load(out_filename)
             else:
                 labeled_data = LabeledData(
-                    n_labels=len(feature_x.steps),
-                    feature_x=feature_x.values,
-                    feature_y=feature_y.values,
-                    scores=np.clip(feature_x.scores, 0.0, 1.0)
+                    feature_x=feature_x,
+                    feature_y=feature_y,
+                    candidates_x=candidates_x,
+                    candidates_y=candidates_y
                 )
                 labeled_data.save(out_filename)
 
@@ -213,10 +231,13 @@ class Pipeline():
             self.gui.labels.label_0_radiobutton.configure(state=tk.NORMAL)
             self.gui.labels.label_1_radiobutton.configure(state=tk.NORMAL)
             self.gui.labels.label_2_radiobutton.configure(state=tk.NORMAL)
+            self.gui.labels.mark_x.configure(state=tk.NORMAL)
+            self.gui.labels.mark_y.configure(state=tk.NORMAL)
             self.gui.labels.bounding_box_cuts_climber.configure(state=tk.NORMAL)
             self.gui.labels.bounding_box_cuts_climber_tv.configure(state=tk.NORMAL)
             self.gui.labels.bounding_box_cuts_climber_dark.configure(state=tk.NORMAL)
             self.gui.labels.side_swap.configure(state=tk.NORMAL)
+            self.gui.labels.reset_button.configure(state=tk.NORMAL)
 
             selection = self.gui.data_list.data_listbox.get(selected_index[0])
 
@@ -224,7 +245,7 @@ class Pipeline():
             self.gui.feature_plots.clear()
 
             self.selected_data = next(d for d in self.data if d['name'] == selection)
-            self.gui.feature_plots.set_features(self.selected_data['feature_x'], self.selected_data['feature_y'])
+            self.gui.feature_plots.set_features(self.selected_data['labeled_data'])
             self.gui.feature_plots.set_labels(self.selected_data['labeled_data'])
             self.images = [cv.imread(image) for image in self.selected_data['run'].data.get_images()]
             self.image_counter = 0
@@ -241,6 +262,8 @@ class Pipeline():
         self.gui.labels.bounding_box_cuts_climber_tv_var.set(labels[2])
         self.gui.labels.bounding_box_cuts_climber_dark_var.set(labels[3])
         self.gui.labels.side_swap_var.set(labels[4])
+        self.gui.labels.mark_x_var.set(labels[5])
+        self.gui.labels.mark_y_var.set(labels[6])
 
         if labels[0] == -1:
             self.gui.labels.submit_button.configure(state=tk.DISABLED)
@@ -257,6 +280,8 @@ class Pipeline():
         bounding_box_cuts_climber_tv = self.gui.labels.bounding_box_cuts_climber_tv_var.get()
         bounding_box_cuts_climber_dark = self.gui.labels.bounding_box_cuts_climber_dark_var.get()
         side_swap = self.gui.labels.side_swap_var.get()
+        mark_x = self.gui.labels.mark_x_var.get()
+        mark_y = self.gui.labels.mark_y_var.get()
 
         labeled_data = self.selected_data['labeled_data']
         labeled_data.add_labels(
@@ -266,7 +291,9 @@ class Pipeline():
                 bounding_box_cuts_climber,
                 bounding_box_cuts_climber_tv,
                 bounding_box_cuts_climber_dark,
-                side_swap
+                side_swap,
+                mark_x,
+                mark_y
             )
         )
         self.gui.feature_plots.set_labels(self.selected_data['labeled_data'])
@@ -275,6 +302,16 @@ class Pipeline():
         already_labeled_data = self.get_already_labeled_data()
         if already_labeled_data:
             self.statistics.calculate_statistics(already_labeled_data, self.selected_data['labeled_data'])
+
+    def reset_labels(self):
+        self.gui.labels.label_var.set(-1)
+        self.gui.labels.bounding_box_cuts_climber_var.set(False)
+        self.gui.labels.bounding_box_cuts_climber_tv_var.set(False)
+        self.gui.labels.bounding_box_cuts_climber_dark_var.set(False)
+        self.gui.labels.side_swap_var.set(False)
+        self.gui.labels.mark_x_var.set(False)
+        self.gui.labels.mark_y_var.set(False)
+        self.submit_labels()
 
     def next_image(self):
         if self.selected_data is None:
