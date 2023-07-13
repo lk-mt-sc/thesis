@@ -313,12 +313,23 @@ class Pipeline():
         self.gui.labels.mark_y_var.set(False)
         self.submit_labels()
 
-    def next_image(self):
+    def next_image(self, candidates_only=False):
         if self.selected_data is None:
             return
 
         if self.image_counter < self.n_images - 1:
-            self.image_counter += 1
+            if candidates_only:
+                possible_next_candidate = self.image_counter + 1
+                candidates_x = self.selected_data['labeled_data'].candidates_x
+                candidates_y = self.selected_data['labeled_data'].candidates_y
+                while (possible_next_candidate not in candidates_x + candidates_y):
+                    if possible_next_candidate + 1 < self.n_images - 1:
+                        possible_next_candidate += 1
+                    else:
+                        possible_next_candidate = None
+                        break
+
+            self.image_counter = possible_next_candidate or self.image_counter + 1
 
             if self.gui.labels.auto_submit_checkbutton_var.get():
                 self.submit_labels()
@@ -326,12 +337,23 @@ class Pipeline():
             self.set_labels_selection()
             self.update_plots()
 
-    def prev_image(self):
+    def prev_image(self, candidates_only=False):
         if self.selected_data is None:
             return
 
         if self.image_counter > 0:
-            self.image_counter -= 1
+            if candidates_only:
+                possible_next_candidate = self.image_counter - 1
+                candidates_x = self.selected_data['labeled_data'].candidates_x
+                candidates_y = self.selected_data['labeled_data'].candidates_y
+                while (possible_next_candidate not in candidates_x + candidates_y):
+                    if possible_next_candidate - 1 > 0:
+                        possible_next_candidate -= 1
+                    else:
+                        possible_next_candidate = None
+                        break
+
+            self.image_counter = possible_next_candidate or self.image_counter - 1
 
             if self.gui.labels.auto_submit_checkbutton_var.get():
                 self.submit_labels()
@@ -433,10 +455,10 @@ class Pipeline():
             self.root.destroy()
 
         if key == 'a':
-            self.prev_image()
+            self.prev_image(candidates_only=True)
 
         if key == 'd':
-            self.next_image()
+            self.next_image(candidates_only=True)
 
         if key == 's':
             if str(self.gui.labels.submit_button['state']) == 'normal':

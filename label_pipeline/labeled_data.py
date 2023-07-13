@@ -10,7 +10,7 @@ class LabeledData():
         self.n_labels = len(feature_x.steps)
         # -1 = not labeled, 0 = correct, 1 = incorrect, 2 = incorrect, hidden
         # bools: bb cuts climber, bb cuts climber (TV), bb cuts climber (dark), side swap, mark x, mark y,
-        self.labels = [(-1, False, False, False, False, False, False)] * self.n_labels
+        self.labels = [(-1, False, False, False, False, True, True)] * self.n_labels
         self.feature_x = feature_x
         self.feature_y = feature_y
         self.candidates_x = candidates_x
