@@ -328,6 +328,8 @@ class Pipeline():
                     else:
                         possible_next_candidate = None
                         break
+            else:
+                possible_next_candidate = None
 
             self.image_counter = possible_next_candidate or self.image_counter + 1
 
@@ -352,6 +354,8 @@ class Pipeline():
                     else:
                         possible_next_candidate = None
                         break
+            else:
+                possible_next_candidate = None
 
             self.image_counter = possible_next_candidate or self.image_counter - 1
 
@@ -455,9 +459,15 @@ class Pipeline():
             self.root.destroy()
 
         if key == 'a':
-            self.prev_image(candidates_only=True)
+            self.prev_image()
 
         if key == 'd':
+            self.next_image()
+
+        if key == 'w':
+            self.prev_image(candidates_only=True)
+
+        if key == 'e':
             self.next_image(candidates_only=True)
 
         if key == 's':
